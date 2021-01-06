@@ -1,0 +1,96 @@
+{
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": "warn",
+    "sort-keys": [
+      1,
+      "asc",
+      {
+        "minKeys": 5
+      }
+    ],
+    "quote-props": [
+      2,
+      "as-needed"
+    ],
+    "id-length": [
+      "warn",
+      {
+        "exceptions": [
+          "_",
+          "i",
+          "Q"
+        ]
+      }
+    ],
+    "comma-dangle": [
+      1,
+      {
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "arrays": "always-multiline",
+        "functions": "never"
+      }
+    ],
+    "curly": 2,
+    "no-unused-vars": "warn",
+    "camelcase": [
+      1,
+      {
+        "ignoreDestructuring": true,
+        "properties": "never"
+      }
+    ],
+    "multiline-ternary": [
+      "warn",
+      "always-multiline"
+    ],
+    "brace-style": [
+      "warn",
+      "1tbs",
+      {
+        "allowSingleLine": true
+      }
+    ],
+    "operator-linebreak": [
+      "warn",
+      "before",
+      {
+        "overrides": {
+          "=": "after",
+          "?": "before",
+          ":": "before"
+        }
+      }
+    ],
+    "indent": [
+      1,
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": [
+      2,
+      "unix"
+    ],
+    "quotes": [
+      2,
+      "single"
+    ],
+    "semi": 0
+  }
+}

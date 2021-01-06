@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="60pt" height="60pt" viewBox="0 0 60 60" version="1.1">
+    <g id="surface1">
+        <path style=" stroke:none;fill-rule:nonzero;fill:#42A5F5;fill-opacity:1;"
+              d="M 55 52.5 L 27.5 52.5 L 27.5 16.25 L 46.25 16.25 L 55 25 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#90CAF9;fill-opacity:1;"
+              d="M 32.5 43.75 L 5 43.75 L 5 7.5 L 23.75 7.5 L 32.5 16.25 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#E1F5FE;fill-opacity:1;"
+              d="M 30.625 17.5 L 22.5 17.5 L 22.5 9.375 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#E1F5FE;fill-opacity:1;"
+              d="M 53.125 26.25 L 45 26.25 L 45 18.125 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#1565C0;fill-opacity:1;"
+              d="M 20.0625 34.875 L 20.0625 23.75 L 26.25 29.375 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#1565C0;fill-opacity:1;"
+              d="M 11.25 27.5 L 20.949219 27.5 L 20.949219 31.25 L 11.25 31.25 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#0D47A1;fill-opacity:1;"
+              d="M 39.9375 32.625 L 39.9375 43.75 L 33.75 38.125 Z "/>
+        <path style=" stroke:none;fill-rule:nonzero;fill:#0D47A1;fill-opacity:1;"
+              d="M 39.050781 36.25 L 48.75 36.25 L 48.75 40 L 39.050781 40 Z "/>
+    </g>
+</svg>

@@ -1,0 +1,51 @@
+{
+  "email": {
+    "TITLE": "Libri Matricola",
+    "QUBO_EMAILS": [
+      "test@astenpos.it"
+    ],
+    "EMAIL_FROM": "test@astenpos.it",
+    "TRANSPORTER": {
+      "host": "mail.asten.it",
+      "port": 465,
+      "secure": true,
+      "auth": {
+        "user": "support@astenpos.it",
+        "pass": "0456600492!"
+      },
+      "tls": {
+        "rejectUnauthorized": false
+      }
+    }
+  },
+  "express": {
+    "AUTH": "boobs",
+    "BODY_LIMIT": "100kb",
+    "IP": "127.0.0.1",
+    "REQ_ID": "libri_mastri",
+    "NAMESPACE": "express",
+    "PORT": 5014
+  },
+  "apollo_express": {
+    "AUTH": "boobs",
+    "BODY_LIMIT": "500kb",
+    "IP": "127.0.0.1",
+    "NAMESPACE": "apollo",
+    "ORIGIN": [
+      "https://service.qubo-italia.eu:7031",
+      "http://service.qubo-italia.eu:5015",
+      "http://109.168.42.51:5015",
+      "https://109.168.42.51:7031",
+      "http://10.0.2.32:5015",
+      "https://10.0.2.32:7031"
+    ],
+    "MAXAGE_MINUTES": 60,
+    "PORT": 5014
+  },
+  "couchbase": {
+    "IP_DEFAULT": "127.0.0.1",
+    "BUCKET_DEFAULT": "libri_mastri_dev",
+    "REG_USER": "registry",
+    "REG_PASS": "902100"
+  }
+}

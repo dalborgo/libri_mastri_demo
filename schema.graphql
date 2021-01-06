@@ -1,0 +1,452 @@
+# This file was generated based on ".graphqlconfig". Do not edit manually.
+
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+interface Edge {
+    cursor: String!
+}
+
+interface User {
+    _createdAt: String
+    _updatedAt: String
+    address: String
+    addressNumber: String
+    city: String
+    email: String
+    id: ID!
+    longName: String
+    options: UserOptions
+    password: String!
+    role: Roles!
+    state: String
+    username: String!
+    vat: String
+    zip: String
+}
+
+type ChildUser implements User {
+    _createdAt: String
+    _updatedAt: String
+    address: String
+    addressNumber: String
+    city: String
+    email: String
+    father: String
+    id: ID!
+    longName: String
+    options: UserOptions
+    password: String!
+    role: Roles!
+    state: String
+    username: String!
+    vat: String
+    zip: String
+}
+
+type Cynation {
+    orgEmail: String
+    orgId: String
+    orgName: String
+}
+
+type DiffResponse {
+    after: String
+    before: String
+    log: String
+}
+
+type Gs {
+    activities: JSON
+    coverageTypes: JSON
+    id: ID
+    offset: String
+    vehicleTypes: JSON
+}
+
+type Holder {
+    activity: String
+    address: String
+    address_number: String
+    city: String
+    id: ID
+    name: String
+    state: String
+    surname: String
+    zip: String
+}
+
+type MainUser implements User {
+    _createdAt: String
+    _updatedAt: String
+    address: String
+    addressNumber: String
+    children: [ChildUser]
+    city: String
+    email: String
+    id: ID!
+    longName: String
+    options: UserOptions
+    password: String!
+    role: Roles!
+    state: String
+    username: String!
+    vat: String
+    zip: String
+}
+
+type Mutation {
+    _: String
+    add(input: AddUserInput!): User
+    addRegistry(input: AddRegistryInput): Registry
+    addRegistry_guest(input: AddRegistryInput): Registry
+    clonePolicy(id: ID!): Policy
+    del(id: ID!): User
+    delFieldRegistry(field: String!, id: ID!): Registry
+    delPolicy(id: ID!): Policy
+    delRegistry(id: ID!): Registry
+    edit(input: EditUserInput!): User
+    editOptions(input: EditOptionsInput!): User
+    editPolicy(input: SavePolicyInput!): Policy
+    editRegistry(input: EditRegistryInput): Registry
+    newPass(id: ID!, password: String!): User
+    newPassRegistry(id: ID!, password: String!): Registry
+    newPolicy(input: SavePolicyInput!): Policy
+    signIn(password: String!, username: String!): User
+    signInRegistry(password: String!, username: String!): Registry
+    signOut: User
+    signOutRegistry: Boolean
+    signUp(email: String!, password: String!, role: Roles!, username: String!): User
+    signUpRegistry(email: String!, name: String, password: String!, username: String!): Registry
+    uploadFile(input: PolicyUploadInput!): UploadResponse
+}
+
+type PageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    hasPrevPage: Boolean!
+}
+
+type Policy {
+    _cas: String
+    _code: String!
+    _createdAt: String
+    attachments: [PolicyAttachments]
+    children: [Policy]
+    cosigners: [Holder]
+    createdBy: User
+    id: ID!
+    initDate: String
+    isRecalculateFraction: String
+    meta: PolicyMeta
+    midDate: String
+    number: String!
+    payFractions: JSON
+    paymentFract: String
+    producer: User
+    productDefinitions: JSON
+    regFractions: JSON
+    regulationFract: String
+    signer: Holder
+    specialArrangements: String
+    state: PolicyState
+    subAgent: User
+    top: String
+    vehicles: JSON
+}
+
+type PolicyAttachments {
+    dir: String
+    name: String
+    size: Int
+    type: String
+}
+
+type PolicyMeta {
+    fromDoc: String
+    modified: Boolean
+    offset: String
+    sequence: Long
+    serie: Long
+    toDoc: String
+    version: Int
+    year: String
+}
+
+type PolicyState {
+    acceptedBy: String
+    code: StateCodes
+    isPolicy: Boolean
+}
+
+type Query {
+    _: String
+    differences(id: ID!): [DiffResponse]
+    gs: Gs
+    mainUsers(skip: ID): [MainUser]
+    me: User
+    policies: [Policy]
+    policiesResultCursor(after: String, dir: CursorDir, first: Int): ResultCursor
+    policy(id: ID!): Policy
+    registries(filter: String, limit: Int, skip: Int): [Registry!]!
+    registries_guest(limit: Int, skip: Int): [Registry!]!
+    registry(id: ID!): Registry
+    registry_guest(id: ID!): Registry
+    user(id: ID!): User
+    users: [User]
+}
+
+type Registry {
+    address: String
+    address_number: String
+    area: String
+    birth_city: String
+    birth_day: String
+    cellular: String
+    cf: String
+    city: String
+    createdAt: String!
+    cynation: Cynation
+    email: String!
+    gender: String
+    id: ID!
+    name: String
+    nationality: String
+    num_employes: Int
+    password: String!
+    pec: String
+    phone: String
+    producer: String
+    sdi: String
+    state: String
+    surname: String
+    updatedAt: String!
+    username: String!
+    vat: String
+    year_revenue: Int
+    zip: String
+}
+
+type ResultCursor {
+    edges: [Edge]
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type Subscription {
+    _: String
+}
+
+type UploadError {
+    column: String
+    line: Int
+    reason: String
+}
+
+type UploadResponse {
+    errors: [UploadError]!
+    policy: Policy!
+}
+
+type UserOptions {
+    forceDownloadPdf: Boolean
+    neverShowMenu: Boolean
+}
+
+type policyEdge implements Edge {
+    cursor: String!
+    node: Policy
+}
+
+enum CacheControlScope {
+    PRIVATE
+    PUBLIC
+}
+
+enum CursorDir {
+    NEXT
+    PREV
+}
+
+"The order of roles is important, the index correspond to the priority weight."
+enum Roles {
+    AGENT
+    GUEST
+    SUB_AGENT
+    SUPER
+}
+
+enum StateCodes {
+    ACCEPTED
+    CHANGED
+    DRAFT
+    REST_AGENT
+    REST_QUBO
+    TO_AGENT
+    TO_QUBO
+}
+
+input AddRegistryInput {
+    address: String
+    address_number: String
+    area: String
+    birth_city: String
+    birth_day: String
+    cellular: String
+    cf: String
+    city: String
+    cynation: CynationInput
+    email: String!
+    gender: String
+    name: String
+    nationality: String
+    num_employes: Int
+    password: String!
+    pec: String
+    phone: String
+    producer: String
+    sdi: String
+    state: String
+    surname: String
+    username: String!
+    vat: String
+    year_revenue: Int
+    zip: String
+}
+
+input AddUserInput {
+    address: String
+    addressNumber: String
+    city: String
+    email: String
+    father: String
+    longName: String
+    password: String!
+    role: Roles!
+    state: String
+    username: String!
+    vat: String
+    zip: String
+}
+
+input CynationInput {
+    orgEmail: String
+    orgId: String
+    orgName: String
+}
+
+input EditOptionsInput {
+    options: OptionsInput
+    username: String!
+}
+
+input EditRegistryInput {
+    address: String
+    address_number: String
+    area: String
+    birth_city: String
+    birth_day: String
+    cellular: String
+    cf: String
+    city: String
+    cynation: CynationInput
+    email: String!
+    gender: String
+    id: ID!
+    name: String
+    nationality: String
+    num_employes: Int
+    pec: String
+    phone: String
+    producer: String
+    sdi: String
+    state: String
+    surname: String
+    username: String!
+    vat: String
+    year_revenue: Int
+    zip: String
+}
+
+input EditUserInput {
+    address: String
+    addressNumber: String
+    city: String
+    email: String
+    father: String
+    longName: String
+    role: Roles!
+    state: String
+    username: String!
+    vat: String
+    zip: String
+}
+
+input OptionsInput {
+    forceDownloadPdf: Boolean
+    neverShowMenu: Boolean
+}
+
+input PolicyAttachmentsInput {
+    files: Upload
+}
+
+input PolicyMetaInput {
+    fromDoc: String
+    modified: Boolean
+    offset: String
+    sequence: Int
+    serie: Int
+    toDoc: String
+    version: Int
+    year: String
+}
+
+input PolicyStateInput {
+    acceptedBy: String
+    code: StateCodes
+    isPolicy: Boolean
+}
+
+input PolicyUploadInput {
+    file: Upload!
+    policy: SavePolicyInput
+}
+
+input SavePolicyInput {
+    _cas: String
+    _code: String
+    _createdAt: String
+    attachments: PolicyAttachmentsInput
+    cosigners: JSON
+    createdBy: String
+    endDate: String
+    initDate: String
+    isRecalculateFraction: String
+    meta: PolicyMetaInput
+    midDate: String
+    newEvent: Boolean
+    number: String
+    payFractions: JSON
+    payObj: JSON
+    paymentFract: String
+    producer: String
+    productDefinitions: JSON
+    regFractions: JSON
+    regulationFract: String
+    signer: JSON
+    specialArrangements: String
+    state: PolicyStateInput
+    vehicles: JSON
+}
+
+
+scalar JSON
+
+"The `Upload` scalar type represents a file upload."
+scalar Upload
+
+scalar JSONObject

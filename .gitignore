@@ -1,0 +1,5 @@
+# Project exclude paths
+/node_modules/
+/packages/io/node_modules/
+/packages/manager/node_modules/
+/packages/webdevias/node_modules/

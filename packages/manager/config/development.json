@@ -1,0 +1,12 @@
+{
+  "apollo_express": {
+    "ORIGIN": [
+      "http://localhost:5015",
+      "http://192.168.1.9:5015"
+    ]
+  },
+  "couchbase": {
+    "IP_DEFAULT": "10.0.2.32",
+    "BUCKET_DEFAULT": "libri_mastri_dev"
+  }
+}

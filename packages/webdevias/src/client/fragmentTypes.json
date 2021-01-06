@@ -1,0 +1,27 @@
+{
+  "__schema": {
+    "types": [
+      {
+        "kind": "INTERFACE",
+        "name": "User",
+        "possibleTypes": [
+          {
+            "name": "MainUser"
+          },
+          {
+            "name": "ChildUser"
+          }
+        ]
+      },
+      {
+        "kind": "INTERFACE",
+        "name": "Edge",
+        "possibleTypes": [
+          {
+            "name": "policyEdge"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+export { default as Header } from './Header'
+export { default as PolicyHeader } from './PolicyHeader'
+export { default as PolicyProductDefinition } from './PolicyProductDefinition'
+export { default as PolicyVehicles } from './PolicyVehicles'
+export { default as PolicyHolders } from './PolicyHolders'
+export { default as PolicyHolderInsertModal } from './PolicyHolderInsertModal'
+export { default as PolicyAttachments } from './PolicyAttachments'
