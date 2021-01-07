@@ -1,4 +1,5 @@
 # Project exclude paths
+/.idea/
 /node_modules/
 /packages/io/node_modules/
 /packages/manager/node_modules/

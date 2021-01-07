@@ -55,6 +55,7 @@
     "react-apollo": "^3.1.5",
     "@mdi/react": "^1.4.0",
     "@mdi/js": "^5.5.55",
+    "exceljs": "^4.2.0",
     "graphql": "^14.6.0",
     "react-number-format": "^4.4.1",
     "history": "^4.10.1",
