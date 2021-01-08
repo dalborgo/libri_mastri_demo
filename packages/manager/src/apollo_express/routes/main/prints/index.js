@@ -548,6 +548,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      today: cDate.mom(null, null, 'DD/MM/YYYY'),
       number,
       counter: target.counter,
       pLongName: get(producer, 'longName'),
@@ -653,6 +654,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      today: cDate.mom(null, null, 'DD/MM/YYYY'),
       number,
       counter: target.constraintCounter,
       pLongName: get(producer, 'longName'),

@@ -6,21 +6,27 @@ import log from '@adapter/common/src/winston'
 export const MAP_GUARANTEES = {
   SILVER: {
     title: template('Opzione 1: Protezione <%= type %> "<%= display %>"'), // <%= code %>
-    body: template('<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 100.000,00'),
-    rate: template('Tasso complessivo: <%= rate %> pro mille lordo'),
-    overdraft: template('Scoperto <%= overdraft %> % min. € <%= excess %>'),
+    body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 100.000,00'),
+    rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
+    overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
   },
   GOLD: {
     title: template('Opzione 2: Protezione <%= type %> "<%= display %>"'), // <%= code %>
-    body: template('<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 150.000,00'),
-    rate: template('Tasso complessivo: <%= rate %> pro mille lordo'),
-    overdraft: template('Scoperto <%= overdraft %> % min. € <%= excess %>'),
+    body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 150.000,00'),
+    rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
+    overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
   },
   PLATINUM: {
     title: template('Opzione 3: Protezione <%= type %> "<%= display %>"'), // <%= code %>
-    body: template('<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 200.000,00'),
-    rate: template('Tasso complessivo: <%= rate %> pro mille lordo'),
-    overdraft: template('Scoperto <%= overdraft %> % min. € <%= excess %>'),
+    body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 200.000,00'),
+    rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
+    overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
+  },
+  NON: {
+    title: template('Protezione <%= type %> "<%= display %>"'), // <%= code %>
+    body: template(''),
+    rate: template(''),
+    overdraft: template(''),
   },
 }
 /*eslint-enable sort-keys*/
