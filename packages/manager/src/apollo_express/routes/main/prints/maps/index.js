@@ -9,24 +9,28 @@ export const MAP_GUARANTEES = {
     body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 100.000,00'),
     rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
     overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
+    min: template('\nPremio annuo lordo minimo applicato € <%= min %>'),
   },
   GOLD: {
     title: template('Opzione 2: Protezione <%= type %> "<%= display %>"'), // <%= code %>
     body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 150.000,00'),
     rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
     overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
+    min: template('\nPremio annuo lordo minimo applicato € <%= min %>'),
   },
   PLATINUM: {
     title: template('Opzione 3: Protezione <%= type %> "<%= display %>"'), // <%= code %>
     body: template('\n<%= conditions %>\nRICORSO TERZI DA INCENDIO Massimale EUR 200.000,00'),
     rate: template('\nTasso complessivo: <%= rate %> pro mille lordo'),
     overdraft: template('\nScoperto <%= overdraft %> % min. € <%= excess %>'),
+    min: template('\nPremio annuo lordo minimo applicato € <%= min %>'),
   },
   NON: {
-    title: template('Protezione <%= type %> "<%= display %>"'), // <%= code %>
+    title: template('Protezione <%= type %> <%= bind %> "<%= display %>"'), // <%= code %>
     body: template(''),
     rate: template(''),
     overdraft: template(''),
+    min: template(''),
   },
 }
 /*eslint-enable sort-keys*/

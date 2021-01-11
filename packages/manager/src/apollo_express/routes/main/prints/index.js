@@ -128,11 +128,15 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
           hasKnote |= true
         }
         if (hideRate) {currentMAP = rest}
+        const hasGlass = prod.glass ? '"Cristalli"' : ''
+        const hasTowing = prod.towing ? hasGlass ? ' "Traino"' : '"Traino"' : ''
         const obj = {
+          bind: `${hasGlass}${hasTowing}`,
           code: prod.productCode ? `(${prod.productCode})` : '',
           conditions,
           display: coverageTypesByKey[key].display,
           excess: numeric.printDecimal(prod.excess / 1000),
+          min: numeric.printDecimal(prod.minimum / 1000),
           overdraft: numeric.printDecimal(prod.overdraft / 1000),
           type: get(vehicleTypesByKey[prod.vehicleType], 'display') || '',
         }
@@ -146,6 +150,9 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         currentMAP.index = vehicleTypesByKey[prod.vehicleType].index + coverageTypesByKey[key].index
         if (prod.conditions) {
           currentMAP.overdraft = prod.conditions
+        }
+        if (!prod.minimum) {
+          delete currentMAP.min
         }
         prev.push(elaborateMap(obj, currentMAP))
       }
