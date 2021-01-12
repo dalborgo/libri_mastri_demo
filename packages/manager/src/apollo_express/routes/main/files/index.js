@@ -3,6 +3,7 @@ import { CSV_ADDED_HEADER_MAP, CSV_HEADER_MAP } from '../../../resolvers/helpers
 import fs from 'fs'
 import Q from 'q'
 import path from 'path'
+import { Gs, Policy } from '../../../models'
 
 function addRouters (router) {
   router.post('/files/export_csv', async function (req, res) {
@@ -37,7 +38,9 @@ function addRouters (router) {
     res.send(buffer)
   })
   router.post('/files/get_bdx', async function (req, res) {
-    res.send({mio: 'bau'})
+    const { vehicleTypes } = await Gs.findById('general_settings')
+    const policies = await Policy.getByQuery('SELECT lb.* from libri_mastri_dev lb WHERE _type = "MB_POLICY" and initDate between "2020-11-26" and "2020-11-26" order by `number`')
+    res.send({ policies, vehicleTypes })
   })
 }
 

@@ -19,13 +19,8 @@ function navigationConfig (user, policy, registry, priority, pathname) {
       title: 'Lista Quotazioni',
       href: '/policies/doclist',
     },
-    {
-      title: 'Bdx',
-      href: '/policies/bdx',
-    },
   ]
   priority === 1 && policyChildren.shift()
-  priority !== 3 && policyChildren.pop()
   policy && !isEditPolicy && policyChildren.push({
     title: `Modifica ${priority === 3 ? 'Offerta' : 'Proposta'}`,
     href: `/policies/edit/${policy}/all`,
@@ -35,6 +30,10 @@ function navigationConfig (user, policy, registry, priority, pathname) {
     title: 'Modifica stato di rischio',
     href: `/policies/editpolicy/${policy}/all`,
     shared: true,
+  })
+  priority === 3 && policyChildren.push({
+    title: 'Bdx',
+    href: '/policies/bdx',
   })
   
   const companyChildren = [
