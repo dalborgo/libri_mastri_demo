@@ -312,7 +312,7 @@ const Body = props => {
                                     select
                                     SelectProps={{ native: true }}
                                     size="small"
-                                    style={{ width: 200 }}
+                                    style={{ width: 300 }}
                                     variant="outlined"
                                   >
                                     <option
