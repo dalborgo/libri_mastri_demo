@@ -5,3 +5,4 @@
 /packages/manager/node_modules/
 /packages/webdevias/node_modules/
 /packages/webdevias/build/
+/packages/manager/src/apollo_express/crypt/

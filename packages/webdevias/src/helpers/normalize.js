@@ -201,7 +201,7 @@ function calcInst (date, dateSucc, dayPrize, midDate = false) {
   const daysDiff = myDays360(startCalc, endCalc, midDate)
   const instalment = Math.round(((dayPrize * 1000) * daysDiff)) / 1000
   const taxable = Math.round((instalment * 1000 / ((100 + taxRate) / 100))) / 1000
-  const tax = instalment - taxable
+  const tax = Number(instalment.toFixed(2)) - Number(taxable.toFixed(2))
   return {
     date: cDate.mom(date, null, 'YYYY-MM-DD'),
     daysDiff,
