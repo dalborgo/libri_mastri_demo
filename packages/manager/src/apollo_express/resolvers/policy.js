@@ -132,6 +132,7 @@ export default {
             vehicle.attachments = await createAttachments(attachments.files, dir)
           }
           //region PRESAVE INCLUSION AND EXCLUSION
+          /*
           if (policy.vehicles && ['DELETED_CONFIRMED', 'ADDED_CONFIRMED'].includes(vehicle.state)) {
             if (!vehicleMap) {
               vehicleMap = policy.vehicles.reduce((prev, curr) => {
@@ -154,10 +155,10 @@ export default {
                 responseType: 'blob',
               }))
             }
-          }
+          }*/
           //endregion
         }
-        cFunctions.sequencePromises(promises).then() //in parallelo
+        //cFunctions.sequencePromises(promises).then() //in parallelo
       }
       const newPolicy = Object.assign(policy, restInput, {
         producer,

@@ -12,7 +12,7 @@ import { filtersInitialValue } from './Header/components/Filter'
 import { CLONE_POLICY } from 'queries/policies'
 import { useConfirm } from 'material-ui-confirm'
 import log from '@adapter/common/src/log'
-import { useLocation } from 'react-router-dom'
+import { useHistory, useLocation } from 'react-router-dom'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,6 +28,7 @@ const Policies = ({ enqueueSnackbar }) => {
   const throwError = useAsyncError()
   const confirm = useConfirm()
   const location = useLocation()
+  const history = useHistory()
   //const [selection, setSelection] = useState([])
   const [filters, setFilters] = useState(filtersInitialValue)
   const isFiltered = useMemo(() => checkNullish(filters, filtersInitialValue), [filters])
@@ -110,7 +111,8 @@ const Policies = ({ enqueueSnackbar }) => {
     })
     client.writeData({ data: { loading: false } })
     await refetch()
-  }, [client, clonePolicy, refetch])
+    history.push('/policies/doclist')
+  }, [client, clonePolicy, history, refetch])
   return (
     <Page
       className={classes.root}
