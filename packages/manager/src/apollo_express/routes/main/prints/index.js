@@ -39,7 +39,7 @@ async function getVL (vehicles, vehicleTypes, productDefinitions, signer, cosign
       leasingSurname = leasingSet[vehicle.leasingCompany].surname || ''
     }
     /*eslint-disable sort-keys*/
-    if (vehicle.state === 'ACTIVE') {
+    if (['DELETED', 'DELETED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {
       prev_.push({
         tar: vehicle.licensePlate,
         vt: vehicle.vehicleType,
