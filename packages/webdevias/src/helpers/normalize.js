@@ -212,7 +212,7 @@ function calcInst (date, dateSucc, dayPrize, midDate = false) {
 }
 
 
-export function getPayFractionsNorm (payFractions, inMillis = true, round = false) {
+export function getPayFractionsNorm (payFractions, inMillis = true, round = false, divThousand = false) {
   const norm = {
     totInstalment: 0,
     totTax: 0,
@@ -220,8 +220,14 @@ export function getPayFractionsNorm (payFractions, inMillis = true, round = fals
     payFractionsNorm: [],
   }
   for (let fraction of payFractions) {
-    const tax = round ? Math.round(numeric.normNumb(fraction.tax, inMillis)) : numeric.normNumb(fraction.tax, inMillis)
-    const taxable = round ? Math.round(numeric.normNumb(fraction.taxable, inMillis)) : numeric.normNumb(fraction.taxable, inMillis)
+    let fractionTax = fraction.tax
+    let fractionTaxable = fraction.taxable
+    if (divThousand) {
+      fractionTax /= 1000
+      fractionTaxable /= 1000
+    }
+    const tax = round ? Math.round(numeric.normNumb(fractionTax, inMillis)) : numeric.normNumb(fractionTax, inMillis)
+    const taxable = round ? Math.round(numeric.normNumb(fractionTaxable, inMillis)) : numeric.normNumb(fractionTaxable, inMillis)
     const sumObj = {
       instalment: tax + taxable,
       tax,

@@ -422,7 +422,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }
     if (type === 'policy') {
       const payFractions = calculatePaymentDates(statePolicy.vehicles, tablePd, statePolicy, header)
-      const { payFractionsNorm } = getPayFractionsNorm(payFractions, false)
+      const { payFractionsNorm } = statePolicy.payFractions ? getPayFractionsNorm(statePolicy.payFractions, false, false, true) : getPayFractionsNorm(payFractions, false)
       data.payFractions = payFractionsNorm
       data.endDate = getPolicyEndDate(data.initDate, data.midDate)
       if (data?.state?.isPolicy) {
