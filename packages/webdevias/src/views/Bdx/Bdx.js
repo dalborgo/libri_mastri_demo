@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { makeStyles } from '@material-ui/styles'
 import PropTypes from 'prop-types'
 import { Page } from 'components'
@@ -13,6 +13,7 @@ import { cDate, cFunctions, numeric } from '@adapter/common'
 import { calculatePrizeTable, getPolicyEndDate } from '../../helpers'
 import { initPolicy } from '../Policy/helpers'
 import numberToLetter from 'number-to-letter'
+import BdxForm from './components/BdxForm'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -56,7 +57,7 @@ export function ctol (columns) {
   return output
 }
 
-function createExcel (policies, vehicleTypes) {
+function createExcel (policies, vehicleTypes, data) {
   const workbook = new ExcelJS.Workbook()
   const ws = workbook.addWorksheet('Dati')
   const columns = [
@@ -98,8 +99,8 @@ function createExcel (policies, vehicleTypes) {
     Object.assign(ws.getRow(rowIndex).getCell(2), bold)
   }
   ws.mergeCells(9, 1, 9, 3)
-  ws.getColumn(1).values = ['', '', 'Nome dell\'Agenzia', 'QUBO INSURANCE SOLUTIONS', '', '', 'Incassi dal', '01/10/2020']
-  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT TUA ASSICURAZIONI 40313690000001 - 40313690000001', '', 'Periodo di incasso', 'Incassi al', '01/10/2020']
+  ws.getColumn(1).values = ['', '', 'Nome dell\'Agenzia', 'QUBO INSURANCE SOLUTIONS', '', '', 'Incassi dal', cDate.mom(data.startDate, null, 'DD/MM/YYYY')]
+  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT TUA ASSICURAZIONI 40313690000001 - 40313690000001', '', 'Periodo di incasso', 'Incassi al', cDate.mom(data.endDate, null, 'DD/MM/YYYY')]
   
   Object.assign(ws.getRow(2).getCell(1), { value: 'Codice Compagnia: 4 - Ragione Sociale Compagnia: TUA ASSICURAZIONI SPA' }, bold)
   Object.assign(ws.getRow(3).getCell(1), lightGray, fontWhite)
@@ -187,14 +188,19 @@ function createExcel (policies, vehicleTypes) {
 
 const Bsx = ({ enqueueSnackbar }) => {
   const classes = useStyles()
+  const formRefBdx = useRef()
   const onClick = useCallback(async () => {
-    const data = {}
+    const { values } = formRefBdx.current || {}
+    const data = {
+      startDate: cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
+      endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
+    }
     const { ok, message, results } = await bdxQuery(
       'files/get_bdx',
       data
     )
     !ok && enqueueSnackbar(message, { variant: 'error' })
-    createExcel(results.policies, results.vehicleTypes)
+    createExcel(results.policies, results.vehicleTypes, data)
   }, [enqueueSnackbar])
   
   return (
@@ -203,6 +209,9 @@ const Bsx = ({ enqueueSnackbar }) => {
       title="Bdx"
     >
       <Header/>
+      <div>
+        <BdxForm formRefBdx={formRefBdx}/>
+      </div>
       <div className={classes.results}>
         <Button color="primary" disableFocusRipple onClick={onClick} size="small" variant="contained">Genera</Button>
       </div>

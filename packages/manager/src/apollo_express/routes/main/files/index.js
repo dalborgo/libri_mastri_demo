@@ -39,7 +39,10 @@ function addRouters (router) {
   })
   router.post('/files/get_bdx', async function (req, res) {
     const { vehicleTypes } = await Gs.findById('general_settings')
-    const policies = await Policy.getByQuery('SELECT lb.* from libri_mastri_dev lb WHERE _type = "MB_POLICY" and initDate between "2020-11-26" and "2020-11-26" order by `number`')
+    const { startDate, endDate } = req.body
+    const policies = await Policy.getByQuery('SELECT lb.* FROM libri_mastri_dev lb '
+                                             + 'WHERE _type = "MB_POLICY" AND initDate between "' + startDate + '" '
+                                             + 'AND "' + endDate + '" order by `number`')
     res.send({ policies, vehicleTypes })
   })
 }
