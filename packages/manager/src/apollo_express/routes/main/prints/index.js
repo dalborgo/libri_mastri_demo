@@ -445,27 +445,10 @@ function addRouters (router) {
       sHour = target.startHour || '24:00'
       sDate = cDate.mom(target.startDate, null, 'DD/MM/YYYY')
     }
-    const cosList = cosigners.map((cosigner, index) => {
-      const name = get(cosigner, 'name')
-      const sur = get(cosigner, 'surname')
-      const addr = get(cosigner, 'address')
-      const addrNumb = get(cosigner, 'address_number')
-      const zip = get(cosigner, 'zip')
-      const city = get(cosigner, 'city')
-      const state = get(cosigner, 'state')
-      const id = get(cosigner, 'id') || empty
-      return {
-        addr,
-        addrNumb,
-        city,
-        first: index === 0,
-        id: `${get(cosigner, 'surname') ? 'C.F.' : 'P.IVA '} ${id}${index !== cosigners.length - 1 ? '' : ''}`,
-        name: `${name ? `${name}` : ''}`,
-        state,
-        sur: `${name ? ' ' + sur : sur}`,
-        zip,
-      }
-    })
+    let realSigner = signer || {}
+    if (target.owner && signer.id !== target.owner) {
+      realSigner = find(cosigners, { id: target.owner }) || {}
+    }
     const query = 'query Registry_guest($id: ID!) {registry_guest(id: $id) {id, surname, address, address_number, zip, city, state}}'
     const { results } = await axiosGraphqlQuery(query, { id: target.leasingCompany })
     if (results && results.registry_guest) {
@@ -491,7 +474,6 @@ function addRouters (router) {
       vType,
       sHour,
       sDate,
-      value: numeric.printDecimal(target.value / 1000),
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -500,10 +482,17 @@ function addRouters (router) {
       sCity: get(signer, 'city'),
       sState: get(signer, 'state'),
       sId: `${get(signer, 'surname') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      value: numeric.printDecimal(target.value / 1000),
+      rName: get(realSigner, 'name') ? get(realSigner, 'name') + ' ' : '',
+      rSur: get(realSigner, 'surname'),
+      rAddr: get(realSigner, 'address'),
+      rAddrNumb: get(realSigner, 'address_number'),
+      rZip: get(realSigner, 'zip'),
+      rCity: get(realSigner, 'city'),
+      rState: get(realSigner, 'state'),
+      rId: `${get(realSigner, 'surname') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
       endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
-      hasCosig: !!cosList.length,
-      cosList,
       lVat,
       lAdd,
       lCity,
@@ -568,27 +557,10 @@ function addRouters (router) {
       sHour = target.startHour || '24:00'
       sDate = cDate.mom(target.startDate, null, 'DD/MM/YYYY')
     }
-    const cosList = cosigners.map((cosigner, index) => {
-      const name = get(cosigner, 'name')
-      const sur = get(cosigner, 'surname')
-      const addr = get(cosigner, 'address')
-      const addrNumb = get(cosigner, 'address_number')
-      const zip = get(cosigner, 'zip')
-      const city = get(cosigner, 'city')
-      const state = get(cosigner, 'state')
-      const id = get(cosigner, 'id') || empty
-      return {
-        addr,
-        addrNumb,
-        city,
-        first: index === 0,
-        id: `${get(cosigner, 'surname') ? 'C.F.' : 'P.IVA '} ${id}${index !== cosigners.length - 1 ? '' : ''}`,
-        name: `${name ? `${name}` : ''}`,
-        state,
-        sur: `${name ? ' ' + sur : sur}`,
-        zip,
-      }
-    })
+    let realSigner = signer || {}
+    if (target.owner && signer.id !== target.owner) {
+      realSigner = find(cosigners, { id: target.owner }) || {}
+    }
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
@@ -600,9 +572,6 @@ function addRouters (router) {
       vType,
       sHour,
       sDate,
-      value: numeric.printDecimal(target.value / 1000),
-      hasCosig: !!cosList.length,
-      cosList,
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -611,6 +580,15 @@ function addRouters (router) {
       sCity: get(signer, 'city'),
       sState: get(signer, 'state'),
       sId: `${get(signer, 'surname') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      value: numeric.printDecimal(target.value / 1000),
+      rName: get(realSigner, 'name') ? get(realSigner, 'name') + ' ' : '',
+      rSur: get(realSigner, 'surname'),
+      rAddr: get(realSigner, 'address'),
+      rAddrNumb: get(realSigner, 'address_number'),
+      rZip: get(realSigner, 'zip'),
+      rCity: get(realSigner, 'city'),
+      rState: get(realSigner, 'state'),
+      rId: `${get(realSigner, 'surname') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
       endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
       prEndDate: endDate,
       prDateInst: numeric.printDecimal(get(priceObj.paymentPrize, 'taxable')),
@@ -679,27 +657,10 @@ function addRouters (router) {
       sHour = target.startHour || '24:00'
       sDate = cDate.mom(target.startDate, null, 'DD/MM/YYYY')
     }
-    const cosList = cosigners.map((cosigner, index) => {
-      const name = get(cosigner, 'name')
-      const sur = get(cosigner, 'surname')
-      const addr = get(cosigner, 'address')
-      const addrNumb = get(cosigner, 'address_number')
-      const zip = get(cosigner, 'zip')
-      const city = get(cosigner, 'city')
-      const state = get(cosigner, 'state')
-      const id = get(cosigner, 'id') || empty
-      return {
-        addr,
-        addrNumb,
-        city,
-        first: index === 0,
-        id: `${get(cosigner, 'surname') ? 'C.F.' : 'P.IVA '} ${id}${index !== cosigners.length - 1 ? '' : ''}`,
-        name: `${name ? `${name}` : ''}`,
-        state,
-        sur: `${name ? ' ' + sur : sur}`,
-        zip,
-      }
-    })
+    let realSigner = signer || {}
+    if (target.owner && signer.id !== target.owner) {
+      realSigner = find(cosigners, { id: target.owner }) || {}
+    }
     const query = 'query Registry_guest($id: ID!) {registry_guest(id: $id) {id, surname, address, address_number, zip, city, state}}'
     const { results } = await axiosGraphqlQuery(query, { id: target.leasingCompany })
     if (results && results.registry_guest) {
@@ -722,12 +683,9 @@ function addRouters (router) {
       counter: target.constraintCounter,
       pLongName: get(producer, 'longName'),
       lic: target.licensePlate,
-      hasCosig: !!cosList.length,
-      cosList,
       vType,
       sHour,
       sDate,
-      value: numeric.printDecimal(target.value / 1000),
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -736,6 +694,15 @@ function addRouters (router) {
       sCity: get(signer, 'city'),
       sState: get(signer, 'state'),
       sId: `${get(signer, 'surname') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      value: numeric.printDecimal(target.value / 1000),
+      rName: get(realSigner, 'name') ? get(realSigner, 'name') + ' ' : '',
+      rSur: get(realSigner, 'surname'),
+      rAddr: get(realSigner, 'address'),
+      rAddrNumb: get(realSigner, 'address_number'),
+      rZip: get(realSigner, 'zip'),
+      rCity: get(realSigner, 'city'),
+      rState: get(realSigner, 'state'),
+      rId: `${get(realSigner, 'surname') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
       endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
       lVat,
