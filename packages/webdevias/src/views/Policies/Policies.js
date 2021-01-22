@@ -43,17 +43,21 @@ const Policies = ({ enqueueSnackbar }) => {
     if (!data) {return []}
     if (isFiltered) {
       return data.policies.reduce((prev, curr) => {
-        if (filters.docNumber) {
-          curr.number.includes(filters.docNumber) && prev.push(curr)
-        } else {
-          prev.push(curr)
+        let toInclude = true
+        if (filters.docNumber && !curr.number.includes(filters.docNumber)) {
+          toInclude &= false
         }
+        if (toInclude && filters.docSigner && !curr.signer?.surname?.toLowerCase().includes(filters.docSigner.toLowerCase())) {
+          toInclude &= false
+        }
+        toInclude && prev.push(curr)
+  
         return prev
       }, [])
     } else {
       return data.policies
     }
-  }, [data, filters.docNumber, isFiltered])
+  }, [data, filters.docNumber, filters.docSigner, isFiltered])
   const { me: { priority } } = client.readQuery({ query: ME })
   const [delPolicy] = useMutation(DELETE_POLICY, {
     onError: gestError(throwError, enqueueSnackbar),

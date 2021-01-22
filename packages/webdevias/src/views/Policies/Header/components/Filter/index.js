@@ -38,9 +38,11 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'space-between',
     cursor: 'pointer',
   },
-  contentSectionContent: {},
+  contentSectionContent: {
+    padding: theme.spacing(1, 0),
+  },
   formGroup: {
-    padding: theme.spacing(2, 0),
+    padding: theme.spacing(1, 0),
   },
   fieldGroup: {
     display: 'flex',
@@ -76,8 +78,9 @@ const useStyles = makeStyles(theme => ({
 
 export const filtersInitialValue = {
   docNumber: '',
+  docSigner: '',
 }
-
+const focus = event => event.target.select()
 const Filter = props => {
   const { open, onClose, className, filters, setFilters, ...rest } = props
   const classes = useStyles()
@@ -155,7 +158,28 @@ const Filter = props => {
                           event.target.value
                         )
                     }
+                    onFocus={focus}
                     value={values.docNumber}
+                    variant="outlined"
+                  />
+                </div>
+                <div className={classes.formGroup}>
+                  <TextField
+                    className={classes.field}
+                    fullWidth
+                    label="Contraente"
+                    margin="dense"
+                    name="docSigner"
+                    onChange={
+                      event =>
+                        handleFieldChange(
+                          event,
+                          'docSigner',
+                          event.target.value
+                        )
+                    }
+                    onFocus={focus}
+                    value={values.docSigner}
                     variant="outlined"
                   />
                 </div>

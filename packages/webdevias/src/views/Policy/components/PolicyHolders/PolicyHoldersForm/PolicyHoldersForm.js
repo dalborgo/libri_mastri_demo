@@ -15,6 +15,8 @@ import { HOLDER_SAVE_FRAGMENT } from 'queries/policies'
 import { cGraphQL } from '@adapter/common'
 import parse from 'autosuggest-highlight/parse'
 import { match } from 'helpers'
+import { ME } from '../../../../../queries'
+import { useApolloClient } from '@apollo/react-hooks'
 
 const newLocale = 'it'
 require(`moment/locale/${newLocale}`)
@@ -65,7 +67,10 @@ const PolicyHoldersForm = props => {
   const { holders = [], innerRef, globalClass, registries = [], dispatch, isPolicy } = props
   const classes = useStyles()
   const theme = useTheme()
+  const client = useApolloClient()
+  const { me: { priority } } = client.readQuery({ query: ME })
   //const focus = event => event.target.select()
+  const isDisabled = (isPolicy && priority < 3)
   return (
     <Formik
       initialValues={
@@ -102,7 +107,7 @@ const PolicyHoldersForm = props => {
                             <Fab
                               className={classes.iconPlus}
                               color={'primary'}
-                              disabled={isPolicy}
+                              disabled={isDisabled}
                               onClick={
                                 () => {
                                   arrayHelpers.push(initValue)
@@ -181,7 +186,7 @@ const PolicyHoldersForm = props => {
                                     }
                                     className={clsx(globalClass.field, globalClass.fieldMid)}
                                     component={Autocomplete}
-                                    disabled={isPolicy}
+                                    disabled={isDisabled}
                                     getOptionLabel={(option) => `${option.surname}${option.name ? ` ${option.name}` : ''} ${option.id ? `(${option.id})` : ''}`.trim()}
                                     getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
                                     name={`holders.${index}.combo`}
@@ -256,7 +261,7 @@ const PolicyHoldersForm = props => {
                                   <IconButton
                                     className={classes.plusButton}
                                     color={values.holders[index]?.id ? 'primary' : 'default'}
-                                    disabled={isPolicy}
+                                    disabled={isDisabled}
                                     onClick={() => dispatch({ type: 'setOpen', index })}
                                   >
                                     <Icon path={mdiPencilCircle} size={1}/>
@@ -264,7 +269,7 @@ const PolicyHoldersForm = props => {
                                   <FastField
                                     className={clsx(globalClass.field, globalClass.fieldMid)}
                                     component={MuiTextField}
-                                    disabled={isPolicy}
+                                    disabled={isDisabled}
                                     InputProps={{ className: globalClass.fieldBack, readOnly: true }}
                                     label="P.I./C.F."
                                     name={`holders.${index}.id`}

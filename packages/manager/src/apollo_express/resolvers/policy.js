@@ -70,6 +70,7 @@ export default {
         _updatedAt: undefined,
         meta: undefined,
         number,
+        payFractions: undefined,
         state: {
           code: 'DRAFT',
         },

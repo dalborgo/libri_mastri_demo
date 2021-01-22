@@ -14,6 +14,7 @@ import { calculatePrizeTable, getPolicyEndDate } from '../../helpers'
 import { initPolicy } from '../Policy/helpers'
 import numberToLetter from 'number-to-letter'
 import BdxForm from './components/BdxForm'
+import find from 'lodash/find'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -63,6 +64,7 @@ function createExcel (policies, vehicleTypes, data) {
   const columns = [
     { key: 'pol', width: 25 },
     { key: 'sign', width: 35 },
+    { key: 'cos', width: 35 },
     { key: 'st', width: 25 },
     { key: 'lic', width: 20 },
     { key: 'model', width: 35 },
@@ -70,8 +72,9 @@ function createExcel (policies, vehicleTypes, data) {
     { key: 'end', width: 20 },
     { key: 'cov', width: 30 },
     { key: 'val', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'gla', width: 15, style: { numFmt: '#,##0.00' } },
-    { key: 'tow', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'gla', width: 15 },
+    { key: 'tow', width: 15 },
+    { key: 'cap', width: 15, style: { numFmt: '#,##0.00' } },
     { key: 'over', width: 15, style: { numFmt: '#,##0.00' } },
     { key: 'exc', width: 15, style: { numFmt: '#,##0.00' } },
     { key: 'prize', width: 20, style: { numFmt: '#,##0.00' } },
@@ -118,7 +121,8 @@ function createExcel (policies, vehicleTypes, data) {
   Object.assign(ws.getRow(7).getCell(2), noBold, lightGray, fontWhite)
   ws.addRow({
     pol: 'NR Polizza',
-    sign: 'Assicurato',
+    sign: 'Contraente',
+    cos: 'Assicurato',
     st: 'Ubicazione Assicurato',
     lic: 'Targa',
     model: 'Tipo Veicolo',
@@ -128,6 +132,7 @@ function createExcel (policies, vehicleTypes, data) {
     val: 'Valore Assicurato',
     gla: 'Cristalli',
     tow: 'Traino',
+    cap: 'Massimale Cristalli',
     over: '% Scoperto',
     exc: 'Franchigia',
     prize: 'Premio Annuo Lordo',
@@ -139,31 +144,39 @@ function createExcel (policies, vehicleTypes, data) {
   let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0
   for (let policy of policies) {
     const newPolicy = initPolicy(policy)
-    totalVehicles += policy.vehicles.length
     for (let vehicle of policy.vehicles) {
+      if (!['DELETED', 'DELETED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
+      totalVehicles++
       const prize = calculatePrizeTable(null, newPolicy, {
         ...vehicle,
         value: numeric.toFloat(vehicle.value / 1000),
       })
+      const signer = newPolicy?.holders?.[0] ?? {}
+      const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
+      let realSigner
+      if (vehicle.owner && signer.id !== vehicle.owner) {
+        realSigner = find(policy.cosigners, { id: vehicle.owner }) || {}
+      }
       const prizeT = (prize / ((100 + 13.5) / 100))
       totalPrize += prize
       totalPrizeT += prizeT
       const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
       const prodKey = cFunctions.camelDeburr(vehicle.productCode + vehicleCode)
       const product = policy.productDefinitions[prodKey] || {}
-      
       ws.addRow({
         pol: newPolicy.number,
-        sign: newPolicy?.holders?.[0].surname + (newPolicy?.holders?.[0].name ? ` ${newPolicy?.holders?.[0].name}` : ''),
+        sign,
+        cos: realSigner ? realSigner.surname + (realSigner.name ? ` ${realSigner.name}` : '') : sign,
         st: newPolicy?.holders?.[0].state,
         lic: vehicle.licensePlate,
-        model: vehicle.model + (vehicle.brand ? ` ${vehicle.brand}` : ''),
+        model: vehicle.vehicleType,
         init: newPolicy.initDate && cDate.mom(newPolicy.initDate, null, 'DD/MM/YYYY'),
         end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
         cov: product.coverageType,
         val: numeric.toFloat(vehicle.value / 1000),
-        gla: vehicle.hasGlass === 'SI' ? numeric.toFloat(product.glass / 1000) : '',
-        tow: vehicle.hasTowing === 'SI' ? numeric.toFloat(product.towing / 1000) : '',
+        gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
+        tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
+        cap: numeric.toFloat(product.glassCap / 1000),
         over: product.overdraft / 1000,
         exc: product.excess / 1000,
         prize,

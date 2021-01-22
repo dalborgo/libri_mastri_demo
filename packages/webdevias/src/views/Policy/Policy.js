@@ -361,7 +361,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     return input
   }, [gs.vehicleTypes, isNew, me.username, statePolicy])
   
-  const calculateEmittedPolicy = useCallback((pds, header, tablePd, header_) => {
+  const calculateEmittedPolicy = useCallback((pds, header, tablePd, header_, holders) => {
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
     const payObj = {}
     const vehicles = statePolicy.vehicles.reduce((prev, curr) => {
@@ -386,15 +386,18 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       prev.push(clone)
       return prev
     }, [])
+    let [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
     //signer passando oggetto vuoto viene pulito nel salvataggio perché è di tipo oggetto in lounge
     const out = {
       ...statePolicy,
       isRecalculateFraction: header?.isRecalculateFraction || statePolicy.isRecalculateFraction,
       _code: statePolicy.id,
+      cosigners,
       attachments: { files: statePolicy.attachments },
       createdBy: statePolicy?.createdBy?.username,
       producer: statePolicy?.producer?.username,
       subAgent: statePolicy?.subAgent?.username,
+      signer: signer.id === '' ? {} : signer,
       productDefinitions,
       vehicles,
     }
@@ -803,6 +806,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: header } = formRefHeader.current || {}
       const header_ = formRefHeader?.current?.values || statePolicy
       const { values: pds, setFieldValue } = formRefPDS.current || {}
+      const { values: holders } = formRefHolders.current || {}
       /* eslint-enable no-unused-vars */
       if (pds?.productDefinitions?.length) {
         await calculateRows(pds?.productDefinitions, setFieldValue)
@@ -810,7 +814,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       //if (tab === 'all') {dispatch({ type: 'refresh' })}
       const { values: newPds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
-      const input = calculateEmittedPolicy(newPds, header, tablePd, header_)
+      const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
       input.endDate = getPolicyEndDate(input.initDate, input.midDate)
       log.debug('input', input)
       let result
