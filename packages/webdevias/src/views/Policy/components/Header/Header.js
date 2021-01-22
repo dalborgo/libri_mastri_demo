@@ -129,6 +129,7 @@ function PrintMenu (props) {
             vertical: 'bottom',
           }
         }
+        disableAutoFocusItem
         getContentAnchorEl={null}
         id="print-menu"
         keepMounted

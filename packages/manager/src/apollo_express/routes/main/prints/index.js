@@ -149,7 +149,7 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         currentMAP.noSt = !prod.statements
         currentMAP.index = vehicleTypesByKey[prod.vehicleType].index + coverageTypesByKey[key].index
         if (prod.conditions) {
-          currentMAP.overdraft = prod.conditions
+          currentMAP.overdraft = '\n' + prod.conditions
         }
         if (!prod.minimum) {
           delete currentMAP.min

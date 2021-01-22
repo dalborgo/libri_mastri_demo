@@ -187,6 +187,7 @@ const RowMenu = props => {
             paper: classes.paperMenu,
           }
         }
+        disableAutoFocusItem
         getContentAnchorEl={null}
         id={`row-menu-${policyId}`}
         onClose={handleClose}

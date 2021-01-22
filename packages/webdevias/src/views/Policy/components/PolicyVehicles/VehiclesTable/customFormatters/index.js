@@ -108,6 +108,7 @@ export const MenuTypeProvider = memo(props => {
                 vertical: 'top',
               }
             }
+            disableAutoFocusItem
             id={`menu${row.licensePlate}${state}`}
             onClose={handleClose}
             open={Boolean(anchorEl)}

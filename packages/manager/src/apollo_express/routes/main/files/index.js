@@ -1,4 +1,5 @@
 import { writeToBuffer } from '@fast-csv/format'
+import { bucket } from '../../../db'
 import { CSV_ADDED_HEADER_MAP, CSV_HEADER_MAP } from '../../../resolvers/helpers'
 import fs from 'fs'
 import Q from 'q'
@@ -38,11 +39,13 @@ function addRouters (router) {
     res.send(buffer)
   })
   router.post('/files/get_bdx', async function (req, res) {
+    const { _name } = bucket
     const { vehicleTypes } = await Gs.findById('general_settings')
     const { startDate, endDate } = req.body
-    const policies = await Policy.getByQuery('SELECT lb.* FROM libri_mastri_dev lb '
-                                             + 'WHERE _type = "MB_POLICY" AND initDate between "' + startDate + '" '
-                                             + 'AND "' + endDate + '" order by `number`')
+    const query = 'SELECT lb.* FROM ' + _name + ' lb '
+                  + 'WHERE _type = "MB_POLICY" AND initDate between "' + startDate + '" '
+                  + 'AND "' + endDate + '" AND state.isPolicy = TRUE AND vehicles is not missing order by `number`'
+    const policies = await Policy.getByQuery(query)
     res.send({ policies, vehicleTypes })
   })
 }

@@ -32,7 +32,19 @@ export const MAP_GUARANTEES = {
     overdraft: template(''),
     min: template(''),
   },
+  URTO: {
+    title: template('Protezione <%= type %> "<%= display %>"'),
+    body: template('\nURTO E CONSEGUENZA DELL’ URTO CONTRO ANIMALI SELVATICI'
+    ),
+    urto: template('L’Impresa di Assicurazione per i veicoli per la quale la garanzia Urto e conseguenza dell’urto contro Animali Selvatici” è prestata e nel caso in cui non sia stata attivata la garanzia Kasko, si obbliga a rimborsare all’assicurato le spese necessarie ad elidere i danni subiti dal veicolo assicurato a seguito di urto, in luogo aperto alla circolazione, con animali selvatici (animali non soggetti al controllo e/o vigilanza dell’uomo) fino al massimale riportato nella lista veicoli per anno a condizione che:'),
+    endUrto: template('- L’assicurato richieda, immediatamente al verificarsi dell’impatto, l’intervento della Pubblica Autorità;'
+                      + '\n- La Pubblica Autorità rilasci un proprio verbale di accertamento o, qualora non abbia potuto intervenire, un’attestazione di mancato intervento.'),
+    rate: template(''),
+    overdraft: template(''),
+    min: template(''),
+  },
 }
+
 /*eslint-enable sort-keys*/
 
 export function elaborateMap (obj, map) {
