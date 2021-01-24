@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React, { memo, useState } from 'react'
 import { Card, CardContent, colors, Fab, Grid, IconButton, Tooltip } from '@material-ui/core'
 import { FastField, FieldArray, Formik } from 'formik'
 import { TextField as MuiTextField } from 'formik-material-ui'
@@ -69,6 +69,7 @@ const PolicyHoldersForm = props => {
   const theme = useTheme()
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
+  const [holdersLength] = useState(holders.length)
   //const focus = event => event.target.select()
   const isDisabled = (isPolicy && priority < 3)
   return (
@@ -169,7 +170,7 @@ const PolicyHoldersForm = props => {
                                   <Fab
                                     className={classes.iconMinus}
                                     color="primary"
-                                    disabled={isPolicy}
+                                    disabled={isPolicy && (isPolicy && index < holdersLength)}
                                     onClick={
                                       () => arrayHelpers.remove(index)
                                     }
@@ -186,7 +187,7 @@ const PolicyHoldersForm = props => {
                                     }
                                     className={clsx(globalClass.field, globalClass.fieldMid)}
                                     component={Autocomplete}
-                                    disabled={isDisabled}
+                                    disabled={isDisabled || (isPolicy && index < holdersLength)}
                                     getOptionLabel={(option) => `${option.surname}${option.name ? ` ${option.name}` : ''} ${option.id ? `(${option.id})` : ''}`.trim()}
                                     getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
                                     name={`holders.${index}.combo`}
@@ -261,7 +262,7 @@ const PolicyHoldersForm = props => {
                                   <IconButton
                                     className={classes.plusButton}
                                     color={values.holders[index]?.id ? 'primary' : 'default'}
-                                    disabled={isDisabled}
+                                    disabled={isDisabled || (isPolicy && index < holdersLength)}
                                     onClick={() => dispatch({ type: 'setOpen', index })}
                                   >
                                     <Icon path={mdiPencilCircle} size={1}/>
@@ -269,7 +270,7 @@ const PolicyHoldersForm = props => {
                                   <FastField
                                     className={clsx(globalClass.field, globalClass.fieldMid)}
                                     component={MuiTextField}
-                                    disabled={isDisabled}
+                                    disabled={isDisabled || (isPolicy && index < holdersLength)}
                                     InputProps={{ className: globalClass.fieldBack, readOnly: true }}
                                     label="P.I./C.F."
                                     name={`holders.${index}.id`}
