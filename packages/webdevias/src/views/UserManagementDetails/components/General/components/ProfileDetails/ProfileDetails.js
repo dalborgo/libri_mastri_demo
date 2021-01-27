@@ -8,8 +8,8 @@ import { getInitials, roleName, useRoleStyleBase } from 'helpers'
 import { cDate } from '@adapter/common'
 import { StackAvatars } from 'components'
 import { Link as RouterLink } from 'react-router-dom'
-import { envConfig } from '../../../../../../init'
-import { ME } from '../../../../../../queries/users'
+import { envConfig } from 'init'
+import { ME } from 'queries/users'
 import { useApolloClient } from '@apollo/react-hooks'
 
 require('moment/locale/it')

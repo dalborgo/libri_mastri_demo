@@ -135,8 +135,8 @@ function createExcel (policies, vehicleTypes, data) {
     cap: 'Massimale Cristalli',
     over: '% Scoperto',
     exc: 'Franchigia',
-    prize: 'Premio Annuo Lordo',
-    prizeT: 'Premio Annuo Netto',
+    prize: 'Premio Lordo',
+    prizeT: 'Premio Netto',
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(10).getCell(colIndex), lightGray, fontWhite)

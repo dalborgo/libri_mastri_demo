@@ -11,7 +11,7 @@ import { REGISTRIES } from 'queries/registries'
 import { gestError, useAsyncError } from 'helpers'
 import CircularIndeterminate from 'components/Progress/CircularIndeterminate'
 import { useParams } from 'react-router'
-import { ME } from '../../../../queries/users'
+import { ME } from 'queries/users'
 
 function Body (props) {
   return (

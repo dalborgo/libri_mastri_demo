@@ -15,7 +15,7 @@ import { HOLDER_SAVE_FRAGMENT } from 'queries/policies'
 import { cGraphQL } from '@adapter/common'
 import parse from 'autosuggest-highlight/parse'
 import { match } from 'helpers'
-import { ME } from '../../../../../queries'
+import { ME } from 'queries'
 import { useApolloClient } from '@apollo/react-hooks'
 
 const newLocale = 'it'
@@ -70,7 +70,6 @@ const PolicyHoldersForm = props => {
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
   const [holdersLength] = useState(holders.length)
-  //const focus = event => event.target.select()
   const isDisabled = (isPolicy && priority < 3)
   return (
     <Formik
@@ -121,7 +120,7 @@ const PolicyHoldersForm = props => {
                           </span>
                         </Tooltip>
                         {
-                          !!values.holders.length &&
+                          (!!values.holders.length && !isPolicy) &&
                           <Tooltip placement="bottom" title="Aggiungi in testa e diventa Intestatario">
                             <span>
                               <Fab
