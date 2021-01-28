@@ -130,6 +130,22 @@ export const MenuTypeProvider = memo(props => {
               </ListItemIcon>
               Appendice d'{isInclusion ? 'inclusione' : 'esclusione'}
             </MenuItem>
+            <MenuItem
+              className={classes.menuItem}
+              component={'button'}
+              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}|void`}
+              onClick={
+                event => {
+                  props.handlePrint(event)
+                  handleClose()
+                }
+              }
+            >
+              <ListItemIcon>
+                <Icon path={mdiFilePdf} size={1}/>
+              </ListItemIcon>
+              Appendice d'{isInclusion ? 'inclusione senza premi' : 'esclusione senza premi'}
+            </MenuItem>
             {
               (['ADDED', 'ADDED_CONFIRMED'].includes(state) && row.leasingCompany) &&
               <MenuItem

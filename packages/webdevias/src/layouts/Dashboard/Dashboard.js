@@ -53,7 +53,9 @@ const Dashboard = props => {
         Object.keys(cache.data.data).forEach(key => {
           key.match(/Policy:/) && cache.data.delete(key)
         })
-        delete cache.data.data['ROOT_QUERY'].policies
+        console.log('cache.data:', cache.data)
+        delete cache.data.data['ROOT_QUERY']['policies({"origin":"/policies/list"})']
+        delete cache.data.data['ROOT_QUERY']['policies({"origin":"/policies/doclist"})']
         cache.writeQuery({
           query: ME,
           data: { me: { ...signOut, __typename: 'MainUser', priority: 0, pathRef: '' } },

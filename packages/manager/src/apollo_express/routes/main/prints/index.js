@@ -407,6 +407,7 @@ function addRouters (router) {
       productDefinitions,
       priceObj,
       signer,
+      noPrize,
       toSave,
       vehicles,
     } = data
@@ -493,6 +494,7 @@ function addRouters (router) {
       rId: `${get(realSigner, 'surname') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
       endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
+      prize: !noPrize,
       lVat,
       lAdd,
       lCity,
@@ -537,6 +539,7 @@ function addRouters (router) {
       priceObj,
       endDate,
       signer,
+      noPrize,
       toSave,
       vehicles,
     } = data
@@ -572,6 +575,7 @@ function addRouters (router) {
       vType,
       sHour,
       sDate,
+      prize: !noPrize,
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
