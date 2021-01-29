@@ -482,7 +482,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   
   //region HANDLE PRINT EmittedPolicy
   const handlePrintEmittedPolicy = useCallback(async event => {
-    const [type, targetLicensePlate, targetState, counter] = event.currentTarget.name.split('|')
+    const [type, targetLicensePlate, targetState, counter, noPrize] = event.currentTarget.name.split('|')
     const header = formRefHeader?.current?.values || statePolicy
     const { values: pds } = formRefPDS.current || {}
     const tablePd = formRefPDS.current
@@ -504,6 +504,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions)
     }
     data.endDate = getPolicyEndDate(data.initDate, data.midDate)
+    data.noPrize = Boolean(noPrize)
     log.debug('data:', data)
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     //tab === 'all' && dispatch({ type: 'refresh' })
@@ -682,6 +683,24 @@ let Policy = ({ policy, enqueueSnackbar }) => {
                   policies: [filter(POLICIES_FRAGMENT, data?.newPolicy), ...newDataPolicies],
                 },
               })
+              if (isPolicy) {
+                let passingPolicy
+                try {
+                  passingPolicy = cache.readQuery({
+                    query: POLICIES,
+                    variables: { origin: '/policies/doclist' },
+                  })
+                } catch (err) {
+                  log.warn('passingPolicy not present!')
+                }
+                if (fromDoc && version === 0) {
+                  cache.writeQuery({
+                    query: POLICIES, variables: { origin: '/policies/doclist' }, data: {
+                      policies: passingPolicy.policies.filter(pol => pol.id !== fromDoc),
+                    },
+                  })
+                }
+              }
             }
           },
         })
@@ -752,10 +771,15 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               }
             } else {
               if (isPolicy) {
-                const passingPolicy = cache.readQuery({
-                  query: POLICIES,
-                  variables: { origin: '/policies/doclist' },
-                })
+                let passingPolicy
+                try {
+                  passingPolicy = cache.readQuery({
+                    query: POLICIES,
+                    variables: { origin: '/policies/doclist' },
+                  })
+                } catch (err) {
+                  log.warn('passingPolicy not present!')
+                }
                 if (passingPolicy) {
                   cache.writeQuery({
                     query: POLICIES, variables: { origin: '/policies/doclist' }, data: {

@@ -52,7 +52,7 @@ export async function bdxQuery (endpoint, data, options = {}) {
       data,
       method,
     })
-    return {ok: true, results: response.data}
+    return { ok: true, results: response.data }
   } catch (err) {
     log.error(err.message)
     return { ok: false, message: err.message, err }

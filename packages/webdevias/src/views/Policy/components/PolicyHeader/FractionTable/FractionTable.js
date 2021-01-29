@@ -6,7 +6,7 @@ import { DateTypeProvider, NumberTypeProvider } from 'helpers/tableFormatters'
 import { IntegratedSummary, SummaryState } from '@devexpress/dx-react-grid'
 
 const messages = { noData: 'Nessun risultato' }
-const messagesSummary = { sum: 'T', euro_sum_tax: '€',euro_sum_taxable: '€',euro_sum_instalment: '€', tot_value: '€' }
+const messagesSummary = { sum: 'T', euro_sum_tax: '€', euro_sum_taxable: '€', euro_sum_instalment: '€', tot_value: '€' }
 
 const summaryCalculator = (type, rows, getValue) => {
   switch (type) {
