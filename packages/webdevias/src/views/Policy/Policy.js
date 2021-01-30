@@ -53,7 +53,7 @@ import get from 'lodash/get'
 import clsx from 'clsx'
 import useRouter from 'utils/useRouter'
 import { useImmerReducer } from 'use-immer'
-import { comparePolicy, getProductDefinitions, initPolicy, reducerInsertModal, reducerPolicy } from './helpers'
+import { comparePolicy, getProductDefinitions, initPolicy, reducerInsertModal, reducerPolicy, createExportTotal } from './helpers'
 import { manageFile } from 'utils/axios'
 import { calculateRows } from './components/PolicyProductDefinition/helpers'
 //region STYLE
@@ -568,6 +568,34 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     !ok && enqueueSnackbar(message, { variant: 'error' })
   }, [client, enqueueSnackbar, gs.vehicleTypes, isNew, statePolicy])
   //endregion
+  //region HANDLE EXPORT TOTAL
+  const handleExportTotal = useCallback(async () => {
+    const { values: header } = formRefHeader.current || {}
+    const { values: pds } = formRefPDS.current || {}
+    const { values: holders } = formRefHolders.current || {}
+    const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
+    const vehicles = statePolicy.vehicles.reduce((prev, curr) => {
+      const clone = { ...curr }
+      let [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
+      let realSigner = signer.surname + (signer.name ? ` ${signer.name}` : '')
+      if (clone.owner && signer.id !== clone.owner) {
+        const found = find(cosigners, { id: clone.owner }) || {}
+        realSigner = found.surname + (found.name ? ` ${found.name}` : '')
+      }
+      const vehicleCode = `${cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)}`
+      const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
+      clone.licensePlate = clone.licensePlate.startsWith('XXXXXX') ? '' : clone.licensePlate
+      clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
+      clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
+      const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
+      clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
+      clone.realSigner = realSigner
+      prev.push(clone)
+      return prev
+    }, [])
+    createExportTotal(vehicles, `stato_veicoli_${getPolicyCode(statePolicy, header)}`)
+  }, [gs.vehicleTypes, statePolicy])
+  //endregion
   
   //region HANDLE SAVE
   const handleSave = useCallback(async event => {
@@ -1001,6 +1029,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
                 {
                   tabs.map(tab => (
                     <Tab
+                      disableFocusRipple
                       key={tab.value}
                       label={tab.label}
                       value={tab.value}
@@ -1069,6 +1098,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               dispatch={dispatch}
               globalClass={classes}
               handleExport={handleExport}
+              handleExportTotal={handleExportTotal}
               handleModeChange={handleVehiclesModeChange}
               handlePrint={handlePrintEmittedPolicy}
               handleUpload={handlePolicyUpload}

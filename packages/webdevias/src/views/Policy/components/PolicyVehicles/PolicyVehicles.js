@@ -17,6 +17,7 @@ const Body = memo(props => {
       <Header
         dispatch={props.dispatch}
         handleExport={props.handleExport}
+        handleExportTotal={props.handleExportTotal}
         handleModeChange={props.handleModeChange}
         isPolicy={props.policy?.state?.isPolicy}
         mode={props.mode}
@@ -45,7 +46,7 @@ const Body = memo(props => {
   )
 })
 
-const PolicyVehicles = ({ globalClass, dispatch, forceUpdate, handleExport, policy, setChanging, tablePd, handleUpload, mode, priority, handleModeChange, handlePrint, vehicleTypes }) => {
+const PolicyVehicles = ({ globalClass, dispatch, forceUpdate, handleExport, handleExportTotal, policy, setChanging, tablePd, handleUpload, mode, priority, handleModeChange, handlePrint, vehicleTypes }) => {
   const [expandHeader, setExpandHeader] = useState(true)
   const [taxableTotal, setTaxableTotal] = useState(true)
   const { tab } = useParams()
@@ -54,6 +55,7 @@ const PolicyVehicles = ({ globalClass, dispatch, forceUpdate, handleExport, poli
     dispatch,
     forceUpdate,
     handleExport,
+    handleExportTotal,
     handleModeChange,
     handlePrint,
     handleUpload,

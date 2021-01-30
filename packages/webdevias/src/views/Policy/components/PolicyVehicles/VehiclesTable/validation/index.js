@@ -24,7 +24,7 @@ export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar) {
     enqueueSnackbar('Società di Leasing non valida!', { variant: 'error' })
   }
   if (row.owner && row.owner.length !== 11) {
-    enqueueSnackbar('Proprietario/Locatario non valido!', { variant: 'error' })
+    enqueueSnackbar('Proprietario/Locatario di lunghezza errata!', { variant: 'error' })
   }
   if (row.hasGlass === 'SI') {
     if (foundDef && numeric.toFloat(foundDef.glass) === 0) {

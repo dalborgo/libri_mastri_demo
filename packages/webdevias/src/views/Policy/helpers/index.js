@@ -1,8 +1,11 @@
-import { cFunctions, numeric } from '@adapter/common'
+import { cDate, cFunctions, numeric } from '@adapter/common'
 import uuid from 'uuid/v1'
 import log from '@adapter/common/src/log'
 import { pdsToArray } from 'helpers'
 import { chain, isEmpty, uniqBy } from 'lodash'
+import ExcelJS from 'exceljs'
+import { ctol } from '../../Bdx/Bdx'
+import saveAs from 'file-saver'
 
 export function reducerPolicy (draft, action) {
   switch (action.type) {
@@ -185,4 +188,111 @@ export function initPolicy (policy) {
   }, [])
   const holders = signer ? [signer, ...cosigners] : cosigners
   return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments }
+}
+
+const bold = { font: { bold: true } }
+const noBold = { font: { bold: false } }
+const right = { alignment: { horizontal: 'right' } }
+const center = { alignment: { horizontal: 'center' } }
+const lightGray = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '969696' } } }
+const fontWhite = { font: { color: { argb: 'FFFFFF' }, bold: true } }
+const fontRed = { font: { color: { argb: 'FF0000' } } }
+const fontGreen = { font: { color: { argb: '008000' } } }
+
+export function createExportTotal (vehicles, fileName) {
+  const workbook = new ExcelJS.Workbook()
+  const ws = workbook.addWorksheet('Dati')
+  const columns = [
+    { key: 'lic', width: 15 },
+    { key: 'dateFrom', width: 15 },
+    { key: 'hourFrom', width: 10 },
+    { key: 'dateTo', width: 15 },
+    { key: 'vehicleType', width: 20 },
+    { key: 'qli', width: 10, style: { numFmt: '#,##0.00' } },
+    { key: 'regDate', width: 20 },
+    { key: 'brand', width: 20 },
+    { key: 'model', width: 20 },
+    { key: 'cov', width: 20 },
+    { key: 'val', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'gla', width: 15 },
+    { key: 'tow', width: 15 },
+    { key: 'leasingCompany', width: 20 },
+    { key: 'leasingExpiry', width: 20 },
+    { key: 'owner', width: 20 },
+    { key: 'prize', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'prizeT', width: 20, style: { numFmt: '#,##0.00' } },
+  ]
+  ws.columns = columns
+  const letter = ctol(columns)
+  ws.addRow({
+    lic: 'Targa',
+    dateFrom: 'Data da',
+    hourFrom: 'Ora da',
+    dateTo: 'Data a',
+    vehicleType: 'Tipo veicolo',
+    qli: 'Q.li/Kw/Posti',
+    regDate: 'Data immatricolazione',
+    brand: 'Marca',
+    model: 'Modello',
+    cov: 'Tipo copertura',
+    val: 'Valore',
+    gla: 'Cristalli',
+    tow: 'Traino',
+    leasingCompany: 'Società di leasing',
+    leasingExpiry: 'Scadenza leasing',
+    owner: 'Proprietario/Locatario',
+    prize: 'Premio Lordo',
+    prizeT: 'Premio Netto',
+  })
+  const alignRightCols = ['qli', 'val', 'prize', 'prizeT']
+  const alignCenterCols = ['gla', 'tow', 'regDate', 'dateTo', 'hourFrom', 'dateFrom', 'leasingExpiry']
+  for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
+    if (alignRightCols.includes(columns[colIndex - 1].key)) {
+      Object.assign(ws.getColumn(colIndex), right)
+    }
+    if (alignCenterCols.includes(columns[colIndex - 1].key)) {
+      Object.assign(ws.getColumn(colIndex), center)
+    }
+    Object.assign(ws.getRow(1).getCell(colIndex), lightGray, fontWhite)
+  }
+  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0
+  
+  for (let vehicle of vehicles) {
+    totalVehicles++
+    ws.addRow({
+      lic: vehicle.licensePlate,
+      dateFrom: vehicle.startDate && cDate.mom(vehicle.startDate, null, 'DD/MM/YYYY'),
+      hourFrom: vehicle.startHour,
+      dateTo: vehicle.finishDate && cDate.mom(vehicle.finishDate, null, 'DD/MM/YYYY'),
+      regDate: vehicle.registrationDate && cDate.mom(vehicle.registrationDate, null, 'DD/MM/YYYY'),
+      vehicleType: vehicle.vehicleType,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      cov: vehicle.productCode,
+      owner: vehicle.realSigner,
+      qli: numeric.toFloat(vehicle.weight),
+      val: numeric.toFloat(vehicle.value),
+      gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
+      tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
+    })
+  }
+  for (let rowIndex = 2; rowIndex <= totalVehicles + 1; rowIndex += 1) {
+    if (vehicles[rowIndex - 2]?.state?.startsWith('DELETED')) {
+      Object.assign(ws.getRow(rowIndex), fontRed)
+    }
+    if (vehicles[rowIndex - 2]?.state?.startsWith('ADDED')) {
+      Object.assign(ws.getRow(rowIndex), fontGreen)
+    }
+  }
+  /*ws.addRow({
+    exc: 'Importi Totali',
+    prize: { formula: `SUM(${letter['prize']}${headerCount}:${letter['prize']}${rl})`, result: totalPrize || '' },
+    prizeT: { formula: `SUM(${letter['prizeT']}${headerCount}:${letter['prizeT']}${rl})`, result: totalPrizeT || '' },
+  })
+  for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
+    Object.assign(ws.getRow(rl + 1).getCell(colIndex), bold)
+  }*/
+  workbook.xlsx.writeBuffer().then(buffer => {
+    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), `${fileName}.xlsx`)
+  })
 }

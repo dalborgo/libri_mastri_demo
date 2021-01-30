@@ -262,6 +262,7 @@ const PolicyHoldersForm = props => {
                                     className={classes.plusButton}
                                     color={values.holders[index]?.id ? 'primary' : 'default'}
                                     disabled={isDisabled || (isPolicy && index < holdersLength)}
+                                    disableFocusRipple
                                     onClick={() => dispatch({ type: 'setOpen', index })}
                                   >
                                     <Icon path={mdiPencilCircle} size={1}/>

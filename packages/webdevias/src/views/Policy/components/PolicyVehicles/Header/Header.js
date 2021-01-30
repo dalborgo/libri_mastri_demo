@@ -7,6 +7,7 @@ import {
   mdiCheckAll,
   mdiCloudDownloadOutline,
   mdiCloudUploadOutline,
+  mdiMicrosoftExcel,
   mdiCurrencyEur,
   mdiMenu,
   mdiViewList,
@@ -21,7 +22,7 @@ const useStyles = makeStyles(theme => ({
 }))
 
 // eslint-disable-next-line react/display-name
-const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, dispatch, setTaxableTotal, taxableTotal }) => {
+const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, handleExportTotal, dispatch, setTaxableTotal, taxableTotal }) => {
   const [anchorEl, setAnchorEl] = React.useState(null)
   
   const handleClick = (event) => {
@@ -71,7 +72,23 @@ const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, dispatch, 
             <ListItemIcon>
               <Icon path={mdiCloudDownloadOutline} size={1}/>
             </ListItemIcon>
-            {isPolicy ? 'Esporta csv inclusioni' : 'Esporta csv veicoli'}
+            {isPolicy ? 'Esporta csv inclusioni confermate' : 'Esporta csv veicoli'}
+          </MenuItem>
+        }
+        {
+          isPolicy &&
+          <MenuItem
+            onClick={
+              () => {
+                handleExportTotal()
+                handleClose()
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiMicrosoftExcel} size={1}/>
+            </ListItemIcon>
+            Esporta xlsx veicoli
           </MenuItem>
         }
         {
@@ -113,7 +130,7 @@ const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, dispatch, 
 })
 
 const Header = props => {
-  const { handleModeChange, handleExport, mode, priority, isPolicy, dispatch, setTaxableTotal, taxableTotal } = props
+  const { handleModeChange, handleExport, handleExportTotal, mode, priority, isPolicy, dispatch, setTaxableTotal, taxableTotal } = props
   const classes = useStyles()
   const theme = useTheme()
   return (
@@ -169,6 +186,7 @@ const Header = props => {
               classes={classes}
               dispatch={dispatch}
               handleExport={handleExport}
+              handleExportTotal={handleExportTotal}
               isPolicy={isPolicy}
               priority={priority}
               setTaxableTotal={setTaxableTotal}
