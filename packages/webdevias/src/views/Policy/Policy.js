@@ -53,7 +53,14 @@ import get from 'lodash/get'
 import clsx from 'clsx'
 import useRouter from 'utils/useRouter'
 import { useImmerReducer } from 'use-immer'
-import { comparePolicy, getProductDefinitions, initPolicy, reducerInsertModal, reducerPolicy, createExportTotal } from './helpers'
+import {
+  comparePolicy,
+  getProductDefinitions,
+  initPolicy,
+  reducerInsertModal,
+  reducerPolicy,
+  createExportTotal,
+} from './helpers'
 import { manageFile } from 'utils/axios'
 import { calculateRows } from './components/PolicyProductDefinition/helpers'
 //region STYLE
@@ -572,10 +579,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const handleExportTotal = useCallback(async () => {
     const { values: header } = formRefHeader.current || {}
     const { values: pds } = formRefPDS.current || {}
+    const tablePd = formRefPDS.current
     const { values: holders } = formRefHolders.current || {}
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
     const vehicles = statePolicy.vehicles.reduce((prev, curr) => {
       const clone = { ...curr }
+      const prize = calculatePrizeTable(tablePd, statePolicy, curr)
+      const payment = calculatePaymentTable(tablePd, statePolicy, curr)
       let [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
       let realSigner = signer.surname + (signer.name ? ` ${signer.name}` : '')
       if (clone.owner && signer.id !== clone.owner) {
@@ -590,10 +600,14 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       clone.realSigner = realSigner
+      clone.prize = prize
+      clone.prizeT = (prize / ((100 + 13.5) / 100))
+      clone.payment = calculatePaymentTable(tablePd, statePolicy, curr)
+      clone.paymentT = (payment / ((100 + 13.5) / 100))
       prev.push(clone)
       return prev
     }, [])
-    createExportTotal(vehicles, `stato_veicoli_${getPolicyCode(statePolicy, header)}`)
+    await createExportTotal(vehicles, `stato_veicoli_${getPolicyCode(statePolicy, header)}`)
   }, [gs.vehicleTypes, statePolicy])
   //endregion
   

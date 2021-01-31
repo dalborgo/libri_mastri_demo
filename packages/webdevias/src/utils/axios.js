@@ -43,6 +43,22 @@ export async function manageFile (endpoint, fileName, type, data, options = {}) 
   }
 }
 
+export const axiosGraphqlQuery = async (query, variables) => {
+  try {
+    const data = JSON.stringify({ query, variables })
+    const config = {
+      method: 'post',
+      url: `${envConfig.HOST}/graphql`,
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    }
+    const { data: dataResponse } = await axios(config)
+    return { ok: true, results: dataResponse.data, errors: dataResponse.errors }
+  } catch (err) {
+    return { ok: false, message: err.message, err }
+  }
+}
+
 export async function bdxQuery (endpoint, data, options = {}) {
   try {
     const {

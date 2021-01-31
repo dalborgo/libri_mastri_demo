@@ -6,6 +6,7 @@ import { chain, isEmpty, uniqBy } from 'lodash'
 import ExcelJS from 'exceljs'
 import { ctol } from '../../Bdx/Bdx'
 import saveAs from 'file-saver'
+import { axiosGraphqlQuery } from 'utils/axios'
 
 export function reducerPolicy (draft, action) {
   switch (action.type) {
@@ -191,7 +192,6 @@ export function initPolicy (policy) {
 }
 
 const bold = { font: { bold: true } }
-const noBold = { font: { bold: false } }
 const right = { alignment: { horizontal: 'right' } }
 const center = { alignment: { horizontal: 'center' } }
 const lightGray = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '969696' } } }
@@ -199,7 +199,7 @@ const fontWhite = { font: { color: { argb: 'FFFFFF' }, bold: true } }
 const fontRed = { font: { color: { argb: 'FF0000' } } }
 const fontGreen = { font: { color: { argb: '008000' } } }
 
-export function createExportTotal (vehicles, fileName) {
+export async function createExportTotal (vehicles, fileName) {
   const workbook = new ExcelJS.Workbook()
   const ws = workbook.addWorksheet('Dati')
   const columns = [
@@ -221,6 +221,8 @@ export function createExportTotal (vehicles, fileName) {
     { key: 'owner', width: 20 },
     { key: 'prize', width: 20, style: { numFmt: '#,##0.00' } },
     { key: 'prizeT', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'payment', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'paymentT', width: 20, style: { numFmt: '#,##0.00' } },
   ]
   ws.columns = columns
   const letter = ctol(columns)
@@ -243,8 +245,10 @@ export function createExportTotal (vehicles, fileName) {
     owner: 'Proprietario/Locatario',
     prize: 'Premio Lordo',
     prizeT: 'Premio Netto',
+    payment: 'Rateo Lordo',
+    paymentT: 'Rateo Netto',
   })
-  const alignRightCols = ['qli', 'val', 'prize', 'prizeT']
+  const alignRightCols = ['qli', 'val', 'prize', 'prizeT', 'payment', 'paymentT']
   const alignCenterCols = ['gla', 'tow', 'regDate', 'dateTo', 'hourFrom', 'dateFrom', 'leasingExpiry']
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     if (alignRightCols.includes(columns[colIndex - 1].key)) {
@@ -255,10 +259,21 @@ export function createExportTotal (vehicles, fileName) {
     }
     Object.assign(ws.getRow(1).getCell(colIndex), lightGray, fontWhite)
   }
-  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0
-  
+  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0, totalVal = 0
+  const query = 'query Registry_guest($id: ID!) {registry_guest(id: $id) {id, surname, address, address_number, zip, city, state}}'
   for (let vehicle of vehicles) {
     totalVehicles++
+    totalPrize += vehicle.prize
+    totalPrizeT += vehicle.prizeT
+    totalVal += vehicle.val
+    let targetLeasing
+    if(vehicle.leasingCompany) {
+      const { results } = await axiosGraphqlQuery(query, { id: vehicle.leasingCompany })
+      if (results && results.registry_guest) {
+        targetLeasing = results.registry_guest
+        targetLeasing = targetLeasing.surname + (targetLeasing.name ? ` ${targetLeasing.name}` : '')
+      }
+    }
     ws.addRow({
       lic: vehicle.licensePlate,
       dateFrom: vehicle.startDate && cDate.mom(vehicle.startDate, null, 'DD/MM/YYYY'),
@@ -269,11 +284,17 @@ export function createExportTotal (vehicles, fileName) {
       brand: vehicle.brand,
       model: vehicle.model,
       cov: vehicle.productCode,
-      owner: vehicle.realSigner,
       qli: numeric.toFloat(vehicle.weight),
       val: numeric.toFloat(vehicle.value),
       gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
       tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
+      leasingCompany: targetLeasing,
+      leasingExpiry: vehicle.leasingExpiry && cDate.mom(vehicle.leasingExpiry, null, 'DD/MM/YYYY'),
+      owner: vehicle.realSigner,
+      prize: vehicle.prize,
+      prizeT: vehicle.prizeT,
+      payment: vehicle.payment,
+      paymentT: vehicle.paymentT,
     })
   }
   for (let rowIndex = 2; rowIndex <= totalVehicles + 1; rowIndex += 1) {
@@ -284,14 +305,14 @@ export function createExportTotal (vehicles, fileName) {
       Object.assign(ws.getRow(rowIndex), fontGreen)
     }
   }
-  /*ws.addRow({
-    exc: 'Importi Totali',
-    prize: { formula: `SUM(${letter['prize']}${headerCount}:${letter['prize']}${rl})`, result: totalPrize || '' },
-    prizeT: { formula: `SUM(${letter['prizeT']}${headerCount}:${letter['prizeT']}${rl})`, result: totalPrizeT || '' },
+  ws.addRow({
+    val: { formula: `SUM(${letter['val']}${2}:${letter['prize']}${totalVehicles + 2})`, result: totalVal || '' },
+    prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 2})`, result: totalPrize || '' },
+    prizeT: { formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 2})`, result: totalPrizeT || '' },
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
-    Object.assign(ws.getRow(rl + 1).getCell(colIndex), bold)
-  }*/
+    Object.assign(ws.getRow(totalVehicles + 2).getCell(colIndex), bold)
+  }
   workbook.xlsx.writeBuffer().then(buffer => {
     saveAs(new Blob([buffer], { type: 'application/octet-stream' }), `${fileName}.xlsx`)
   })
