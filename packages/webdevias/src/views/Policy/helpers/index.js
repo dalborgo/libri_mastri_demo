@@ -208,8 +208,8 @@ export async function createExportTotal (vehicles, fileName) {
     { key: 'hourFrom', width: 10 },
     { key: 'dateTo', width: 15 },
     { key: 'vehicleType', width: 20 },
-    { key: 'qli', width: 10, style: { numFmt: '#,##0.00' } },
-    { key: 'regDate', width: 20 },
+    { key: 'qli', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'regDate', width: 15 },
     { key: 'brand', width: 20 },
     { key: 'model', width: 20 },
     { key: 'cov', width: 20 },
@@ -217,12 +217,12 @@ export async function createExportTotal (vehicles, fileName) {
     { key: 'gla', width: 15 },
     { key: 'tow', width: 15 },
     { key: 'leasingCompany', width: 20 },
-    { key: 'leasingExpiry', width: 20 },
+    { key: 'leasingExpiry', width: 15 },
     { key: 'owner', width: 20 },
-    { key: 'prize', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'prizeT', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'payment', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'paymentT', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'prize', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'prizeT', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'payment', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'paymentT', width: 15, style: { numFmt: '#,##0.00' } },
   ]
   ws.columns = columns
   const letter = ctol(columns)
@@ -233,7 +233,7 @@ export async function createExportTotal (vehicles, fileName) {
     dateTo: 'Data a',
     vehicleType: 'Tipo veicolo',
     qli: 'Q.li/Kw/Posti',
-    regDate: 'Data immatricolazione',
+    regDate: 'Data imm.',
     brand: 'Marca',
     model: 'Modello',
     cov: 'Tipo copertura',
@@ -241,7 +241,7 @@ export async function createExportTotal (vehicles, fileName) {
     gla: 'Cristalli',
     tow: 'Traino',
     leasingCompany: 'Società di leasing',
-    leasingExpiry: 'Scadenza leasing',
+    leasingExpiry: 'Scad. leasing',
     owner: 'Proprietario/Locatario',
     prize: 'Premio Lordo',
     prizeT: 'Premio Netto',
@@ -265,7 +265,7 @@ export async function createExportTotal (vehicles, fileName) {
     totalVehicles++
     totalPrize += vehicle.prize
     totalPrizeT += vehicle.prizeT
-    totalVal += vehicle.val
+    totalVal += vehicle.value
     let targetLeasing
     if(vehicle.leasingCompany) {
       const { results } = await axiosGraphqlQuery(query, { id: vehicle.leasingCompany })
@@ -306,7 +306,7 @@ export async function createExportTotal (vehicles, fileName) {
     }
   }
   ws.addRow({
-    val: { formula: `SUM(${letter['val']}${2}:${letter['prize']}${totalVehicles + 2})`, result: totalVal || '' },
+    val: { formula: `SUM(${letter['val']}${2}:${letter['val']}${totalVehicles + 2})`, result: totalVal || '' },
     prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 2})`, result: totalPrize || '' },
     prizeT: { formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 2})`, result: totalPrizeT || '' },
   })
