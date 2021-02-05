@@ -720,7 +720,7 @@ function addRouters (router) {
     }
     /*eslint-enable sort-keys*/
     {
-      const { ok, message, results } = await ioFiles.fillDocxTemplate(filePath, validation.objectUpperCase(input))
+      const { ok, message, results } = await ioFiles.fillDocxTemplate(filePath, input)
       if (!ok) {return res.status(412).send({ ok, message })}
       partial.buffer = results
       partial.correct = ok
