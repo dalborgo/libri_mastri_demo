@@ -319,7 +319,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }
   }
   
-  const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState) => {
+  const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState, targetCounter) => {
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
     /*const duplicatedPDS = cFunctions.checkDuplicate(productDefinitions, comparator)
     console.log('duplicatedPDS:', duplicatedPDS)*/
@@ -335,7 +335,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       if (targetLicensePlate) {
-        (clone.licensePlate === targetLicensePlate && clone.state === targetState) && prev.push(clone)
+        // ok (clone.counter == targetCounter) non sapendo il tipo
+        //eslint-disable-next-line
+        (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.counter || clone.counter == targetCounter)) && prev.push(clone)
       } else {
         prev.push(clone)
       }
@@ -359,7 +361,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       vehicles,
     }
     out.number = out.number ? out.number : getPolicyCode(statePolicy, header, isNew)
-    log.debug('out', out)
     out.initDate = out.initDate ? cDate.mom(out.initDate, null, 'YYYY-MM-DD') : null
     out.midDate = out.midDate ? cDate.mom(out.midDate, null, 'YYYY-MM-DD') : null
     const input = {
@@ -457,7 +458,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           continue
         }
         const isStartDate = vehicle.startDate === data.initDate
-        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || cDate.inRange(startRegDate, endRegDate, vehicle.finishDate)) {
+        const end = calcPolicyEndDate(data.initDate, data.midDate)
+        console.log('vehicle.endDate:', vehicle.finishDate)
+        console.log('end', end)
+        const isEndDate = vehicle.finishDate !== end
+        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || cDate.inRange(startRegDate, endRegDate, vehicle.finishDate, true, isEndDate)) {
           if (moment(vehicle.finishDate).isAfter(endRegDate)) {
             vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
             vehicle.state = 'ADDED_CONFIRMED'
@@ -494,7 +499,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const { values: pds } = formRefPDS.current || {}
     const tablePd = formRefPDS.current
     const { values: holders } = formRefHolders.current || {}
-    const data = calculatePolicy(header, pds, holders, targetLicensePlate, targetState)
+    const data = calculatePolicy(header, pds, holders, targetLicensePlate, targetState, counter)
     const dataProducer = data?.producer
     if (dataProducer) {
       if (dataProducer.father) {

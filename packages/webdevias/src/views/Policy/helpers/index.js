@@ -204,12 +204,12 @@ export async function createExportTotal (vehicles, fileName) {
   const ws = workbook.addWorksheet('Dati')
   const columns = [
     { key: 'lic', width: 15 },
-    { key: 'dateFrom', width: 15 },
+    { key: 'dateFrom', width: 15, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'hourFrom', width: 10 },
-    { key: 'dateTo', width: 15 },
+    { key: 'dateTo', width: 15, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'vehicleType', width: 20 },
     { key: 'qli', width: 15, style: { numFmt: '#,##0.00' } },
-    { key: 'regDate', width: 15 },
+    { key: 'regDate', width: 15, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'brand', width: 20 },
     { key: 'model', width: 20 },
     { key: 'cov', width: 20 },
@@ -276,10 +276,10 @@ export async function createExportTotal (vehicles, fileName) {
     }
     ws.addRow({
       lic: vehicle.licensePlate,
-      dateFrom: vehicle.startDate && cDate.mom(vehicle.startDate, null, 'DD/MM/YYYY'),
+      dateFrom: vehicle.startDate && new Date(vehicle.startDate),
       hourFrom: vehicle.startHour,
-      dateTo: vehicle.finishDate && cDate.mom(vehicle.finishDate, null, 'DD/MM/YYYY'),
-      regDate: vehicle.registrationDate && cDate.mom(vehicle.registrationDate, null, 'DD/MM/YYYY'),
+      dateTo: vehicle.finishDate && new Date(vehicle.finishDate),
+      regDate: vehicle.registrationDate && new Date(vehicle.registrationDate),
       vehicleType: vehicle.vehicleType,
       brand: vehicle.brand,
       model: vehicle.model,
@@ -306,9 +306,9 @@ export async function createExportTotal (vehicles, fileName) {
     }
   }
   ws.addRow({
-    val: { formula: `SUM(${letter['val']}${2}:${letter['val']}${totalVehicles + 2})`, result: totalVal || '' },
-    prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 2})`, result: totalPrize || '' },
-    prizeT: { formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 2})`, result: totalPrizeT || '' },
+    val: { formula: `SUM(${letter['val']}${2}:${letter['val']}${totalVehicles + 1})`, result: totalVal || '' },
+    prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 1})`, result: totalPrize || '' },
+    prizeT: { formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 1})`, result: totalPrizeT || '' },
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(totalVehicles + 2).getCell(colIndex), bold)
