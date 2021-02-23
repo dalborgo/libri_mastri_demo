@@ -55,11 +55,11 @@ import useRouter from 'utils/useRouter'
 import { useImmerReducer } from 'use-immer'
 import {
   comparePolicy,
+  createExportTotal,
   getProductDefinitions,
   initPolicy,
   reducerInsertModal,
   reducerPolicy,
-  createExportTotal,
 } from './helpers'
 import { manageFile } from 'utils/axios'
 import { calculateRows } from './components/PolicyProductDefinition/helpers'
@@ -458,11 +458,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           continue
         }
         const isStartDate = vehicle.startDate === data.initDate
-        const end = calcPolicyEndDate(data.initDate, data.midDate)
-        console.log('vehicle.endDate:', vehicle.finishDate)
-        console.log('end', end)
-        const isEndDate = vehicle.finishDate !== end
-        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || cDate.inRange(startRegDate, endRegDate, vehicle.finishDate, true, isEndDate)) {
+        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
           if (moment(vehicle.finishDate).isAfter(endRegDate)) {
             vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
             vehicle.state = 'ADDED_CONFIRMED'
