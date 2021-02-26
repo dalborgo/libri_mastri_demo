@@ -336,10 +336,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
-        //eslint-disable-next-line
         if(typeLabel === 'vincolo') {
+          //eslint-disable-next-line
           (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.constraintCounter || clone.constraintCounter == targetCounter)) && prev.push(clone)
         }else {
+          //eslint-disable-next-line
           (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.counter || clone.counter == targetCounter)) && prev.push(clone)
         }
       } else {
