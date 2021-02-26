@@ -319,7 +319,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }
   }
   
-  const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState, targetCounter) => {
+  const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState, targetCounter, typeLabel) => {
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
     /*const duplicatedPDS = cFunctions.checkDuplicate(productDefinitions, comparator)
     console.log('duplicatedPDS:', duplicatedPDS)*/
@@ -337,7 +337,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
         //eslint-disable-next-line
-        (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.counter || clone.counter == targetCounter)) && prev.push(clone)
+        if(typeLabel === 'vincolo') {
+          (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.constraintCounter || clone.constraintCounter == targetCounter)) && prev.push(clone)
+        }else {
+          (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.counter || clone.counter == targetCounter)) && prev.push(clone)
+        }
       } else {
         prev.push(clone)
       }
@@ -495,7 +499,18 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const { values: pds } = formRefPDS.current || {}
     const tablePd = formRefPDS.current
     const { values: holders } = formRefHolders.current || {}
-    const data = calculatePolicy(header, pds, holders, targetLicensePlate, targetState, counter)
+    let typeLabel
+    switch (type) {
+      case 'constraint':
+        typeLabel = 'vincolo'
+        break
+      case 'inclusion':
+        typeLabel = 'inclusione'
+        break
+      default:
+        typeLabel = 'esclusione'
+    }
+    const data = calculatePolicy(header, pds, holders, targetLicensePlate, targetState, counter, typeLabel)
     const dataProducer = data?.producer
     if (dataProducer) {
       if (dataProducer.father) {
@@ -517,17 +532,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     //tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
-    let typeLabel
-    switch (type) {
-      case 'constraint':
-        typeLabel = 'vincolo'
-        break
-      case 'inclusion':
-        typeLabel = 'inclusione'
-        break
-      default:
-        typeLabel = 'esclusione'
-    }
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
       `${typeLabel}_${getPolicyCode(statePolicy, header, isNew)}-${counter || targetLicensePlate}.pdf`,
