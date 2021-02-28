@@ -1,6 +1,6 @@
 import path from 'path'
 import { ioFiles } from '@adapter/io'
-import { cDate, cFunctions, numeric, validation } from '@adapter/common'
+import { cDate, cFunctions, numeric } from '@adapter/common'
 import { Gs, User } from '../../../models'
 import { axiosGraphqlQuery } from '../../../resolvers/helpers/axios'
 import get from 'lodash/get'
@@ -413,6 +413,7 @@ function addRouters (router) {
     } = data
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
+    const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
     const fileName = `inclusione_${_code}-${target.counter || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
@@ -467,7 +468,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
-      today: cDate.mom(null, null, 'DD/MM/YYYY'),
+      today,
       number,
       counter: target.counter,
       pLongName: get(producer, 'longName'),
@@ -545,6 +546,7 @@ function addRouters (router) {
     } = data
     //const target = find(vehicles, inp => ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
+    const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
     const fileName = `esclusione_${_code}-${target.counter || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
@@ -567,7 +569,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
-      today: cDate.mom(null, null, 'DD/MM/YYYY'),
+      today,
       number,
       counter: target.counter,
       pLongName: get(producer, 'longName'),
@@ -628,6 +630,7 @@ function addRouters (router) {
       vehicles,
     } = data
     const [target] = vehicles
+    const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
     const fileName = `vincolo_${_code}-${target.constraintCounter || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
@@ -682,7 +685,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
-      today: cDate.mom(null, null, 'DD/MM/YYYY'),
+      today,
       number,
       counter: target.constraintCounter,
       pLongName: get(producer, 'longName'),
