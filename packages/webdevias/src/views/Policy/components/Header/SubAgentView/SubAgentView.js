@@ -137,7 +137,7 @@ const SubAgentView = props => {
             </Link>
           </div>
           :
-          children.length ?
+          children?.length ?
             <FormSubAgent
               formRefSub={formRefSub}
               setSubAgent={setSubAgent}

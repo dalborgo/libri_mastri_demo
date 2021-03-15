@@ -164,14 +164,16 @@ const PolicyHolderInsertModal = props => {
                   disabled={!isValid || !dirty}
                   onClick={
                     async () => {
-                      const { registries } = client.readQuery({ query: REGISTRIES })
                       const { setFieldValue } = formRefHolders.current
                       const combo = reduce(values, (prev, curr, key) => {
                         prev[key] = values[key]
                         return prev
                       }, { __typename: 'Registry' })
-                      const newRegistries = [combo, ...registries]
-                      await client.writeQuery({ query: REGISTRIES, data: { registries: newRegistries } })
+                      try {
+                        const { registries } = client.readQuery({ query: REGISTRIES })
+                        const newRegistries = [combo, ...registries]
+                        await client.writeQuery({ query: REGISTRIES, data: { registries: newRegistries } })
+                      } catch (e) { }
                       setFieldValue(`holders.${index}.combo`, combo)
                       for (let key in combo) {
                         setFieldValue(`holders.${index}.${key}`, combo[key] || '')

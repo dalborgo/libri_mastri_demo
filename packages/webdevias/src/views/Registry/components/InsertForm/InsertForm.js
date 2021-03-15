@@ -191,9 +191,6 @@ const InsertForm = ({ formik, activities = [] }) => {
             InputProps={
               {
                 className: classes.fieldBack,
-                inputProps: {
-                  textAlign: 'left',
-                },
               }
             }
             label="Cap"

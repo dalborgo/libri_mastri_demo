@@ -251,7 +251,8 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
         return (
           <>
             {
-              priority === 3 &&
+              //todo anteprima per tutti
+              priority > 0 &&
               <PrintMenu classes={classes} items={proposalAndPolicy}/>
             }
             <Button
