@@ -6,6 +6,7 @@ import pdftk from 'node-pdftk'
 import PizZip from 'pizzip'
 import toPdf from 'office-to-pdf'
 import path from 'path'
+import AwaitLock from 'await-lock'
 
 async function fillDocxTemplate (templatePath, data, undefString = ' ') {
   try {
@@ -23,14 +24,17 @@ async function fillDocxTemplate (templatePath, data, undefString = ' ') {
     return { ok: false, message: err.message, err }
   }
 }
-
+const lock = new AwaitLock()
 async function docxToPdf (buffer) {
+  await lock.acquireAsync()
   try {
     const results = await toPdf(buffer)
     return { ok: true, results }
   } catch (err) {
     log.error(err.message)
     return { ok: false, message: err.message, err }
+  } finally {
+    lock.release()
   }
 }
 

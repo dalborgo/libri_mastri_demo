@@ -117,7 +117,7 @@ export const MenuTypeProvider = memo(props => {
             <MenuItem
               className={classes.menuItem}
               component={'button'}
-              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}`}
+              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || '' }`}
               onClick={
                 event => {
                   props.handlePrint(event)
@@ -133,7 +133,7 @@ export const MenuTypeProvider = memo(props => {
             <MenuItem
               className={classes.menuItem}
               component={'button'}
-              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}|void`}
+              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || '' }|void`}
               onClick={
                 event => {
                   props.handlePrint(event)

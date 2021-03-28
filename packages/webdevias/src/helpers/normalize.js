@@ -211,7 +211,6 @@ function calcInst (date, dateSucc, dayPrize, midDate = false) {
   }
 }
 
-
 export function getPayFractionsNorm (payFractions, inMillis = true, round = false, divThousand = false) {
   const norm = {
     totInstalment: 0,
@@ -240,7 +239,7 @@ export function getPayFractionsNorm (payFractions, inMillis = true, round = fals
   return norm
 }
 
-export function calculateRegulationPayment (vehicles, tablePd, statePolicy, header, regFractions) {
+export function calculateRegulationPayment (vehicles, tablePd, statePolicy, header, regFractions, exclusionPrint) {
   const [vehicle] = vehicles
   //const {isRecalculateFraction} = header
   const priceObj = {
@@ -251,7 +250,7 @@ export function calculateRegulationPayment (vehicles, tablePd, statePolicy, head
   const paymentPrize = calculatePaymentTable(tablePd, statePolicy, {
     ...vehicle,
     value: numeric.toFloat(vehicle.value / 1000),
-  })
+  }, false, false, exclusionPrint)
   const datePrize = calculatePrizeTable(tablePd, statePolicy, {
     ...vehicle,
     value: numeric.toFloat(vehicle.value / 1000),
@@ -370,7 +369,7 @@ export function calculatePrizeTable (tablePd, policy, vehicle, printTaxable = fa
   return 0
 }
 
-export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false) {
+export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, exclusionPrint = false) {
   const { values: valuesTPd } = tablePd || {}
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
@@ -392,6 +391,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     let totalAmount = (numeric.toFloat(vehicle.value) * numeric.toFloat(rate) / 100)
     totalAmount = (totalAmount < minimum ? minimum : totalAmount) || 0
     totalAmount = (totalAmount + accessories) || 0
+    //console.log('totalAmount:', totalAmount)
     const dayAmount = totalAmount / 360
     let normStartDate, normFinishDate
     if (vehicle.startDate) {
@@ -409,7 +409,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     } else {
       days360_ = myDays360_2(normStartDate, normFinishDate)
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
-        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate) {
+        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && !exclusionPrint) {
           rangePrice = dayAmount * days360_
         } else {
           const days360ToEnd = myDays360_2(normStartDate, endDate)

@@ -10,7 +10,7 @@ const inRange = (start, end, date, includeStart = true) => {
   return range.contains(moment(date))
 }
 const inRange2Date = (start, end, startDate, endDate) => {
-  const range = moment().range(moment(start).add(1, 'd'), moment(end))
+  const range = moment().range(moment(start).add(0, 'd'), moment(end))
   return range.contains(moment(startDate)) && range.contains(moment(endDate))
 }
 

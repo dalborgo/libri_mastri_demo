@@ -11,6 +11,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "await-lock": "^2.1.0",
     "qs": "^6.9.1",
     "office-to-pdf": "^4.0.0",
     "docxtemplater": "^3.17.6",

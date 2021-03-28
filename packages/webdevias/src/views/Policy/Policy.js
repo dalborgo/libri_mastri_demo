@@ -336,12 +336,20 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
-        if(typeLabel === 'vincolo') {
+        if (typeLabel === 'vincolo') {
           //eslint-disable-next-line
           (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.constraintCounter || clone.constraintCounter == targetCounter)) && prev.push(clone)
-        }else {
+        } else if (typeLabel === 'inclusione') {
           //eslint-disable-next-line
-          (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!clone.counter || clone.counter == targetCounter)) && prev.push(clone)
+          const counter = clone.includedCounter || clone.counter
+          if (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!counter || counter == targetCounter)) {
+            prev.push(clone)
+          }
+        } else {
+          const counter = clone.excludedCounter || clone.counter
+          if (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!counter || counter == targetCounter)) {
+            prev.push(clone)
+          }
         }
       } else {
         prev.push(clone)
@@ -459,10 +467,10 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const newVehicles = []
       //data.toSave = true
       for (let vehicle of statePolicy.vehicles) { // non in millesimi qua
-        if (!vehicle.startDate || !vehicle.finishDate) {
+        const isStartDate = vehicle.startDate === data.initDate
+        if ((!vehicle.startDate || !vehicle.finishDate) || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)) {
           continue
         }
-        const isStartDate = vehicle.startDate === data.initDate
         if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
           if (moment(vehicle.finishDate).isAfter(endRegDate)) {
             vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
@@ -525,7 +533,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { payFractionsNorm } = getPayFractionsNorm(payFractions, false)
       data.payFractions = payFractionsNorm
     } else {
-      data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions)
+      data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions, typeLabel === 'esclusione')
     }
     data.endDate = getPolicyEndDate(data.initDate, data.midDate)
     data.noPrize = Boolean(noPrize)

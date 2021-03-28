@@ -43,8 +43,8 @@ import find from 'lodash/find'
 import TableDetailToggleCell from 'helpers/tableFormatters/TableDetailToggleCellBase'
 import RowAttachmentsComponent from './RowAttachmentsComponent'
 
-function getVehicleId ({ licensePlate, state, counter }) {
-  return licensePlate && state ? `${licensePlate}#${state}#${counter}` : uuid()
+function getVehicleId ({ licensePlate, state }) {
+  return licensePlate && state ? `${licensePlate}#${state}#${uuid()}` : uuid()
 }
 
 const getRowId = getVehicleId

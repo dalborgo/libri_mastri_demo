@@ -71,10 +71,10 @@ export function reducerPolicy (draft, action) {
           partial.index = i
         }
         if (draft.vehicles[i].state === 'ADDED_CONFIRMED') {
-          partial.maxIncluded = Math.max(partial.maxIncluded, draft.vehicles[i].counter || 0)
+          partial.maxIncluded = Math.max(partial.maxIncluded, draft.vehicles[i].includedCounter || draft.vehicles[i].counter || 0)
         }
         if (draft.vehicles[i].state === 'DELETED_CONFIRMED') {
-          partial.maxExcluded = Math.max(partial.maxExcluded, draft.vehicles[i].counter || 0)
+          partial.maxExcluded = Math.max(partial.maxExcluded, draft.vehicles[i].excludedCounter || draft.vehicles[i].counter || 0)
         }
         if (draft.vehicles[i].leasingCompany) {
           partial.maxConstraint = Math.max(partial.maxConstraint, draft.vehicles[i].constraintCounter || 0)
@@ -84,9 +84,11 @@ export function reducerPolicy (draft, action) {
         draft.vehicles[partial.index].state = action.newState
         if (draft.vehicles[partial.index].state === 'ADDED_CONFIRMED') {
           draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : ++partial.maxIncluded
+          draft.vehicles[partial.index].includedCounter = draft.vehicles[partial.index].includedCounter ? draft.vehicles[partial.index].includedCounter : ++partial.maxIncluded
         }
         if (draft.vehicles[partial.index].state === 'DELETED_CONFIRMED') {
           draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : ++partial.maxExcluded
+          draft.vehicles[partial.index].excludedCounter = draft.vehicles[partial.index].excludedCounter ? draft.vehicles[partial.index].excludedCounter : ++partial.maxExcluded
         }
         if (draft.vehicles[partial.index].state === 'ADDED_CONFIRMED' && draft.vehicles[partial.index].leasingCompany) {
           draft.vehicles[partial.index].constraintCounter = draft.vehicles[partial.index].constraintCounter ? draft.vehicles[partial.index].constraintCounter : ++partial.maxConstraint
