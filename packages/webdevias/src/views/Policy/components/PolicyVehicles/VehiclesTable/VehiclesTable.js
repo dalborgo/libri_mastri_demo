@@ -43,8 +43,8 @@ import find from 'lodash/find'
 import TableDetailToggleCell from 'helpers/tableFormatters/TableDetailToggleCellBase'
 import RowAttachmentsComponent from './RowAttachmentsComponent'
 
-function getVehicleId ({ licensePlate, state }) {
-  return licensePlate && state ? `${licensePlate}#${state}#${uuid()}` : uuid()
+function getVehicleId ({ licensePlate, state, counter }) {
+  return licensePlate && state ? `${licensePlate}#${state}#${counter}` : uuid()
 }
 
 const getRowId = getVehicleId
@@ -424,6 +424,9 @@ const VehiclesTable = props => {
     }
     if (column.name === 'startDate' && ['DELETED', 'ACTIVE'].includes(props.row.state)) {
       return <FastBaseCell {...props} defaultValue={cDate.mom(policy.initDate, null, 'DD/MM/YYYY')}/>
+    }
+    if (column.name === 'startDate' && ['ADDED_CONFIRMED'].includes(props.row.state)) {
+      return <FastBaseCell {...props} defaultValue={cDate.mom(props.value, null, 'DD/MM/YYYY')}/>
     }
     if (column.name === 'finishDate' && (['ADDED'].includes(props.row.state) || (!props.row.state && isPolicy))) {
       return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.minDate)}/>

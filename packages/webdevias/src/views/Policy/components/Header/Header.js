@@ -87,6 +87,7 @@ function HeaderButton (props) {
   return (
     <Button
       className={props.classes.whiteButton}
+      id="headerButton"
       name={props.name}
       onClick={props.onClick}
       variant="outlined"

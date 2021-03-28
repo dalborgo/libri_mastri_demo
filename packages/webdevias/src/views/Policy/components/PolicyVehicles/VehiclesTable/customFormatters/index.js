@@ -171,12 +171,15 @@ export const MenuTypeProvider = memo(props => {
                 className={classes.menuItem}
                 component={'button'}
                 onClick={
-                  () => props.dispatch({
-                    licensePlate: row.licensePlate,
-                    newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
-                    state: row.state,
-                    type: 'setVehicleStateByIndex',
-                  })
+                  async () => {
+                    await props.dispatch({
+                      licensePlate: row.licensePlate,
+                      newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
+                      state: row.state,
+                      type: 'setVehicleStateByIndex',
+                    })
+                    document.getElementById('headerButton').click()
+                  }
                 }
               >
                 <ListItemIcon>

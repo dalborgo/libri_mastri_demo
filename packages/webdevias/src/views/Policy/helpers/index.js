@@ -83,12 +83,14 @@ export function reducerPolicy (draft, action) {
       if (partial.index > -1) {
         draft.vehicles[partial.index].state = action.newState
         if (draft.vehicles[partial.index].state === 'ADDED_CONFIRMED') {
-          draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : ++partial.maxIncluded
-          draft.vehicles[partial.index].includedCounter = draft.vehicles[partial.index].includedCounter ? draft.vehicles[partial.index].includedCounter : ++partial.maxIncluded
+          ++partial.maxIncluded
+          draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : partial.maxIncluded
+          draft.vehicles[partial.index].includedCounter = draft.vehicles[partial.index].includedCounter ? draft.vehicles[partial.index].includedCounter : partial.maxIncluded
         }
         if (draft.vehicles[partial.index].state === 'DELETED_CONFIRMED') {
-          draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : ++partial.maxExcluded
-          draft.vehicles[partial.index].excludedCounter = draft.vehicles[partial.index].excludedCounter ? draft.vehicles[partial.index].excludedCounter : ++partial.maxExcluded
+          ++partial.maxExcluded
+          draft.vehicles[partial.index].counter = draft.vehicles[partial.index].counter ? draft.vehicles[partial.index].counter : partial.maxExcluded
+          draft.vehicles[partial.index].excludedCounter = draft.vehicles[partial.index].excludedCounter ? draft.vehicles[partial.index].excludedCounter : partial.maxExcluded
         }
         if (draft.vehicles[partial.index].state === 'ADDED_CONFIRMED' && draft.vehicles[partial.index].leasingCompany) {
           draft.vehicles[partial.index].constraintCounter = draft.vehicles[partial.index].constraintCounter ? draft.vehicles[partial.index].constraintCounter : ++partial.maxConstraint
