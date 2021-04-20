@@ -187,12 +187,12 @@ function myDays360 (startCalc, endCalc, midDate) {
   return daysDiff
 }
 
-function myDays360_2 (startCalc, endCalc) {
+function myDays360_2 (startCalc, endCalc, forceOne) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
   /*if (isLastFebruary(startCalc) || isLastFebruary(endCalc)) {
     daysDiff = Math.round(daysDiff / 30) * 30
   }*/
-  return daysDiff
+  return forceOne && daysDiff === 0 ? 1: daysDiff
 }
 
 function calcInst (date, dateSucc, dayPrize, midDate = false) {
@@ -416,7 +416,9 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
           rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
         }
       } else {
-        rangePrice = dayAmount * days360_
+        //hack calcola 1 con il true in fondo se fine polizza
+        const days360_2 = myDays360_2(normStartDate, normFinishDate, true)
+        rangePrice = dayAmount * days360_2
       }
     }
     prize = rangePrice || 0
