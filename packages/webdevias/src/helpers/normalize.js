@@ -409,7 +409,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     } else {
       days360_ = myDays360_2(normStartDate, normFinishDate)
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
-        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && !exclusionPrint) {
+        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && !exclusionPrint && startDate !== policy.initDate) {
           rangePrice = dayAmount * days360_
         } else {
           const days360ToEnd = myDays360_2(normStartDate, endDate)
