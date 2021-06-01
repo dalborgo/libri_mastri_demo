@@ -110,8 +110,8 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
     return prev_
   }, Promise.resolve([]))
 }
-
-function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ') {
+// globalGlass per non scrivere gli art per i non glass
+function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', globalGlass) {
   let hasKnote = false
   const guaranteeList = reduce(groupedPd, (prev, products, key) => {
     const littleKey = (key.split(' '))[0]
@@ -146,7 +146,14 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         currentMAP.glassCap = prod.glassCap ? numeric.printDecimal(prod.glassCap / 1000) : empty
         currentMAP.towing = prod.towing ? numeric.printDecimal(prod.towing / 1000) : ''
         currentMAP.st = prod.statements
-        currentMAP.noSt = !prod.statements
+        if (prod.statement) {
+          currentMAP.noSt = false
+        } else if (globalGlass === 'NO') {
+          currentMAP.noSt = false
+        } else {
+          currentMAP.noSt = true
+        }
+        //currentMAP.noSt = !prod.statements
         currentMAP.index = vehicleTypesByKey[prod.vehicleType].index + coverageTypesByKey[key].index
         if (prod.conditions) {
           currentMAP.overdraft = '\n' + prod.conditions
@@ -423,15 +430,21 @@ function addRouters (router) {
         return res.send(data)
       }
     }
-    const { coverageTypes } = await Gs.findById('general_settings')
+    const { vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
+    const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
     const groupedCt = keyBy(coverageTypes, 'id')
-    const groupedPd = keyBy(productDefinitions, 'coverageType')
+    const groupedPd = groupBy(productDefinitions, 'coverageType')
     const producer = await User.findById(data.producer) || {}
-    let sHour, sDate, targetLeasing = {}, coverageType, gars = []
+    let sHour, sDate, targetLeasing = {}, coverageType, gars = [], guaranteeList = [], hasKnote
     if (target.productCode) {
       const objCov = groupedPd[target.productCode]
+      const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
+      const found = find(objCov, { vehicleType: vehicleCode })
+      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target.hasGlass)
+      guaranteeList = data.guaranteeList
+      hasKnote = data.hasKnote
       if (objCov) {
-        coverageType = objCov.coverageType
+        coverageType = found.coverageType
       }
       if (coverageType) {
         gars = (groupedCt[coverageType]).conditions.join(' – ')
@@ -511,6 +524,9 @@ function addRouters (router) {
       prDateTax: numeric.printDecimal(get(priceObj.paymentPrize, 'tax')),
       prDateInst: numeric.printDecimal(get(priceObj.paymentPrize, 'instalment')),
       prDateFinishDate: get(priceObj.datePrize, 'finishDate') && cDate.mom(priceObj.datePrize.finishDate, null, 'DD/MM/YYYY'),
+      guaranteeList,
+      kaskoNote: TEXT_KASKO,
+      hasKnote,
     }
     /*eslint-enable sort-keys*/
     {
