@@ -468,7 +468,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       //data.toSave = true
       for (let vehicle of statePolicy.vehicles) { // non in millesimi qua
         const isStartDate = vehicle.startDate === data.initDate
-        if ((!vehicle.startDate || !vehicle.finishDate) || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)) {
+        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
           continue
         }
         if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
@@ -513,6 +513,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       case 'constraint':
         typeLabel = 'vincolo'
         break
+      case 'application':
+        typeLabel = 'applicazione'
+        break
       case 'inclusion':
         typeLabel = 'inclusione'
         break
@@ -533,7 +536,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { payFractionsNorm } = getPayFractionsNorm(payFractions, false)
       data.payFractions = payFractionsNorm
     } else {
-      data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions, typeLabel === 'esclusione')
+      data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions)// typeLabel === 'esclusione'
     }
     data.endDate = getPolicyEndDate(data.initDate, data.midDate)
     data.noPrize = Boolean(noPrize)

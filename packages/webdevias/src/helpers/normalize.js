@@ -187,12 +187,12 @@ function myDays360 (startCalc, endCalc, midDate) {
   return daysDiff
 }
 
-function myDays360_2 (startCalc, endCalc, forceOne) {
+function myDays360_2 (startCalc, endCalc) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
   /*if (isLastFebruary(startCalc) || isLastFebruary(endCalc)) {
     daysDiff = Math.round(daysDiff / 30) * 30
   }*/
-  return forceOne && daysDiff === 0 ? 1: daysDiff
+  return daysDiff
 }
 
 function calcInst (date, dateSucc, dayPrize, midDate = false) {
@@ -210,6 +210,7 @@ function calcInst (date, dateSucc, dayPrize, midDate = false) {
     tax: tax,
   }
 }
+
 
 export function getPayFractionsNorm (payFractions, inMillis = true, round = false, divThousand = false) {
   const norm = {
@@ -239,7 +240,7 @@ export function getPayFractionsNorm (payFractions, inMillis = true, round = fals
   return norm
 }
 
-export function calculateRegulationPayment (vehicles, tablePd, statePolicy, header, regFractions, exclusionPrint) {
+export function calculateRegulationPayment (vehicles, tablePd, statePolicy, header, regFractions) {
   const [vehicle] = vehicles
   //const {isRecalculateFraction} = header
   const priceObj = {
@@ -250,7 +251,7 @@ export function calculateRegulationPayment (vehicles, tablePd, statePolicy, head
   const paymentPrize = calculatePaymentTable(tablePd, statePolicy, {
     ...vehicle,
     value: numeric.toFloat(vehicle.value / 1000),
-  }, false, false, exclusionPrint)
+  }, false, false)
   const datePrize = calculatePrizeTable(tablePd, statePolicy, {
     ...vehicle,
     value: numeric.toFloat(vehicle.value / 1000),
@@ -369,7 +370,7 @@ export function calculatePrizeTable (tablePd, policy, vehicle, printTaxable = fa
   return 0
 }
 
-export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, exclusionPrint = false) {
+export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false) {
   const { values: valuesTPd } = tablePd || {}
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
@@ -391,7 +392,6 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     let totalAmount = (numeric.toFloat(vehicle.value) * numeric.toFloat(rate) / 100)
     totalAmount = (totalAmount < minimum ? minimum : totalAmount) || 0
     totalAmount = (totalAmount + accessories) || 0
-    //console.log('totalAmount:', totalAmount)
     const dayAmount = totalAmount / 360
     let normStartDate, normFinishDate
     if (vehicle.startDate) {
@@ -409,16 +409,77 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     } else {
       days360_ = myDays360_2(normStartDate, normFinishDate)
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
-        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && !exclusionPrint && startDate !== policy.initDate) {
+        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
           rangePrice = dayAmount * days360_
         } else {
           const days360ToEnd = myDays360_2(normStartDate, endDate)
           rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
         }
       } else {
-        //hack calcola 1 con il true in fondo se fine polizza
-        const days360_2 = myDays360_2(normStartDate, normFinishDate, true)
-        rangePrice = dayAmount * days360_2
+        rangePrice = dayAmount * days360_
+      }
+    }
+    prize = rangePrice || 0
+    taxable = (prize / ((100 + taxRate) / 100))
+    if (returnExtra) {
+      return {
+        payment: printTaxable ? taxable : prize,
+        days: days360_ === undefined ? myDays360_2(policy.initDate, endDate) : days360_,
+      }
+    } else {
+      return printTaxable ? taxable : prize
+    }
+  }
+  return 0
+}
+
+export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable = false, returnExtra = false) {
+  const { values: valuesTPd } = tablePd || {}
+  const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
+  const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
+  if (!productDefinitions.length) {return 0}
+  const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
+  const defProdCode = find(productDefinitions, { vehicleType: vehicleCode })
+  const prodFound = find(productDefinitions, {
+    productCode: vehicle.productCode,
+    vehicleType: vehicleCode,
+  }) || defProdCode
+  let prize = 0, taxable = 0
+  const regFractions = policy.regFractions
+  if (prodFound) {
+    const glass = vehicle.hasGlass === 'SI' ? prodFound.glass || 0 : 0
+    const towing = vehicle.hasTowing === 'SI' ? prodFound.towing || 0 : 0
+    const rate = prodFound.rate || 0
+    const minimum = numeric.toFloat(prodFound.minimum) || 0
+    const accessories = numeric.toFloat(glass) + numeric.toFloat(towing)
+    let totalAmount = (numeric.toFloat(vehicle.value) * numeric.toFloat(rate) / 100)
+    totalAmount = (totalAmount < minimum ? minimum : totalAmount) || 0
+    totalAmount = (totalAmount + accessories) || 0
+    const dayAmount = totalAmount / 360
+    let normStartDate, normFinishDate
+    if (vehicle.startDate) {
+      normStartDate = cDate.mom(vehicle.startDate, null, 'YYYY-MM-DD')
+    }
+    if (vehicle.finishDate) {
+      normFinishDate = cDate.mom(vehicle.finishDate, null, 'YYYY-MM-DD')
+    }
+    const startDate = normStartDate || policy.initDate
+    const endDate = calcPolicyEndDate(policy.initDate, policy.midDate)
+    const finishDate = normFinishDate || endDate
+    let rangePrice, days360_
+    if (startDate === policy.initDate && finishDate === endDate) {
+      rangePrice = totalAmount
+    } else {
+      days360_ = myDays360_2(normStartDate, normFinishDate)
+      if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
+        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
+          rangePrice = dayAmount * days360_
+        } else {
+          const days360ToEnd = myDays360_2(normStartDate, endDate)
+          rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
+        }
+      } else {
+        rangePrice = dayAmount * days360_
       }
     }
     prize = rangePrice || 0

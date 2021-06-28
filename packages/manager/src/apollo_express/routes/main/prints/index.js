@@ -12,7 +12,7 @@ import reduce from 'lodash/reduce'
 import { COLLISION_TEXT, elaborateMap, MAP_GUARANTEES, REG_TEXT, TEXT_KASKO } from './maps'
 import fs from 'fs'
 import Q from 'q'
-import { calculateSequenceNumber } from '../../../resolvers/helpers'
+import { calcPolicyEndDate, calculateSequenceNumber } from '../../../resolvers/helpers'
 
 async function getVL (vehicles, vehicleTypes, productDefinitions, signer, cosigners) {
   const leasingSet = {}
@@ -110,6 +110,7 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
     return prev_
   }, Promise.resolve([]))
 }
+
 // globalGlass per non scrivere gli art per i non glass
 function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', globalGlass) {
   let hasKnote = false
@@ -507,6 +508,149 @@ function addRouters (router) {
       rState: get(realSigner, 'state'),
       rId: `${get(realSigner, 'name') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
       endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
+      lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
+      prize: !noPrize,
+      lVat,
+      lAdd,
+      lCity,
+      lAn,
+      lSur,
+      lState,
+      lZip,
+      gars,
+      prOrTaxable: numeric.printDecimal(get(priceObj.datePrize, 'taxable')),
+      prOrTax: numeric.printDecimal(get(priceObj.datePrize, 'tax')),
+      prOrInst: numeric.printDecimal(get(priceObj.datePrize, 'instalment')),
+      prDateTaxable: numeric.printDecimal(get(priceObj.paymentPrize, 'taxable')),
+      prDateTax: numeric.printDecimal(get(priceObj.paymentPrize, 'tax')),
+      prDateInst: numeric.printDecimal(get(priceObj.paymentPrize, 'instalment')),
+      prDateFinishDate: get(priceObj.datePrize, 'finishDate') && cDate.mom(priceObj.datePrize.finishDate, null, 'DD/MM/YYYY'),
+      guaranteeList,
+      kaskoNote: TEXT_KASKO,
+      hasKnote,
+    }
+    /*eslint-enable sort-keys*/
+    {
+      const { ok, message, results } = await ioFiles.fillDocxTemplate(filePath, input)
+      if (!ok) {return res.status(412).send({ ok, message })}
+      partial.buffer = results
+      partial.correct = ok
+    }
+    {
+      const { ok, message, results } = await ioFiles.docxToPdf(partial.buffer)
+      if (!ok) {return res.status(412).send({ ok, message })}
+      partial.correct &= ok
+      res.send(results)
+      if (partial.correct && toSave) {
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileName, results)
+      }
+    }
+  })
+  router.post('/prints/print_application', async function (req, res) {
+    const filePath = path.resolve('src/apollo_express/public/templates/modello_applicazione_stato_di_rischio.docx')
+    const partial = {}, empty = ' '
+    const data = req.body
+    const {
+      _code,
+      cosigners,
+      initDate,
+      midDate,
+      number,
+      productDefinitions,
+      priceObj,
+      signer,
+      noPrize,
+      toSave,
+      vehicles,
+    } = data
+    //console.log('data:', data)
+    //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
+    const [target] = vehicles
+    const today = cDate.mom(initDate, null, 'DD/MM/YYYY')
+    const fileName = `applicazione_${_code}-${target.inPolicy || 'XXX'}.pdf`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const { vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
+    const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
+    const groupedCt = keyBy(coverageTypes, 'id')
+    const groupedPd = groupBy(productDefinitions, 'coverageType')
+    const producer = await User.findById(data.producer) || {}
+    let sHour, sDate, targetLeasing = {}, coverageType, gars = [], guaranteeList = [], hasKnote
+    if (target.productCode) {
+      const objCov = groupedPd[target.productCode]
+      const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
+      const found = find(objCov, { vehicleType: vehicleCode })
+      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target.hasGlass)
+      guaranteeList = data.guaranteeList
+      hasKnote = data.hasKnote
+      if (objCov) {
+        coverageType = found.coverageType
+      }
+      if (coverageType) {
+        gars = (groupedCt[coverageType]).conditions.join(' – ')
+        if (target.hasGlass === 'SI') {
+          gars += ' – Cristalli'
+        }
+        if (target.hasTowing === 'SI') {
+          gars += ' – Traino'
+        }
+      }
+    }
+    sHour = '24:00'
+    sDate = cDate.mom(initDate, null, 'DD/MM/YYYY')
+    let realSigner = signer || {}
+    if (target.owner && signer.id !== target.owner) {
+      realSigner = find(cosigners, { id: target.owner }) || {}
+    }
+    const query = 'query Registry_guest($id: ID!) {registry_guest(id: $id) {id, surname, address, address_number, zip, city, state}}'
+    const { results } = await axiosGraphqlQuery(query, { id: target.leasingCompany })
+    if (results && results.registry_guest) {
+      targetLeasing = results.registry_guest
+    }
+    const {
+      id: lVat,
+      surname: lSur,
+      address: lAdd,
+      address_number: lAn,
+      zip: lZip,
+      city: lCity,
+      state: lState,
+    } = targetLeasing
+    const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
+    /*eslint-disable sort-keys*/
+    const input = {
+      today,
+      number,
+      counter: target.inPolicy,
+      pLongName: get(producer, 'longName'),
+      lic: target.licensePlate,
+      vType,
+      sHour,
+      sDate,
+      sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
+      sSur: get(signer, 'surname'),
+      sAddr: get(signer, 'address'),
+      sAddrNumb: get(signer, 'address_number'),
+      sZip: get(signer, 'zip'),
+      sCity: get(signer, 'city'),
+      sState: get(signer, 'state'),
+      sId: `${get(signer, 'name') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      value: numeric.printDecimal(target.value / 1000),
+      rName: get(realSigner, 'name') ? get(realSigner, 'name') + ' ' : '',
+      rSur: get(realSigner, 'surname'),
+      rAddr: get(realSigner, 'address'),
+      rAddrNumb: get(realSigner, 'address_number'),
+      rZip: get(realSigner, 'zip'),
+      rCity: get(realSigner, 'city'),
+      rState: get(realSigner, 'state'),
+      rId: `${get(realSigner, 'name') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
+      endDate: cDate.mom(calcPolicyEndDate(initDate, midDate), null, 'DD/MM/YYYY'),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
       prize: !noPrize,
       lVat,

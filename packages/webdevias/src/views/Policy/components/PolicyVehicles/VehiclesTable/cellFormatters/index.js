@@ -90,7 +90,7 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
     isError |= !value
   }
   if (restProps.column.name === 'vehicleType') {
-    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE'].includes(value)
+    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA'].includes(value)
   }
   if (restProps.column.name === 'prize') {
     isError |= !value || value === '0,00'

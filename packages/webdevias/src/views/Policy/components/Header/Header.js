@@ -101,7 +101,11 @@ function PrintMenu (props) {
   const { items: itemsRaw, classes } = props
   const items = Array.isArray(itemsRaw) ? itemsRaw : [itemsRaw]
   const [anchorEl, setAnchorEl] = React.useState(null)
-  
+  const client = useApolloClient()
+  const { me: { priority } } = client.readQuery({ query: ME })
+  if (priority !== 3) {// blocco menu per non qubo
+    return null
+  }
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -252,8 +256,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
         return (
           <>
             {
-              //todo anteprima per tutti
-              priority > 0 &&
+              priority === 3 &&
               <PrintMenu classes={classes} items={proposalAndPolicy}/>
             }
             <Button

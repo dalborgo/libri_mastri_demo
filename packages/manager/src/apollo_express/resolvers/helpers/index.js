@@ -122,6 +122,17 @@ function calculate (meta, forceError = false) {
   }
 }
 
+
+export function calcPolicyEndDate (init, mid) {
+  if (mid) {
+    return cDate.mom(mid, null, 'YYYY-MM-DD', [1, 'y'])
+  } else if (init) {
+    return cDate.mom(init, null, 'YYYY-MM-DD', [1, 'y'])
+  } else {
+    return null
+  }
+}
+
 export async function calculateSequenceNumber (meta_, state, tag) {
   let meta, number, _code
   let { offset = 0, fromDoc, version } = meta_

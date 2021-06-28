@@ -20,7 +20,8 @@ function navigationConfig (user, policy, registry, priority, pathname) {
       href: '/policies/doclist',
     },
   ]
-  priority === 1 && policyChildren.shift()
+  priority !== 3 && policyChildren.pop()
+  priority !== 3 && policyChildren.shift()
   policy && !isEditPolicy && policyChildren.push({
     title: `Modifica ${priority === 3 ? 'Offerta' : 'Proposta'}`,
     href: `/policies/edit/${policy}/all`,

@@ -2,6 +2,7 @@ import { Gs, Policy, User } from '../models'
 import getStream from 'get-stream'
 import parse from 'csv-parse'
 import {
+  calcPolicyEndDate,
   calculateSequenceNumber,
   checkRecord,
   columnNameMap,
@@ -17,6 +18,7 @@ import { axiosLocalhostInstance } from './helpers/axios'
 import { cDate, cFunctions } from '@adapter/common'
 import { CustomValidationError } from '../errors'
 import config from 'config'
+import moment from 'moment'
 
 const { BUCKET_DEFAULT } = config.get('couchbase')
 const decodeCAS = obj => obj.getCAS(true).toString()
@@ -28,6 +30,13 @@ export default {
       const { userRole, userId } = req.session || {}
       const [first] = await Policy.getByQuery(getPolicyQuery(id, userRole, userId))
       if (!first) {return null}
+      if (userRole !== 'SUPER') {
+        const { initDate, midDate } = first
+        const endDate = calcPolicyEndDate(initDate, midDate)
+        const today = moment().format('YYYY-MM-DD')
+        const isBefore = moment(endDate).isBefore(today)
+        return isBefore ? null : new Policy(first, {}, first._cas)
+      }
       return new Policy(first, {}, first._cas)
     },
     policies: async (_, { origin }, { req }) => {
@@ -37,7 +46,19 @@ export default {
       const ids = await Policy.getAll(['_createdAt', 'desc'], true)
       return Policy.findById(ids, { populate: 'producer' }) //keepSortOrder
       */
-      return Policy.getByQuery(getPoliciesQuery(userRole, userId, onlyDoc), [], true) //req_plus
+      const policies = await Policy.getByQuery(getPoliciesQuery(userRole, userId, onlyDoc), [], true) //req_plus
+      if (userRole !== 'SUPER') {
+        const outPolicies = []
+        for (let policy of policies) {
+          const { initDate, midDate } = policy
+          const endDate = calcPolicyEndDate(initDate, midDate)
+          const today = moment().format('YYYY-MM-DD')
+          const isBefore = moment(endDate).isBefore(today)
+          !isBefore && outPolicies.push(policy)
+        }
+        return outPolicies
+      }
+      return policies
     },
     differences: async (_, { id }) => {
       const new_ = await Policy.findById(id)

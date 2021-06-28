@@ -77,7 +77,7 @@ export const MenuTypeProvider = memo(props => {
     }
     const classes = useStyles()
     const isInclusion = useMemo(() => ['ADDED', 'ADDED_CONFIRMED'].includes(state), [state])
-    if (state === 'ACTIVE' || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
+    if ((state === 'ACTIVE' && !row.inPolicy) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
       return null
     } else {
       return (
@@ -114,38 +114,63 @@ export const MenuTypeProvider = memo(props => {
             open={Boolean(anchorEl)}
             transitionDuration={0}
           >
-            <MenuItem
-              className={classes.menuItem}
-              component={'button'}
-              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || '' }`}
-              onClick={
-                event => {
-                  props.handlePrint(event)
-                  handleClose()
+            {
+              (row.inPolicy) &&
+              <MenuItem
+                className={classes.menuItem}
+                component={'button'}
+                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}`}
+                onClick={
+                  event => {
+                    props.handlePrint(event)
+                    handleClose()
+                  }
                 }
-              }
-            >
-              <ListItemIcon>
-                <Icon path={mdiFilePdf} size={1}/>
-              </ListItemIcon>
-              Appendice d'{isInclusion ? 'inclusione' : 'esclusione'}
-            </MenuItem>
-            <MenuItem
-              className={classes.menuItem}
-              component={'button'}
-              name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || '' }|void`}
-              onClick={
-                event => {
-                  props.handlePrint(event)
-                  handleClose()
+              >
+                <ListItemIcon>
+                  <Icon path={mdiFilePdf} size={1}/>
+                </ListItemIcon>
+                Applicazione
+              </MenuItem>
+            }
+            {
+              state !== 'ACTIVE' &&
+              <MenuItem
+                className={classes.menuItem}
+                component={'button'}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}`}
+                onClick={
+                  event => {
+                    props.handlePrint(event)
+                    handleClose()
+                  }
                 }
-              }
-            >
-              <ListItemIcon>
-                <Icon path={mdiFilePdf} size={1}/>
-              </ListItemIcon>
-              Appendice d'{isInclusion ? 'inclusione senza premi' : 'esclusione senza premi'}
-            </MenuItem>
+              >
+                <ListItemIcon>
+                  <Icon path={mdiFilePdf} size={1}/>
+                </ListItemIcon>
+                Appendice d'{isInclusion ? 'inclusione' : 'esclusione'}
+              </MenuItem>
+            }
+            {
+              state !== 'ACTIVE' &&
+              <MenuItem
+                className={classes.menuItem}
+                component={'button'}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}|void`}
+                onClick={
+                  event => {
+                    props.handlePrint(event)
+                    handleClose()
+                  }
+                }
+              >
+                <ListItemIcon>
+                  <Icon path={mdiFilePdf} size={1}/>
+                </ListItemIcon>
+                Appendice d'{isInclusion ? 'inclusione senza premi' : 'esclusione senza premi'}
+              </MenuItem>
+            }
             {
               (['ADDED', 'ADDED_CONFIRMED'].includes(state) && row.leasingCompany) &&
               <MenuItem
