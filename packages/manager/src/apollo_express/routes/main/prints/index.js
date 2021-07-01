@@ -147,7 +147,7 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         currentMAP.glassCap = prod.glassCap ? numeric.printDecimal(prod.glassCap / 1000) : empty
         currentMAP.towing = prod.towing ? numeric.printDecimal(prod.towing / 1000) : ''
         currentMAP.st = prod.statements
-        if (prod.statement) {
+        if (prod.statements) {
           currentMAP.noSt = false
         } else if (globalGlass === 'NO') {
           currentMAP.noSt = false
@@ -563,7 +563,6 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
-    //console.log('data:', data)
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = cDate.mom(initDate, null, 'DD/MM/YYYY')
