@@ -8,3 +8,4 @@
 /packages/manager/src/apollo_express/crypt/
 ~*.docx
 ~*.tmp
+/packages/manager/src/apollo_express/public/templates/

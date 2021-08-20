@@ -17,6 +17,7 @@ import {
   calcPolicyEndDate,
   calculatePaymentDates,
   calculatePaymentTable,
+  calculatePaymentTable2,
   calculatePrizeTable,
   calculateRegulationDates,
   calculateRegulationPayment,
@@ -430,6 +431,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   
   //region HANDLE PRINT
   const handlePrint = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter) => async () => {
+    console.log('hasRegulation:', hasRegulation)
     const header = formRefHeader?.current?.values || statePolicy
     const { values: pds } = formRefPDS.current || {}
     const tablePd = formRefPDS.current
@@ -467,20 +469,38 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const newVehicles = []
       //data.toSave = true
       for (let vehicle of statePolicy.vehicles) { // non in millesimi qua
-        const isStartDate = vehicle.startDate === data.initDate
-        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-          continue
-        }
-        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-            vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
-            vehicle.state = 'ADDED_CONFIRMED'
+        if (hasRegulation === 'SI') {
+          const isStartDate = vehicle.startDate === data.initDate
+          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+            continue
           }
-          const { payment, days } = calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
-          const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
-          totTaxable += payment
-          newVehicles.push({ ...vehicle, payment, prize, days })
+          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+              vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.state = 'ADDED_CONFIRMED'
+            }
+            const { payment, days } = calculatePaymentTable2(tablePd, statePolicy, vehicle, true, true, endRegDate)
+            const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
+            totTaxable += payment
+            newVehicles.push({ ...vehicle, payment, prize, days })
+          }
+        } else {
+          const isStartDate = vehicle.startDate === data.initDate
+          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+            continue
+          }
+          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+              vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.state = 'ADDED_CONFIRMED'
+            }
+            const { payment, days } = calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
+            const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
+            totTaxable += payment
+            newVehicles.push({ ...vehicle, payment, prize, days })
+          }
         }
+        
       }
       data.vehicles = newVehicles
       data.totTaxable = Number(totTaxable.toFixed(2))
@@ -1009,7 +1029,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   if (tab && !find([...tabs, { value: 'all' }], { value: tab })) {
     return <Error404/>
   }
-  console.log('statePolicy:', statePolicy)
   return (
     <div className={clsx(classes.divRoot, classes.policyDetails)}>
       <Header
@@ -1127,6 +1146,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             (tab === 'all' || tab === 'vehicles') &&
             <PolicyVehicles
               dispatch={dispatch}
+              formRefHeader={formRefHeader}
               globalClass={classes}
               handleExport={handleExport}
               handleExportTotal={handleExportTotal}

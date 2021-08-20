@@ -112,7 +112,10 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
 }
 
 // globalGlass per non scrivere gli art per i non glass
-function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', globalGlass) {
+function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', target) {
+  const globalGlass = target ? target.hasGlass : null
+  const globalTowing = target ? target.hasTowing : null
+  
   let hasKnote = false
   const guaranteeList = reduce(groupedPd, (prev, products, key) => {
     const littleKey = (key.split(' '))[0]
@@ -142,10 +145,17 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
           type: get(vehicleTypesByKey[prod.vehicleType], 'display') || '',
         }
         if (!hideRate) {obj.rate = numeric.printDecimal(prod.rate / 100)} //pro mille
-        currentMAP.hasExtensions = prod.glass || prod.towing
-        currentMAP.glass = prod.glass ? numeric.printDecimal(prod.glass / 1000) : ''
-        currentMAP.glassCap = prod.glassCap ? numeric.printDecimal(prod.glassCap / 1000) : empty
-        currentMAP.towing = prod.towing ? numeric.printDecimal(prod.towing / 1000) : ''
+        if (target) {
+          currentMAP.hasExtensions = (globalGlass === 'SI' && prod.glass) || (globalTowing === 'SI' && prod.towing)
+          currentMAP.glass = (globalGlass === 'SI' && prod.glass) ? numeric.printDecimal(prod.glass / 1000) : ''
+          currentMAP.glassCap = prod.glassCap ? numeric.printDecimal(prod.glassCap / 1000) : empty
+          currentMAP.towing = (globalTowing === 'SI' && prod.towing) ? numeric.printDecimal(prod.towing / 1000) : ''
+        } else {
+          currentMAP.hasExtensions = prod.glass || prod.towing
+          currentMAP.glass = prod.glass ? numeric.printDecimal(prod.glass / 1000) : ''
+          currentMAP.glassCap = prod.glassCap ? numeric.printDecimal(prod.glassCap / 1000) : empty
+          currentMAP.towing = prod.towing ? numeric.printDecimal(prod.towing / 1000) : ''
+        }
         currentMAP.st = prod.statements
         if (prod.statements) {
           currentMAP.noSt = false
@@ -441,7 +451,7 @@ function addRouters (router) {
       const objCov = groupedPd[target.productCode]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
       const found = find(objCov, { vehicleType: vehicleCode })
-      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target.hasGlass)
+      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
       guaranteeList = data.guaranteeList
       hasKnote = data.hasKnote
       if (objCov) {
@@ -585,7 +595,7 @@ function addRouters (router) {
       const objCov = groupedPd[target.productCode]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
       const found = find(objCov, { vehicleType: vehicleCode })
-      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target.hasGlass)
+      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
       guaranteeList = data.guaranteeList
       hasKnote = data.hasKnote
       if (objCov) {

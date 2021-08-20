@@ -211,7 +211,6 @@ function calcInst (date, dateSucc, dayPrize, midDate = false) {
   }
 }
 
-
 export function getPayFractionsNorm (payFractions, inMillis = true, round = false, divThousand = false) {
   const norm = {
     totInstalment: 0,
@@ -433,7 +432,18 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
   return 0
 }
 
-export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable = false, returnExtra = false) {
+function calcDaysBetweenTwoDateRanges (startDate, endDate, dateRanges) {
+  const inputStartDate = startDate
+  
+  const inputEndDate = endDate
+  
+  const endDateToConsider = moment(dateRanges.EndDate).isAfter(inputEndDate) ? inputEndDate : dateRanges.EndDate
+  const startDateToConsider = moment(dateRanges.startDate).isAfter(inputStartDate) ? dateRanges.startDate : inputStartDate
+  const daysDifference = moment(endDateToConsider).diff(moment(startDateToConsider), 'days')
+  return daysDifference
+}
+
+export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, regDay) {
   const { values: valuesTPd } = tablePd || {}
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
@@ -457,6 +467,7 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
     totalAmount = (totalAmount + accessories) || 0
     const dayAmount = totalAmount / 360
     let normStartDate, normFinishDate
+    
     if (vehicle.startDate) {
       normStartDate = cDate.mom(vehicle.startDate, null, 'YYYY-MM-DD')
     }
@@ -466,28 +477,82 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
     const startDate = normStartDate || policy.initDate
     const endDate = calcPolicyEndDate(policy.initDate, policy.midDate)
     const finishDate = normFinishDate || endDate
-    let rangePrice, days360_
-    if (startDate === policy.initDate && finishDate === endDate) {
+    
+    let rangePrice, daysLifeTime
+    if (false && startDate === policy.initDate && finishDate === endDate) {
       rangePrice = totalAmount
     } else {
-      days360_ = myDays360_2(normStartDate, normFinishDate)
+      const now = moment(regDay)
+      let currentFract
+      for (let i = 0; i < regFractions.length; i++) {
+        let __startDate, __endDate
+        if (i === 0) {
+          __startDate = policy.initDate
+        } else {
+          __startDate = regFractions[i - 1].endDate
+        }
+        __endDate = regFractions[i].endDate
+        const range = moment().range(__startDate, __endDate)
+        if (range.contains(now)) {
+          currentFract = {
+            fract: regFractions[i],
+            startDate: __startDate,
+            endDate: __endDate,
+            days: regFractions[i].daysDiff,
+          }
+          break
+        }
+      }
+      console.log('' + vehicle.licensePlate, startDate, finishDate)
+      console.log('current_fract', currentFract.startDate, currentFract.endDate)
+      const dateRanges = { startDate: currentFract.startDate, EndDate: currentFract.endDate }
+      
+      const vehicleDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(startDate, finishDate, dateRanges), 0)
+      const fractDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(currentFract.startDate, currentFract.endDate, dateRanges), 0)
+      console.log('vehicleDaysInCurrentFract:', vehicleDaysInCurrentFract)
+      /*  let totalPaidAtInitRange
+        if (moment(finishDate).isBefore(moment(currentFract.startDate))) {// è stato escluso precedentemente al currentFract
+          totalPaidAtInitRange = 0
+        } else if (moment(startDate).isAfter(moment(currentFract.startDate))) {
+          totalPaidAtInitRange = 0
+        } else {
+          totalPaidAtInitRange = dayAmount * currentFract.days
+        }
+        */
+      if (moment(startDate).isSameOrBefore(moment(currentFract.startDate)) &&
+          moment(currentFract.startDate).isBefore(moment(finishDate)) &&
+          moment(finishDate).isBefore(moment(currentFract.endDate))) {
+        const reversal = (vehicleDaysInCurrentFract - currentFract.days) * dayAmount
+        console.log('pura_esclusione', reversal)
+        rangePrice = reversal
+      } else if (vehicleDaysInCurrentFract === fractDaysInCurrentFract) {
+        const fractRate = currentFract.days * dayAmount
+        console.log('veicolo presente nell intero periodo', fractRate)
+        rangePrice = fractRate
+      } else {
+        const fractRate = vehicleDaysInCurrentFract * dayAmount
+        console.log(`veicolo inserito nel periodo per ${vehicleDaysInCurrentFract}`, fractRate)
+        rangePrice = fractRate
+      }
+      daysLifeTime = vehicleDaysInCurrentFract
+      /*daysLifeTime = myDays360_2(normStartDate, normFinishDate)
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
         if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
-          rangePrice = dayAmount * days360_
+          rangePrice = dayAmount * daysLifeTime
         } else {
           const days360ToEnd = myDays360_2(normStartDate, endDate)
-          rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
+          rangePrice = dayAmount * daysLifeTime - (dayAmount * days360ToEnd)
         }
       } else {
-        rangePrice = dayAmount * days360_
-      }
+        rangePrice = dayAmount * daysLifeTime
+      }*/
     }
     prize = rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
     if (returnExtra) {
       return {
         payment: printTaxable ? taxable : prize,
-        days: days360_ === undefined ? myDays360_2(policy.initDate, endDate) : days360_,
+        days: daysLifeTime,
       }
     } else {
       return printTaxable ? taxable : prize

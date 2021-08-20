@@ -6,7 +6,6 @@ import { Navigation } from 'components'
 import navigationConfig from './navigationConfig'
 import { useApolloClient } from '@apollo/react-hooks'
 import { ME } from 'queries'
-import log from '@adapter/common/src/log'
 import { Link as RouterLink, matchPath, useLocation } from 'react-router-dom'
 import { getInitials, useRoleStyleBase } from 'helpers'
 import InputIcon from '@material-ui/icons/Input'
@@ -54,7 +53,6 @@ const NavBar = props => {
   const userParam = matchUser.params.id
   const registryParam = matchRegistry.params.id
   const policyParam = matchPolicy.params.id || matchPolicyEdit.params.id
-  log.debug('matchUser', matchUser)
   const { me } = client.readQuery({ query: ME })
   const theme = useTheme()
   const xlUp = useMediaQuery(theme.breakpoints.up('xl'))

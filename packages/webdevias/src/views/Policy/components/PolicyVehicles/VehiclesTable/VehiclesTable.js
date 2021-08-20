@@ -22,7 +22,13 @@ import {
 } from '@devexpress/dx-react-grid-material-ui'
 import { Container, Paper } from '@material-ui/core'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { calcPolicyEndDate, calculatePaymentTable, calculatePrizeTable, getPolicyEndDate } from 'helpers'
+import {
+  calcPolicyEndDate,
+  calculatePaymentTable,
+  calculatePaymentTable2,
+  calculatePrizeTable,
+  getPolicyEndDate,
+} from 'helpers'
 import {
   DateTypeProvider,
   NumberTypeProvider,
@@ -101,15 +107,32 @@ const NoDataComponent = ({ getMessage, ...rest }) => (
 )
 
 const VehiclesTable = props => {
-  const { policy: { vehicles: rows }, policy, tablePd, dispatch, enqueueSnackbar, vehicleTypes, handlePrint, priority, taxableTotal } = props
+  const {
+    policy: { vehicles: rows },
+    policy,
+    tablePd,
+    dispatch,
+    enqueueSnackbar,
+    vehicleTypes,
+    handlePrint,
+    priority,
+    taxableTotal,
+    formRefHeader,
+  } = props
   const { tab } = useParams()
   const isPolicy = policy?.state?.isPolicy
   const updatePrize = useCallback(row => {
     return calculatePrizeTable(tablePd, policy, row, taxableTotal)
   }, [tablePd, policy, taxableTotal])
   const updatePayment = useCallback(row => {
-    return calculatePaymentTable(tablePd, policy, row, taxableTotal)
-  }, [tablePd, policy, taxableTotal])
+    const { values: header } = formRefHeader.current || {}
+    const isRecalculateFraction = header?.isRecalculateFraction || policy.isRecalculateFraction
+    if (isRecalculateFraction) {
+      return calculatePaymentTable2(tablePd, policy, row, taxableTotal)
+    } else {
+      return calculatePaymentTable(tablePd, policy, row, taxableTotal)
+    }
+  }, [formRefHeader, policy, tablePd, taxableTotal])
   const extractError = useCallback(row => row.licensePlate && row.licensePlate.startsWith('XXXXXX') ? row.licensePlate.match('XXXXXX')[0] : row.licensePlate, [])
   const pdsObj = useMemo(() => {
     const { values: valuesTPd } = tablePd || {}

@@ -31,6 +31,7 @@ const Body = memo(props => {
           <VehiclesTable
             dispatch={props.dispatch}
             forceUpdate={props.forceUpdate}
+            formRefHeader={props.formRefHeader}
             handlePrint={props.handlePrint}
             policy={props.policy}
             priority={props.priority}
@@ -46,7 +47,25 @@ const Body = memo(props => {
   )
 })
 
-const PolicyVehicles = ({ globalClass, dispatch, forceUpdate, handleExport, handleExportTotal, policy, setChanging, tablePd, handleUpload, mode, priority, handleModeChange, handlePrint, vehicleTypes }) => {
+const PolicyVehicles = (
+  {
+    globalClass,
+    dispatch,
+    forceUpdate,
+    handleExport,
+    handleExportTotal,
+    policy,
+    setChanging,
+    tablePd,
+    handleUpload,
+    mode,
+    priority,
+    handleModeChange,
+    handlePrint,
+    vehicleTypes,
+    formRefHeader,
+  }
+) => {
   const [expandHeader, setExpandHeader] = useState(true)
   const [taxableTotal, setTaxableTotal] = useState(true)
   const { tab } = useParams()
@@ -54,6 +73,7 @@ const PolicyVehicles = ({ globalClass, dispatch, forceUpdate, handleExport, hand
     changing: setChanging,
     dispatch,
     forceUpdate,
+    formRefHeader,
     handleExport,
     handleExportTotal,
     handleModeChange,

@@ -134,6 +134,25 @@ export const MenuTypeProvider = memo(props => {
               </MenuItem>
             }
             {
+              (row.inPolicy) &&
+              <MenuItem
+                className={classes.menuItem}
+                component={'button'}
+                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}|void`}
+                onClick={
+                  event => {
+                    props.handlePrint(event)
+                    handleClose()
+                  }
+                }
+              >
+                <ListItemIcon>
+                  <Icon path={mdiFilePdf} size={1}/>
+                </ListItemIcon>
+                Applicazione senza premi
+              </MenuItem>
+            }
+            {
               state !== 'ACTIVE' &&
               <MenuItem
                 className={classes.menuItem}

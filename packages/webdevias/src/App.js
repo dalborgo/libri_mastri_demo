@@ -2,7 +2,6 @@ import React, { useRef } from 'react'
 import { Router } from 'react-router-dom'
 import { createBrowserHistory } from 'history'
 import { renderRoutes } from 'react-router-config'
-import log from '@adapter/common/src/log'
 import { ME } from 'queries'
 import { useQuery } from '@apollo/react-hooks'
 import { withSnackbar } from 'notistack'
@@ -39,7 +38,6 @@ const App = props => {
     },
   })
   const { me } = data
-  log.debug('me', me)
   const connStatus = useRef(null)
   if (networkStatus === 8) {
     startPolling(1000)
