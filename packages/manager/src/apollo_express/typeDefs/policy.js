@@ -14,6 +14,7 @@ export default gql`
     newPolicy(input: SavePolicyInput!): Policy @auth
     delPolicy(id: ID!): Policy @auth
     clonePolicy(id: ID!): Policy @auth
+    updatePolicy(id: ID!): Policy @auth
     uploadFile(input: PolicyUploadInput!): UploadResponse @auth
   }
   

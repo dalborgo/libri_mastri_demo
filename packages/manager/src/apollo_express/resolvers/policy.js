@@ -279,6 +279,26 @@ export default {
       if (!ok) { log.warn(message) }
       return savedPolicy
     },
+    updatePolicy: async (root, { id }) => {
+      const policy = await Policy.findById(id)
+      console.log('UPDATE')
+      const name = `CLONED_${policy._code}`
+      const number = `Bozza (CL. ${policy.number})`
+      const updated = {
+        ...policy,
+        _code: `${cDate.mom(null, null, 'YYYYMMDDHHmmssSSS')}_${name}`,
+        _createdAt: undefined,
+        _updatedAt: undefined,
+        meta: undefined,
+        number,
+        payFractions: undefined,
+        state: {
+          code: 'DRAFT',
+        },
+      }
+      const newPolicy = new Policy(updated)
+      return newPolicy.save()
+    },
     uploadFile: async (_, { input }) => {
       const errors = []
       const gs = await Gs.findById('general_settings')

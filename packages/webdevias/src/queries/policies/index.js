@@ -278,6 +278,17 @@ export const CLONE_POLICY = gql`
     }
   }
 `
+export const UPDATE_POLICY = gql`
+  mutation UpdatePolicy($id: ID!){
+    updatePolicy(id: $id) {
+      id
+      meta {
+        version
+      }
+      __typename
+    }
+  }
+`
 export const POLICY = gql`
   query Policy($id: ID!){
     policy(id: $id) {

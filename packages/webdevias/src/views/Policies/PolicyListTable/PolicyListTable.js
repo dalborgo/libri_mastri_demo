@@ -7,7 +7,7 @@ import Button from '@material-ui/core/Button'
 import { Link as RouterLink } from 'react-router-dom'
 import { createMuiTheme, ThemeProvider, withStyles } from '@material-ui/core/styles'
 import { ME } from 'queries/users'
-import { mdiContentCopy, mdiDelete, mdiDotsVertical } from '@mdi/js'
+import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiUpdate } from '@mdi/js'
 import { useApolloClient } from '@apollo/react-hooks'
 import { getPolicyState } from 'helpers'
 import TableDetailToggleCell from 'helpers/tableFormatters/TableDetailToggleCellBase'
@@ -148,7 +148,7 @@ const GridDetailContainerBase = ({ row: { children } }) => {
 }
 
 const RowMenu = props => {
-  const { onDelete, onClone, allowDelete, policyId, classes } = props
+  const { onDelete, onClone, onUpdate, allowDelete, policyId, classes } = props
   const [anchorEl, setAnchorEl] = React.useState(null)
   const handleClick = (event) => {
     event.stopPropagation()
@@ -196,6 +196,19 @@ const RowMenu = props => {
         <MenuItem
           onClick={
             () => {
+              onUpdate()
+              handleClose()
+            }
+          }
+        >
+          <ListItemIcon>
+            <Icon path={mdiUpdate} size={1}/>
+          </ListItemIcon>
+          Rinnova
+        </MenuItem>
+        <MenuItem
+          onClick={
+            () => {
               onClone()
               handleClose()
             }
@@ -221,7 +234,7 @@ const RowMenu = props => {
 }
 
 const PolicyListTable = props => {
-  const { deletePolicy, clonePolicy, rows } = props
+  const { deletePolicy, clonePolicy, updatePolicy, rows } = props
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
   /*const changeSelection = useMemo(() => selection_ => {
@@ -273,6 +286,7 @@ const PolicyListTable = props => {
               classes={classes}
               onClone={clonePolicy(policyId)}
               onDelete={deletePolicy(policyId, number, __typename)}
+              onUpdate={updatePolicy(policyId)}
               policyId={policyId}
             />
             <Button
@@ -295,7 +309,7 @@ const PolicyListTable = props => {
           />
         )
     }
-  }), [clonePolicy, deletePolicy, priority])
+  }), [clonePolicy, deletePolicy, priority, updatePolicy])
   return (
     <Paper>
       <Grid

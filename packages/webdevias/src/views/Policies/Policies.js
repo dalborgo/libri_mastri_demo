@@ -9,7 +9,7 @@ import PolicyListTable from './PolicyListTable'
 import compose from 'lodash/fp/compose'
 import { withSnackbar } from 'notistack'
 import { filtersInitialValue } from './Header/components/Filter'
-import { CLONE_POLICY } from 'queries/policies'
+import { CLONE_POLICY, UPDATE_POLICY } from 'queries/policies'
 import { useConfirm } from 'material-ui-confirm'
 import log from '@adapter/common/src/log'
 import { useHistory, useLocation } from 'react-router-dom'
@@ -51,7 +51,6 @@ const Policies = ({ enqueueSnackbar }) => {
           toInclude &= false
         }
         toInclude && prev.push(curr)
-  
         return prev
       }, [])
     } else {
@@ -63,6 +62,9 @@ const Policies = ({ enqueueSnackbar }) => {
     onError: gestError(throwError, enqueueSnackbar),
   })
   const [clonePolicy] = useMutation(CLONE_POLICY, {
+    onError: gestError(throwError, enqueueSnackbar),
+  })
+  const [updatePolicy] = useMutation(UPDATE_POLICY, {
     onError: gestError(throwError, enqueueSnackbar),
   })
   const deletePolicy = useCallback((id, number, __typename) => async () => {
@@ -105,18 +107,44 @@ const Policies = ({ enqueueSnackbar }) => {
       }
     }*/
   }, [client, confirm, delPolicy, refetch])
-  
   const clonePolicy_ = useCallback(number => async () => {
     client.writeData({ data: { loading: true } })
     await clonePolicy({
       variables: {
         id: number,
       },
+      update: async (cache, { data }) => {
+        let prevList
+        try {
+          prevList = cache.readQuery({
+            query: POLICIES,
+            variables: { origin: '/policies/doclist' },
+          })
+        } catch (err) {
+          log.warn('prevList not present!')
+        }
+        /* if (prevList) {
+          cache.writeQuery({
+            query: POLICIES, variables: { origin: '/policies/doclist' }, data: {
+              policies: [data.clonePolicy, ...prevList],
+            },
+          })
+        }*/
+      },
+    })
+    client.writeData({ data: { loading: false } })
+    history.push('/policies/doclist')
+  }, [client, clonePolicy, history])
+  const updatePolicy_ = useCallback(number => async () => {
+    client.writeData({ data: { loading: true } })
+    await updatePolicy({
+      variables: {
+        id: number,
+      },
     })
     client.writeData({ data: { loading: false } })
     await refetch()
-    history.push('/policies/doclist')
-  }, [client, clonePolicy, history, refetch])
+  }, [client, refetch, updatePolicy])
   return (
     <Page
       className={classes.root}
@@ -131,6 +159,7 @@ const Policies = ({ enqueueSnackbar }) => {
               clonePolicy={clonePolicy_}
               deletePolicy={deletePolicy}
               rows={filteredRows}
+              updatePolicy={updatePolicy_}
             />
           </div>
           :

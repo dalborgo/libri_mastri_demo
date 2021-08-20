@@ -122,6 +122,7 @@ type Mutation {
     signUp(email: String!, password: String!, role: Roles!, username: String!): User
     signUpRegistry(email: String!, name: String, password: String!, username: String!): Registry
     uploadFile(input: PolicyUploadInput!): UploadResponse
+    updatePolicy(id: ID!): Policy
 }
 
 type PageInfo {
