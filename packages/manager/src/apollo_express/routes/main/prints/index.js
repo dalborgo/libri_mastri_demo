@@ -810,8 +810,7 @@ function addRouters (router) {
         return res.send(data)
       }
     }
-    const { vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
-    const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
+    const { coverageTypes } = await Gs.findById('general_settings')
     const groupedCt = keyBy(coverageTypes, 'id')
     const groupedPd = groupBy(productDefinitions, 'coverageType')
     const producer = await User.findById(data.producer) || {}
@@ -819,10 +818,6 @@ function addRouters (router) {
     if (target.productCode) {
       const objCov = groupedPd[target.productCode]
       const found = find(objCov, { vehicleType: target.vehicleType })
-      const {
-        guaranteeList,
-        hasKnote
-      } = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt)
       if (objCov) {
         coverageType = found.coverageType
       }
