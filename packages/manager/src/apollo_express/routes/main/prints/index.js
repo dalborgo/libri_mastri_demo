@@ -429,6 +429,7 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
+    console.log('productDefinitions:', productDefinitions)
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
@@ -809,15 +810,21 @@ function addRouters (router) {
         return res.send(data)
       }
     }
-    const { coverageTypes } = await Gs.findById('general_settings')
+    const { vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
+    const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
     const groupedCt = keyBy(coverageTypes, 'id')
-    const groupedPd = keyBy(productDefinitions, 'coverageType')
+    const groupedPd = groupBy(productDefinitions, 'coverageType')
     const producer = await User.findById(data.producer) || {}
     let sHour, sDate, targetLeasing = {}, coverageType, gars = []
     if (target.productCode) {
       const objCov = groupedPd[target.productCode]
+      const found = find(objCov, { vehicleType: target.vehicleType })
+      const {
+        guaranteeList,
+        hasKnote
+      } = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt)
       if (objCov) {
-        coverageType = objCov.coverageType
+        coverageType = found.coverageType
       }
       if (coverageType) {
         gars = (groupedCt[coverageType]).conditions.join(' – ')

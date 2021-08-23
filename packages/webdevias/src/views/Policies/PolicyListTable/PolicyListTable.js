@@ -4,7 +4,7 @@ import { IntegratedPaging, PagingState, RowDetailState } from '@devexpress/dx-re
 import { Grid, PagingPanel, Table, TableHeaderRow, TableRowDetail } from '@devexpress/dx-react-grid-material-ui'
 import { DateTypeProvider } from 'helpers/tableFormatters'
 import Button from '@material-ui/core/Button'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { createMuiTheme, ThemeProvider, withStyles } from '@material-ui/core/styles'
 import { ME } from 'queries/users'
 import { mdiContentCopy, mdiDelete, mdiDotsVertical, mdiUpdate } from '@mdi/js'
@@ -150,6 +150,8 @@ const GridDetailContainerBase = ({ row: { children } }) => {
 const RowMenu = props => {
   const { onDelete, onClone, onUpdate, allowDelete, policyId, classes } = props
   const [anchorEl, setAnchorEl] = React.useState(null)
+  const { pathname } = useLocation()
+  const isQuotation = pathname === '/policies/doclist'
   const handleClick = (event) => {
     event.stopPropagation()
     setAnchorEl(event.currentTarget)
@@ -193,19 +195,21 @@ const RowMenu = props => {
         onClose={handleClose}
         open={Boolean(anchorEl)}
       >
-        <MenuItem
-          onClick={
-            () => {
-              onUpdate()
-              handleClose()
-            }
-          }
-        >
-          <ListItemIcon>
-            <Icon path={mdiUpdate} size={1}/>
-          </ListItemIcon>
-          Rinnova
-        </MenuItem>
+        {!isQuotation &&
+         <MenuItem
+           onClick={
+             () => {
+               onUpdate()
+               handleClose()
+             }
+           }
+         >
+           <ListItemIcon>
+             <Icon path={mdiUpdate} size={1}/>
+           </ListItemIcon>
+           Rinnova
+         </MenuItem>
+        }
         <MenuItem
           onClick={
             () => {

@@ -29,6 +29,7 @@ const Policies = ({ enqueueSnackbar }) => {
   const confirm = useConfirm()
   const location = useLocation()
   const history = useHistory()
+  const isQuotation = location.pathname === '/policies/doclist'
   //const [selection, setSelection] = useState([])
   const [filters, setFilters] = useState(filtersInitialValue)
   const isFiltered = useMemo(() => checkNullish(filters, filtersInitialValue), [filters])
@@ -114,25 +115,11 @@ const Policies = ({ enqueueSnackbar }) => {
         id: number,
       },
       update: async (cache, { data }) => {
-        let prevList
-        try {
-          prevList = cache.readQuery({
-            query: POLICIES,
-            variables: { origin: '/policies/doclist' },
-          })
-        } catch (err) {
-          log.warn('prevList not present!')
-        }
-        /* if (prevList) {
-          cache.writeQuery({
-            query: POLICIES, variables: { origin: '/policies/doclist' }, data: {
-              policies: [data.clonePolicy, ...prevList],
-            },
-          })
-        }*/
+        !isQuotation && delete cache.data.data['ROOT_QUERY']['policies({"origin":"/policies/doclist"})']
       },
     })
     client.writeData({ data: { loading: false } })
+    isQuotation && refetch()
     history.push('/policies/doclist')
   }, [client, clonePolicy, history])
   const updatePolicy_ = useCallback(number => async () => {
