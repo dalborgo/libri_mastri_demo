@@ -9,6 +9,7 @@
     "plop": "plop -- --project common"
   },
   "dependencies": {
+    "days360": "^2.0.0",
     "generate-password": "^1.5.1",
     "graphql-anywhere": "^4.2.6",
     "loglevel": "^1.6.8",

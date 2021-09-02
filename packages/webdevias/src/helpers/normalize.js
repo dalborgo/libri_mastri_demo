@@ -26,16 +26,6 @@ export function getPolicyEndDate (init, mid) {
   }
 }
 
-export function calcPolicyEndDate (init, mid) {
-  if (mid) {
-    return cDate.mom(mid, null, 'YYYY-MM-DD', [1, 'y'])
-  } else if (init) {
-    return cDate.mom(init, null, 'YYYY-MM-DD', [1, 'y'])
-  } else {
-    return null
-  }
-}
-
 const theme = createMuiTheme({
   palette: {
     secondary: {
@@ -169,7 +159,7 @@ function getFractMonths (fract) {
 
 const taxRate = 13.5
 
-function isLastFebruary (data) {
+/*function isLastFebruary (data) {
   const endDay = moment(data).endOf('month').format('D')
   const day = moment(data).format('D')
   if (day === endDay) {
@@ -177,15 +167,15 @@ function isLastFebruary (data) {
   } else {
     return 0
   }
-}
+}*/
 
-function myDays360 (startCalc, endCalc, midDate) {
+/*function myDays360 (startCalc, endCalc, midDate) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
   if (!midDate && (isLastFebruary(startCalc) || isLastFebruary(endCalc))) {
     daysDiff = Math.round(daysDiff / 30) * 30
   }
   return daysDiff
-}
+}*/
 
 function myDays360_2 (startCalc, endCalc) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
@@ -198,7 +188,7 @@ function myDays360_2 (startCalc, endCalc) {
 function calcInst (date, dateSucc, dayPrize, midDate = false) {
   const startCalc = cDate.mom(date, null, 'YYYY-MM-DD')
   const endCalc = cDate.mom(dateSucc, null, 'YYYY-MM-DD')
-  const daysDiff = myDays360(startCalc, endCalc, midDate)
+  const daysDiff = cFunctions.myDays360(startCalc, endCalc, midDate)
   const instalment = Math.round(((dayPrize * 1000) * daysDiff)) / 1000
   const taxable = Math.round((instalment * 1000 / ((100 + taxRate) / 100))) / 1000
   const tax = Number(instalment.toFixed(2)) - Number(taxable.toFixed(2))
@@ -302,46 +292,6 @@ export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
   return fractions
 }
 
-function calcDateReg (startDate, endDate, regFractions, hasRegulation, midDate = false) {
-  const startCalc = cDate.mom(startDate, null, 'YYYY-MM-DD')
-  const endCalc = cDate.mom(endDate, null, 'YYYY-MM-DD')
-  const daysDiff = myDays360(startCalc, endCalc, midDate)
-  //const found = find(regFractions, { endCalc })
-  return {
-    startDate: startCalc,
-    endDate: endCalc,
-    daysDiff,
-    hasRegulation,
-  }
-}
-
-export function calculateRegulationDates (regFractions, header, isRecalculateFraction = 'NO') {
-  const { initDate, midDate, regulationFract } = header
-  const fractions = []
-  const period = getFractMonths(regulationFract)
-  if (initDate) {
-    const start = midDate || initDate
-    if (period === 0) {
-      const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
-      fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, regFractions, isRecalculateFraction))
-    } else {
-      midDate && fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), regFractions, isRecalculateFraction, midDate))
-      for (let i = 0; i < 12; i += period) {
-        const startDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i, 'M'])
-        const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i + period, 'M'])
-        fractions.push(
-          calcDateReg(
-            startDate,
-            endDate,
-            regFractions,
-            isRecalculateFraction
-          ))
-      }
-    }
-  }
-  return fractions
-}
-
 export function calculatePrizeTable (tablePd, policy, vehicle, printTaxable = false) {
   const { values: valuesTPd } = tablePd || {}
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
@@ -400,7 +350,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
       normFinishDate = cDate.mom(vehicle.finishDate, null, 'YYYY-MM-DD')
     }
     const startDate = normStartDate || policy.initDate
-    const endDate = calcPolicyEndDate(policy.initDate, policy.midDate)
+    const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate)
     const finishDate = normFinishDate || endDate
     let rangePrice, days360_
     if (startDate === policy.initDate && finishDate === endDate) {
@@ -418,7 +368,8 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
         rangePrice = dayAmount * days360_
       }
     }
-    prize = rangePrice || 0
+    const factor = vehicle.exclusionType ? cFunctions.exclusionTypeFactor(vehicle.exclusionType) : 1
+    prize = factor * rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
     if (returnExtra) {
       return {
@@ -475,7 +426,7 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
       normFinishDate = cDate.mom(vehicle.finishDate, null, 'YYYY-MM-DD')
     }
     const startDate = normStartDate || policy.initDate
-    const endDate = calcPolicyEndDate(policy.initDate, policy.midDate)
+    const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate)
     const finishDate = normFinishDate || endDate
     
     let rangePrice, daysLifeTime
@@ -483,7 +434,7 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
       rangePrice = totalAmount
     } else {
       const now = moment(regDay)
-      let currentFract
+      let currentFract = {}
       for (let i = 0; i < regFractions.length; i++) {
         let __startDate, __endDate
         if (i === 0) {
@@ -547,7 +498,8 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
         rangePrice = dayAmount * daysLifeTime
       }*/
     }
-    prize = rangePrice || 0
+    const factor = vehicle.exclusionType ? cFunctions.exclusionTypeFactor(vehicle.exclusionType) : 1
+    prize = factor * rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
     if (returnExtra) {
       return {

@@ -22,15 +22,10 @@ const LookupEditCellBase = ({
 }) => (
   <TableCell
     className={classes.lookupEditCell}
-    style={
-      {
-        visibility: hide ? 'hidden' : 'visible',
-      }
-    }
   >
     {
       values.length ?
-        <div style={{ marginTop: 2 }}>
+        <div style={{ marginTop: 2, visibility: hide ? 'hidden' : 'visible' }}>
           <Select
             input={
               (
@@ -57,17 +52,19 @@ const LookupEditCellBase = ({
           </Select>
         </div>
         :
-        <Select
-          disabled
-          input={
-            (
-              <Input
-                classes={{ root: classes.inputRoot }}
-              />
-            )
-          }
-          value=""
-        />
+        <div style={{ visibility: hide ? 'hidden' : 'visible' }}>
+          <Select
+            disabled
+            input={
+              (
+                <Input
+                  classes={{ root: classes.inputRoot }}
+                />
+              )
+            }
+            value=""
+          />
+        </div>
     }
   </TableCell>
 )

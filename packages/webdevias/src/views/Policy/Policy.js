@@ -14,12 +14,10 @@ import {
 } from './components'
 import { useLazyQuery, useMutation } from '@apollo/react-hooks'
 import {
-  calcPolicyEndDate,
   calculatePaymentDates,
   calculatePaymentTable,
   calculatePaymentTable2,
   calculatePrizeTable,
-  calculateRegulationDates,
   calculateRegulationPayment,
   gestError,
   getPayFractionsNorm,
@@ -476,7 +474,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           }
           if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
             if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-              vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
               vehicle.state = 'ADDED_CONFIRMED'
             }
             const { payment, days } = calculatePaymentTable2(tablePd, statePolicy, vehicle, true, true, endRegDate)
@@ -491,7 +489,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           }
           if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
             if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-              vehicle.finishDate = calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
               vehicle.state = 'ADDED_CONFIRMED'
             }
             const { payment, days } = calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
@@ -505,6 +503,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       data.vehicles = newVehicles
       data.totTaxable = Number(totTaxable.toFixed(2))
       data.totInstalment = (totTaxable * ((100 + 13.5) / 100))
+      console.log('vehicle:', data.vehicles[0])
+      console.log('totTaxable:', data.totTaxable)
     }
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     tab === 'all' && dispatch({ type: 'refresh' })
@@ -560,7 +560,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }
     data.endDate = getPolicyEndDate(data.initDate, data.midDate)
     data.noPrize = Boolean(noPrize)
-    log.debug('data:', data)
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     //tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
@@ -949,7 +948,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const createdBy = statePolicy?.createdBy?.username ?? me.username
       const producer = statePolicy?.producer?.username
       const subAgent = statePolicy?.subAgent?.username
-      const endDate = calcPolicyEndDate(statePolicy?.initDate, statePolicy?.midDate)
+      const endDate = cFunctions.calcPolicyEndDate(statePolicy?.initDate, statePolicy?.midDate)
       const isPolicy = statePolicy?.state?.isPolicy
       const out = {
         ...statePolicy,
@@ -1012,9 +1011,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     let regFractions
     if (regulationFract !== paymentFract && isRecalculateFraction !== 'NO') {
       setFieldValue('isRecalculateFraction', 'NO')
-      regFractions = calculateRegulationDates(fractions, header, 'NO')
+      regFractions = cFunctions.calculateRegulationDates(fractions, header, 'NO')
     } else {
-      regFractions = calculateRegulationDates(fractions, header, isRecalculateFraction)
+      regFractions = cFunctions.calculateRegulationDates(fractions, header, isRecalculateFraction)
     }
     dispatch({ type: 'setRegFractions', regFractions })
   }, [dispatch, statePolicy.isRecalculateFraction, statePolicy.paymentFract, statePolicy.regFractions, statePolicy.regulationFract])

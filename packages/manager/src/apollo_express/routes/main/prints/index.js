@@ -12,7 +12,7 @@ import reduce from 'lodash/reduce'
 import { COLLISION_TEXT, elaborateMap, MAP_GUARANTEES, REG_TEXT, TEXT_KASKO } from './maps'
 import fs from 'fs'
 import Q from 'q'
-import { calcPolicyEndDate, calculateSequenceNumber } from '../../../resolvers/helpers'
+import { calculateSequenceNumber } from '../../../resolvers/helpers'
 
 async function getVL (vehicles, vehicleTypes, productDefinitions, signer, cosigners) {
   const leasingSet = {}
@@ -660,7 +660,7 @@ function addRouters (router) {
       rCity: get(realSigner, 'city'),
       rState: get(realSigner, 'state'),
       rId: `${get(realSigner, 'name') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
-      endDate: cDate.mom(calcPolicyEndDate(initDate, midDate), null, 'DD/MM/YYYY'),
+      endDate: cDate.mom(cFunctions.calcPolicyEndDate(initDate, midDate), null, 'DD/MM/YYYY'),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
       prize: !noPrize,
       lVat,

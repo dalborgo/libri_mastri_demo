@@ -47,7 +47,6 @@
     "number-to-letter": "^1.0.1",
     "axios": "^0.19.2",
     "clsx": "^1.1.0",
-    "days360": "^2.0.0",
     "read-blob": "^1.1.0",
     "file-saver": "^2.0.2",
     "formik": "^2.1.4",

@@ -22,13 +22,7 @@ import {
 } from '@devexpress/dx-react-grid-material-ui'
 import { Container, Paper } from '@material-ui/core'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
-import {
-  calcPolicyEndDate,
-  calculatePaymentTable,
-  calculatePaymentTable2,
-  calculatePrizeTable,
-  getPolicyEndDate,
-} from 'helpers'
+import { calculatePaymentTable, calculatePaymentTable2, calculatePrizeTable, getPolicyEndDate } from 'helpers'
 import {
   DateTypeProvider,
   NumberTypeProvider,
@@ -127,7 +121,7 @@ const VehiclesTable = props => {
   const updatePayment = useCallback(row => {
     const { values: header } = formRefHeader.current || {}
     const isRecalculateFraction = header?.isRecalculateFraction || policy.isRecalculateFraction
-    if (isRecalculateFraction) {
+    if (isRecalculateFraction === 'SI') {
       return calculatePaymentTable2(tablePd, policy, row, taxableTotal)
     } else {
       return calculatePaymentTable(tablePd, policy, row, taxableTotal)
@@ -138,6 +132,7 @@ const VehiclesTable = props => {
     const { values: valuesTPd } = tablePd || {}
     return valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   }, [policy.productDefinitions, tablePd])
+  const [exclusionTypeList] = useState(() => cFunctions.getExclusionTypeList())
   const productList = useMemo(() => {
     const init = vehicleTypes.reduce((prev, curr) => {
       prev[curr.id] = []
@@ -213,7 +208,6 @@ const VehiclesTable = props => {
       { name: 'value', title: '€ Valore' },
       { name: 'hasGlass', title: 'Cristalli', getCellValue: formatBool },
       { name: 'hasTowing', title: 'Traino', getCellValue: formatBool },
-      
       { name: 'leasingCompany', title: 'Società di Leasing' },
       { name: 'leasingExpiry', title: 'Scadenza Leasing' },
       { name: 'owner', title: 'Proprietario/Locatario' },
@@ -228,6 +222,7 @@ const VehiclesTable = props => {
       columns.splice(2, 0, { name: 'startDate', title: 'Data da' })
       columns.splice(3, 0, { name: 'startHour', title: 'Ora da' })
       columns.splice(4, 0, { name: 'finishDate', title: 'Data a' })
+      columns.splice(5, 0, { name: 'exclusionType', title: 'Info' })
       columns.splice(columns.length, 0, {
         name: 'payment',
         title: taxableTotal ? '€ Rateo Netto' : '€ Rateo Lordo',
@@ -254,6 +249,7 @@ const VehiclesTable = props => {
     { columnName: 'startDate', align: 'center', width: 120 },
     { columnName: 'startHour', align: 'center', width: 80 },
     { columnName: 'finishDate', align: 'center', width: 120 },
+    { columnName: 'exclusionType', align: 'center' },
     { columnName: 'vehicleType', align: 'center' },
     { columnName: 'weight', align: 'right' },
     { columnName: 'registrationDate', align: 'center', width: 120 },
@@ -287,7 +283,7 @@ const VehiclesTable = props => {
     let hasChanged = false
     const defCommon = {
       state: isPolicy ? 'ADDED' : 'ACTIVE',
-      finishDate: isPolicy ? calcPolicyEndDate(policy.initDate, policy.midDate) : undefined,
+      finishDate: isPolicy ? cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate) : undefined,
       vehicleType: 'AUTO',
       hasTowing: 'NO',
       hasGlass: 'NO',
@@ -330,6 +326,7 @@ const VehiclesTable = props => {
         if (isPolicy) {
           const startDate = changed[id]['startDate']
           const finishDate = changed[id]['finishDate']
+          const exclusionType = changed[id]['exclusionType'] || exclusionTypeList[0]
           let effStartDate = 'startDate' in changed[id] ? startDate : row.startDate
           if (effStartDate?.isValid) {
             effStartDate = effStartDate.isValid() ? effStartDate : row.startDate
@@ -341,6 +338,7 @@ const VehiclesTable = props => {
           if (['ACTIVE', 'DELETED'].includes(row.state)) {
             updateRow = {
               ...row,
+              exclusionType: effFinishDate ? exclusionType : undefined,
               startDate: effFinishDate ? policy.initDate : '',
               finishDate: effFinishDate,
               state: effFinishDate ? 'DELETED' : 'ACTIVE',
@@ -361,7 +359,7 @@ const VehiclesTable = props => {
               ...row,
               ...changed[id],
               startDate: effStartDate,
-              finishDate: ['ADDED'].includes(row.state) ? calcPolicyEndDate(policy.initDate, policy.midDate) : effFinishDate,
+              finishDate: ['ADDED'].includes(row.state) ? cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate) : effFinishDate,
               registrationDate: effRegistrationDate,
               leasingExpiry: effLeasingExpiry,
             }
@@ -401,8 +399,7 @@ const VehiclesTable = props => {
     }
     hasChanged && dispatch({ type: 'setVehicles', vehicles: changedRows })
     //if (added) {scrollToRow(startingAddedId)}
-  }, [defaultVehicleCode, dispatch, enqueueSnackbar, isPolicy, pdsObj, policy.initDate, policy.midDate, productList, rows, vehicleTypes])
-  
+  }, [defaultVehicleCode, dispatch, enqueueSnackbar, exclusionTypeList, isPolicy, pdsObj, policy.initDate, policy.midDate, productList, rows, vehicleTypes])
   const commandWithScroll = useCallback(props => {
     const { id, onExecute } = props
     let CommandButton = commandComponents[id]
@@ -432,12 +429,16 @@ const VehiclesTable = props => {
   const EditCell = useCallback(props => {
     const { column } = props
     const shortEdit = isPolicy && ['DELETED', 'ACTIVE', 'DELETED_FROM_INCLUDED', 'ADDED_CONFIRMED'].includes(props.row.state)
+    const shortEditInfo = !['ACTIVE', 'DELETED'].includes(props.row.state)
     if (column.name === 'vehicleType') {
       return <LookupEditCell {...props} hide={shortEdit} values={vehicleList}/>
     }
     if (column.name === 'productCode') {
       const list = [...new Set(productListFlat)]
       return <LookupEditCell {...props} hide={shortEdit} values={list}/>
+    }
+    if (column.name === 'exclusionType') {
+      return <LookupEditCell {...props} hide={shortEditInfo} values={exclusionTypeList}/>
     }
     if (column.name === 'licensePlate' && shortEdit) {
       return <FastBaseCell {...props}/>
@@ -455,7 +456,7 @@ const VehiclesTable = props => {
       return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.minDate)}/>
     }
     return <TableEditRow.Cell {...props}/>
-  }, [isPolicy, policy.initDate, policy.minDate, productListFlat, vehicleList])
+  }, [exclusionTypeList, isPolicy, policy.initDate, policy.minDate, productListFlat, vehicleList])
   
   const OptimizedGridDetailContainerBase = useCallback(({ row }) => {
     const { licensePlate, state, attachments } = row

@@ -2,7 +2,6 @@ import { Gs, Policy, User } from '../models'
 import getStream from 'get-stream'
 import parse from 'csv-parse'
 import {
-  calcPolicyEndDate,
   calculateSequenceNumber,
   checkRecord,
   columnNameMap,
@@ -32,7 +31,7 @@ export default {
       if (!first) {return null}
       if (userRole !== 'SUPER') {
         const { initDate, midDate } = first
-        const endDate = calcPolicyEndDate(initDate, midDate)
+        const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
         const today = moment().format('YYYY-MM-DD')
         const isBefore = moment(endDate).isBefore(today)
         return isBefore ? null : new Policy(first, {}, first._cas)
@@ -51,7 +50,7 @@ export default {
         const outPolicies = []
         for (let policy of policies) {
           const { initDate, midDate } = policy
-          const endDate = calcPolicyEndDate(initDate, midDate)
+          const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
           const today = moment().format('YYYY-MM-DD')
           const isBefore = moment(endDate).isBefore(today)
           !isBefore && outPolicies.push(policy)
@@ -218,7 +217,10 @@ export default {
         if (!ok) { log.warn(message) }
       } else {
         if (toSend.length) {
-          const { ok, message } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer)
+          const {
+            ok,
+            message,
+          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer)
           if (!ok) { log.warn(message) }
         }
       }
@@ -281,20 +283,42 @@ export default {
     },
     updatePolicy: async (root, { id }) => {
       const policy = await Policy.findById(id)
-      console.log('UPDATE')
-      const name = `CLONED_${policy._code}`
-      const number = `Bozza (CL. ${policy.number})`
+      const { initDate, midDate, regFractions = [], isRecalculateFraction, meta: { serie }, vehicles } = policy
+      const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
+      const year_ = (endDate.split('-'))[0]
+      const code = `RENEWED_${year_}_${serie}`
+      const number = `Bozza (RV. ${year_}/${serie})`
+      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, { ...policy, initDate: endDate }, isRecalculateFraction)
+      let count = 1
+      const newVehicles = vehicles.reduce((prev, curr) => {
+        if(['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)){
+          const newCurr = {
+            ...curr,
+            constraintCounter: undefined,
+            counter: undefined,
+            inPolicy: count++,
+            startDate: undefined,
+            startHour: undefined,
+            state: 'ACTIVE',
+          }
+          prev.push(newCurr)
+        }
+        return prev
+      }, [])
       const updated = {
         ...policy,
-        _code: `${cDate.mom(null, null, 'YYYYMMDDHHmmssSSS')}_${name}`,
+        _code: code,
         _createdAt: undefined,
         _updatedAt: undefined,
+        initDate: endDate,
         meta: undefined,
         number,
         payFractions: undefined,
+        regFractions: regFractions_,
         state: {
           code: 'DRAFT',
         },
+        vehicles: newVehicles,
       }
       const newPolicy = new Policy(updated)
       return newPolicy.save()

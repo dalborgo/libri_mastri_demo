@@ -5,9 +5,10 @@ import camelCase from 'lodash/camelCase'
 import snakeCase from 'lodash/snakeCase'
 import deburr from 'lodash/deburr'
 import { chain, find, isEqual, isObject, transform } from 'lodash'
-import { numeric } from '../index'
+import { cDate, numeric } from '../index'
 import log from '../log'
-
+import moment from 'moment'
+import days360 from 'days360'
 const isProd = () => process.env.NODE_ENV === 'production'
 const generator = require('generate-password')
 
@@ -152,16 +153,116 @@ function getFractName (fract) {
   }
 }
 
+function isLastFebruary (data) {
+  const endDay = moment(data).endOf('month').format('D')
+  const day = moment(data).format('D')
+  if (day === endDay) {
+    return ['29', '28'].includes(day) ? parseInt(day, 10) : 0
+  } else {
+    return 0
+  }
+}
+
+function getFractMonths (fract) {
+  switch (fract) {
+    case 'UNIQUE':
+      return 0
+    case 'ANNUAL':
+      return 12
+    case 'SIX_MONTHLY':
+      return 6
+    case 'FOUR_MONTHLY':
+      return 4
+    case 'THREE_MONTHLY':
+      return 3
+    case 'MONTHLY':
+      return 1
+    default:
+      return 0
+  }
+}
+
+function calculateRegulationDates (regFractions, header, isRecalculateFraction = 'NO') {
+  const { initDate, midDate, regulationFract } = header
+  const fractions = []
+  const period = getFractMonths(regulationFract)
+  if (initDate) {
+    const start = midDate || initDate
+    if (period === 0) {
+      const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
+      fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, regFractions, isRecalculateFraction))
+    } else {
+      midDate && fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), regFractions, isRecalculateFraction, midDate))
+      for (let i = 0; i < 12; i += period) {
+        const startDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i, 'M'])
+        const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i + period, 'M'])
+        fractions.push(
+          calcDateReg(
+            startDate,
+            endDate,
+            regFractions,
+            isRecalculateFraction
+          ))
+      }
+    }
+  }
+  return fractions
+}
+
+function calcDateReg (startDate, endDate, regFractions, hasRegulation, midDate = false) {
+  const startCalc = cDate.mom(startDate, null, 'YYYY-MM-DD')
+  const endCalc = cDate.mom(endDate, null, 'YYYY-MM-DD')
+  const daysDiff = myDays360(startCalc, endCalc, midDate)
+  //const found = find(regFractions, { endCalc })
+  return {
+    startDate: startCalc,
+    endDate: endCalc,
+    daysDiff,
+    hasRegulation,
+  }
+}
+
+function calcPolicyEndDate (init, mid) {
+  if (mid) {
+    return cDate.mom(mid, null, 'YYYY-MM-DD', [1, 'y'])
+  } else if (init) {
+    return cDate.mom(init, null, 'YYYY-MM-DD', [1, 'y'])
+  } else {
+    return null
+  }
+}
+
+function myDays360 (startCalc, endCalc, midDate) {
+  let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
+  if (!midDate && (isLastFebruary(startCalc) || isLastFebruary(endCalc))) {
+    daysDiff = Math.round(daysDiff / 30) * 30
+  }
+  return daysDiff
+}
+
+const EXCLUSION_TYPES = {
+  'CON RIMBORSO PREMIO': 1,
+  'SENZA RIMBORSO PREMIO': 0,
+}
+
+const getExclusionTypeList = () => Object.keys(EXCLUSION_TYPES)
+
+const exclusionTypeFactor = key => EXCLUSION_TYPES[key]
+
 export default {
+  calcPolicyEndDate,
+  calculateRegulationDates,
   camelDeburr,
   checkDuplicate,
   createChain,
   cursorPaginator: paginator.cursorPaginator,
   cursorPaginatorBoost: paginator.cursorPaginatorBoost,
   difference,
+  exclusionTypeFactor,
   fromBase64,
   generateString,
   getAuth,
+  getExclusionTypeList,
   getFractName,
   getPrizeLine,
   getUUID,
@@ -171,6 +272,7 @@ export default {
   isObj,
   isProd,
   isString,
+  myDays360,
   normPayFractions,
   removeAtIndex,
   sequencePromises,

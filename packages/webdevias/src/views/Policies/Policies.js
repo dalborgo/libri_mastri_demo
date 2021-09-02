@@ -114,24 +114,27 @@ const Policies = ({ enqueueSnackbar }) => {
       variables: {
         id: number,
       },
-      update: async (cache, { data }) => {
+      update: async (cache) => {
         !isQuotation && delete cache.data.data['ROOT_QUERY']['policies({"origin":"/policies/doclist"})']
       },
     })
     client.writeData({ data: { loading: false } })
     isQuotation && refetch()
     history.push('/policies/doclist')
-  }, [client, clonePolicy, history])
+  }, [client, clonePolicy, history, isQuotation, refetch])
   const updatePolicy_ = useCallback(number => async () => {
     client.writeData({ data: { loading: true } })
     await updatePolicy({
       variables: {
         id: number,
       },
+      update: async (cache) => {
+        delete cache.data.data['ROOT_QUERY']['policies({"origin":"/policies/doclist"})']
+      },
     })
     client.writeData({ data: { loading: false } })
-    await refetch()
-  }, [client, refetch, updatePolicy])
+    history.push('/policies/doclist')
+  }, [client, history, updatePolicy])
   return (
     <Page
       className={classes.root}
