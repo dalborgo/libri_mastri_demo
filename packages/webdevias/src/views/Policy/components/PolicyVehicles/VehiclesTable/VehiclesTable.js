@@ -222,7 +222,7 @@ const VehiclesTable = props => {
       columns.splice(2, 0, { name: 'startDate', title: 'Data da' })
       columns.splice(3, 0, { name: 'startHour', title: 'Ora da' })
       columns.splice(4, 0, { name: 'finishDate', title: 'Data a' })
-      columns.splice(5, 0, { name: 'exclusionType', title: 'Info' })
+      columns.splice(5, 0, { name: 'exclusionType', title: 'Motivazione' })
       columns.splice(columns.length, 0, {
         name: 'payment',
         title: taxableTotal ? '€ Rateo Netto' : '€ Rateo Lordo',
@@ -442,6 +442,12 @@ const VehiclesTable = props => {
     }
     if (column.name === 'licensePlate' && shortEdit) {
       return <FastBaseCell {...props}/>
+    }
+    if (column.name === 'startHour' && !shortEditInfo) {
+      return <FastBaseCell {...props}/>
+    }
+    if (column.name === 'state' && !shortEditInfo) {
+      return <FastBaseCell {...props} empty/>
     }
     if (!['startDate', 'finishDate'].includes(column.name) && shortEdit) {
       return <TableEditRow.Cell {...props} style={{ visibility: 'hidden' }}/>

@@ -9,6 +9,7 @@ import { cDate, numeric } from '../index'
 import log from '../log'
 import moment from 'moment'
 import days360 from 'days360'
+
 const isProd = () => process.env.NODE_ENV === 'production'
 const generator = require('generate-password')
 
@@ -241,8 +242,9 @@ function myDays360 (startCalc, endCalc, midDate) {
 }
 
 const EXCLUSION_TYPES = {
-  'CON RIMBORSO PREMIO': 1,
-  'SENZA RIMBORSO PREMIO': 0,
+  'VENDITA/DEMOLIZIONE': 1,
+  REIMMATRICOLAZIONE: 1,
+  'FURTO TOTALE': 0,
 }
 
 const getExclusionTypeList = () => Object.keys(EXCLUSION_TYPES)

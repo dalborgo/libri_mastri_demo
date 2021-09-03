@@ -70,13 +70,13 @@ const LookupEditCellBase = ({
 )
 export const LookupEditCell = withStyles(styles)(LookupEditCellBase)
 
-const BaseCell = ({ value, classes, style, editingEnabled, onValueChange, defaultValue, ...restProps }) => (
+const BaseCell = ({ value, classes, style, editingEnabled, onValueChange, defaultValue, empty = false, ...restProps }) => (
   <VirtualTable.Cell
     className={classes.lookupEditCell}
     style={{ ...style }}
     {...restProps}
   >
-    {defaultValue || value}
+    {empty ? '' : defaultValue || value}
   </VirtualTable.Cell>
 )
 export const FastBaseCell = withStyles(styles)(BaseCell)

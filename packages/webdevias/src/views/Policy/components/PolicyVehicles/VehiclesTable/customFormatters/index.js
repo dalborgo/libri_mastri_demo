@@ -46,7 +46,7 @@ export const BooleanEditor = ({ value, onValueChange }) => {
 }
 export const TitleComponent = ({ children: columnTitle }) => (
   <>
-    {['Menu', 'Info'].includes(columnTitle) ? null : columnTitle}
+    {['Menu'].includes(columnTitle) ? null : columnTitle}
   </>
 )
 
