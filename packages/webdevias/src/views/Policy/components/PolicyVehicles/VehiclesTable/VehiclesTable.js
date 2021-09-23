@@ -297,8 +297,8 @@ const VehiclesTable = props => {
           productCode: productList[cFunctions.getVehicleCode(curr.vehicleType, curr.weight, vehicleTypes) || defaultVehicleCode][0],
         }
         const newCurr = Object.assign(default_, curr)
-        controlRow(newCurr, rows, null, productList, enqueueSnackbar)
-        prev.push(newCurr)
+        const abortError = controlRow(newCurr, rows, null, productList, enqueueSnackbar, policy)
+        !abortError && prev.push(newCurr)
         return prev
       }, [])
       changedRows = [...rows, ...toAdded]
@@ -374,8 +374,8 @@ const VehiclesTable = props => {
         }
         const vehicleCode = cFunctions.getVehicleCode(updateRow.vehicleType, updateRow.weight, vehicleTypes) || defaultVehicleCode
         updateRow.productCode = productList[vehicleCode].indexOf(updateRow.productCode) > -1 ? updateRow.productCode : productList[vehicleCode][0]
-        controlRow(updateRow, rows, rowKey, pdsObj, enqueueSnackbar)
-        return updateRow
+        const abortError = controlRow(updateRow, rows, rowKey, pdsObj, enqueueSnackbar, policy)
+        return abortError ? row : updateRow
       })
     }
     if (deleted) {
@@ -399,7 +399,7 @@ const VehiclesTable = props => {
     }
     hasChanged && dispatch({ type: 'setVehicles', vehicles: changedRows })
     //if (added) {scrollToRow(startingAddedId)}
-  }, [defaultVehicleCode, dispatch, enqueueSnackbar, exclusionTypeList, isPolicy, pdsObj, policy.initDate, policy.midDate, productList, rows, vehicleTypes])
+  }, [defaultVehicleCode, dispatch, enqueueSnackbar, exclusionTypeList, isPolicy, pdsObj, policy, productList, rows, vehicleTypes])
   const commandWithScroll = useCallback(props => {
     const { id, onExecute } = props
     let CommandButton = commandComponents[id]

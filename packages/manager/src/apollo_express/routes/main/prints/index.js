@@ -744,6 +744,7 @@ function addRouters (router) {
       counter: target.counter,
       pLongName: get(producer, 'longName'),
       lic: target.licensePlate,
+      reason: target.exclusionType || 'VENDITA/DEMOLIZIONE',
       vType,
       sHour,
       sDate,

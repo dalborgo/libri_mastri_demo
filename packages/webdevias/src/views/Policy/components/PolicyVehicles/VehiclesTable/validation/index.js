@@ -2,8 +2,11 @@ import findIndex from 'lodash/findIndex'
 import uuid from 'uuid/v1'
 import find from 'lodash/find'
 import { cFunctions, numeric } from '@adapter/common'
+import moment from 'moment'
 
-export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar) {
+export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar, policy) {
+  let abortError = false
+  const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.minDate)
   if (!(row.licensePlate && row.state)) {
     row.licensePlate = `XXXXXX_${uuid()}`
     enqueueSnackbar('Targa obbligatoria!', { variant: 'error' })
@@ -36,6 +39,12 @@ export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar) {
     row.startDate = null
     enqueueSnackbar(`Data da "${malformed}" non valida!`, { variant: 'error' })
   }
+  if (policy.initDate && (row.startDate || row.finishDate)) {
+    if (moment(row.startDate).isBefore(moment(policy.initDate)) || moment(row.finishDate).isAfter(moment(endDate))) {
+      abortError = true
+      enqueueSnackbar('Data non compresa nel periodo di polizza!', { variant: 'error' })
+    }
+  }
   if (row.leasingExpiry && !cFunctions.isString(row.leasingExpiry) && !row.leasingExpiry.isValid()) {
     const malformed = row.leasingExpiry._i
     row.leasingExpiry = null
@@ -56,4 +65,5 @@ export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar) {
       row.licensePlate = `XXXXXX_${uuid()}`
     }
   }
+  return abortError
 }
