@@ -429,7 +429,6 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
-    console.log('productDefinitions:', productDefinitions)
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')

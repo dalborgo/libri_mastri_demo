@@ -37,6 +37,7 @@ import DialogEditConditions from './DialogEditConditions'
 import { calculateRows } from './helpers'
 import { ME } from 'queries/users'
 import { useApolloClient } from '@apollo/react-hooks'
+import sortBy from 'lodash/sortBy'
 
 const newLocale = 'it'
 require(`moment/locale/${newLocale}`)
@@ -657,7 +658,7 @@ const PolicyProductDefinition = props => {
     setExpandHeader(expandHeader => !expandHeader)
   }
   const bodyProps = {
-    coverageTypes,
+    coverageTypes: sortBy(coverageTypes, 'index'),
     globalClass,
     dispatch,
     innerRef,

@@ -11,15 +11,15 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@types/qs": "^6.9.0",
     "await-lock": "^2.1.0",
-    "qs": "^6.9.1",
-    "office-to-pdf": "^4.0.0",
-    "docxtemplater": "^3.17.6",
-    "pizzip": "^3.0.6",
-    "node-pdftk": "^2.1.2",
-    "swagger-client": "3.10.0",
     "couchbase": "2.6.10",
+    "docxtemplater": "^3.17.6",
     "http-message-parser": "^0.0.34",
-    "@types/qs": "^6.9.0"
+    "node-pdftk": "^2.1.2",
+    "office-to-pdf": "^4.0.0",
+    "pizzip": "^3.0.6",
+    "qs": "^6.9.1",
+    "swagger-client": "3.10.0"
   }
 }

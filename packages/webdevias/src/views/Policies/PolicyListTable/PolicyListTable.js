@@ -17,6 +17,8 @@ import MenuItem from '@material-ui/core/MenuItem'
 import Icon from '@mdi/react'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import { grey } from '@material-ui/core/colors'
+import { cFunctions } from '@adapter/common'
+import moment from 'moment'
 
 const styles = theme => ({
   tableCell: {
@@ -195,7 +197,8 @@ const RowMenu = props => {
         onClose={handleClose}
         open={Boolean(anchorEl)}
       >
-        {!isQuotation &&
+        {
+          !isQuotation &&
          <MenuItem
            onClick={
              () => {
@@ -250,7 +253,7 @@ const PolicyListTable = props => {
     }
   }, [selection, setSelection])*/
   const Cell = useMemo(() => withStyles(styles)(props_ => {
-    const { column, row: { __typename, state, id: policyId, top, meta, number } } = props_
+    const { column, row: { __typename, state, id: policyId, top, meta, number, initDate, midDate } } = props_
     const { classes, ...rest } = props_
     const allowDelete = (!top && !meta?.toDoc && !state?.isPolicy && priority === 3) || state?.code === 'DRAFT' || meta?.modified === true
     switch (column.name) {
@@ -306,10 +309,17 @@ const PolicyListTable = props => {
           </Table.Cell>
         )
       default:
+        const isPolicy = state?.isPolicy
+        let style = undefined
+        const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
+        if(isPolicy && moment(endDate).isBefore(moment())){
+          style = {color: '#c2c2c2' }
+        }
         return (
           <Table.Cell
             {...rest}
             className={classes.tableCell}
+            style={style}
           />
         )
     }

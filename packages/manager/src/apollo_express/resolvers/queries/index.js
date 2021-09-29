@@ -33,6 +33,7 @@ export function getPoliciesQuery (userRole, userId, onlyDoc = false) {
                 + 'ARRAY_AGG(DISTINCT p)[0]._code as id, '
                 + 'ARRAY_AGG(DISTINCT p)[0]._createdAt as _createdAt, '
                 + 'ARRAY_AGG(DISTINCT p)[0].initDate as initDate, '
+                + 'ARRAY_AGG(DISTINCT p)[0].midDate as midDate, '
                 + 'ARRAY_AGG(DISTINCT p)[0].state, '
                 + '{ARRAY_AGG(DISTINCT p)[0].meta.modified, ARRAY_AGG(DISTINCT p)[0].meta.toDoc} as meta, '
                 + 'ARRAY_AGG(DISTINCT p)[0].top, '
