@@ -22,7 +22,7 @@ const useStyles = makeStyles(theme => ({
 }))
 
 // eslint-disable-next-line react/display-name
-const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, handleExportTotal, dispatch, setTaxableTotal, taxableTotal }) => {
+const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, handleExport, handleExportTotal, dispatch, setTaxableTotal, taxableTotal }) => {
   const [anchorEl, setAnchorEl] = React.useState(null)
   
   const handleClick = (event) => {
@@ -97,6 +97,23 @@ const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, handleExpo
               () => {
                 handleClose()
                 setTimeout(() => {
+                  setFiltered(!filtered)
+                }, 20)
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiCurrencyEur} size={1}/>
+            </ListItemIcon>
+            {filtered ? 'NON FILTRARE' : 'FILTRARE'}
+          </MenuItem>
+        }
+        {
+          <MenuItem
+            onClick={
+              () => {
+                handleClose()
+                setTimeout(() => {
                   setTaxableTotal(!taxableTotal)
                 }, 20)
               }
@@ -130,7 +147,7 @@ const ExportMenu = memo(({ priority, isPolicy, classes, handleExport, handleExpo
 })
 
 const Header = props => {
-  const { handleModeChange, handleExport, handleExportTotal, mode, priority, isPolicy, dispatch, setTaxableTotal, taxableTotal } = props
+  const { handleModeChange, handleExport, handleExportTotal, mode, priority, isPolicy, dispatch, setTaxableTotal, taxableTotal, setFiltered, filtered } = props
   const classes = useStyles()
   const theme = useTheme()
   return (
@@ -185,10 +202,12 @@ const Header = props => {
             <ExportMenu
               classes={classes}
               dispatch={dispatch}
+              filtered={filtered}
               handleExport={handleExport}
               handleExportTotal={handleExportTotal}
               isPolicy={isPolicy}
               priority={priority}
+              setFiltered={setFiltered}
               setTaxableTotal={setTaxableTotal}
               taxableTotal={taxableTotal}
             />

@@ -102,10 +102,11 @@ const NoDataComponent = ({ getMessage, ...rest }) => (
 
 const VehiclesTable = props => {
   const {
-    policy: { vehicles: rows },
+    policy: { vehicles },
     policy,
     tablePd,
     dispatch,
+    filtered,
     enqueueSnackbar,
     vehicleTypes,
     handlePrint,
@@ -113,6 +114,9 @@ const VehiclesTable = props => {
     taxableTotal,
     formRefHeader,
   } = props
+  const rows = vehicles.filter(veh => {
+    return !veh.escludi
+  })
   const { tab } = useParams()
   const isPolicy = policy?.state?.isPolicy
   const updatePrize = useCallback(row => {

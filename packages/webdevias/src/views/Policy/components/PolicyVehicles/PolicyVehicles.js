@@ -12,16 +12,33 @@ import { useParams } from 'react-router-dom'
 
 // eslint-disable-next-line react/display-name
 const Body = memo(props => {
+  if (props.filtered) {
+    props.policy.vehicles = props.policy.vehicles.map(row => {
+      if (row.licensePlate === 'FJ388BP') {
+        row.escludi = true
+      }
+      return row
+    })
+  } else {
+    props.policy.vehicles = props.policy.vehicles.map(row => {
+      if(row.escludi){
+        row.escludi = undefined
+      }
+      return row
+    })
+  }
   return (
     <>
       <Header
         dispatch={props.dispatch}
+        filtered={props.filtered}
         handleExport={props.handleExport}
         handleExportTotal={props.handleExportTotal}
         handleModeChange={props.handleModeChange}
         isPolicy={props.policy?.state?.isPolicy}
         mode={props.mode}
         priority={props.priority}
+        setFiltered={props.setFiltered}
         setTaxableTotal={props.setTaxableTotal}
         taxableTotal={props.taxableTotal}
       />
@@ -30,6 +47,7 @@ const Body = memo(props => {
           ?
           <VehiclesTable
             dispatch={props.dispatch}
+            filtered={props.filtered}
             forceUpdate={props.forceUpdate}
             formRefHeader={props.formRefHeader}
             handlePrint={props.handlePrint}
@@ -68,6 +86,7 @@ const PolicyVehicles = (
 ) => {
   const [expandHeader, setExpandHeader] = useState(true)
   const [taxableTotal, setTaxableTotal] = useState(true)
+  const [filtered, setFiltered] = useState(false)
   const { tab } = useParams()
   const bodyProps = {
     changing: setChanging,
@@ -84,6 +103,8 @@ const PolicyVehicles = (
     priority,
     tablePd,
     taxableTotal,
+    filtered,
+    setFiltered,
     setTaxableTotal,
     vehicleTypes,
   }
