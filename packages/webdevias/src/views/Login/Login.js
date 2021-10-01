@@ -1,6 +1,6 @@
 import React from 'react'
 import { makeStyles } from '@material-ui/styles'
-import { Card, CardContent, CardMedia, Typography } from '@material-ui/core'
+import { Card, CardContent, Typography } from '@material-ui/core'
 import LockIcon from '@material-ui/icons/Lock'
 
 import { Page } from 'components'
@@ -11,13 +11,15 @@ const useStyles = makeStyles(theme => ({
   root: {
     height: '100%',
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
     padding: theme.spacing(6, 2),
+    background: 'url(/images/libri_matricola.jpg) no-repeat center center fixed',
   },
   card: {
     width: theme.breakpoints.values.md,
-    maxWidth: '100%',
+    maxWidth: 500,
+    marginRight: theme.spacing(3),
     overflow: 'unset',
     display: 'flex',
     position: 'relative',
@@ -75,6 +77,7 @@ const Login = () => {
   return (
     <Page
       className={classes.root}
+      id="loginPage"
       title="Login"
     >
       <Card className={classes.card}>
@@ -90,51 +93,7 @@ const Login = () => {
             Collegati al portale libri matricola
           </Typography>
           <LoginForm className={classes.loginForm}/>
-          {/*<Divider className={classes.divider}/>
-          <Link
-            align="center"
-            color="secondary"
-            component={RouterLink}
-            to="/auth/register"
-            underline="always"
-            variant="subtitle2"
-          >
-            Don't have an account?
-          </Link>*/}
         </CardContent>
-        <CardMedia
-          className={classes.media}
-          image="/images/auth.png"
-          title="Cover"
-        >
-          <Typography
-            color="inherit"
-            variant="subtitle1"
-          >
-            {''}
-          </Typography>
-          {/*<div className={classes.person}>
-            <Avatar
-              alt="Person"
-              className={classes.avatar}
-              src="/images/avatars/avatar_2.png"
-            />
-            <div>
-              <Typography
-                color="inherit"
-                variant="body1"
-              >
-                Ekaterina Tankova
-              </Typography>
-              <Typography
-                color="inherit"
-                variant="body2"
-              >
-                Manager at inVision
-              </Typography>
-            </div>
-          </div>*/}
-        </CardMedia>
       </Card>
     </Page>
   )

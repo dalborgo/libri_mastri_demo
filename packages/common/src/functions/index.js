@@ -245,6 +245,7 @@ const EXCLUSION_TYPES = {
   'VENDITA/DEMOLIZIONE': 1,
   REIMMATRICOLAZIONE: 1,
   'FURTO TOTALE': 0,
+  ALTRO: 1,
 }
 
 const getExclusionTypeList = () => Object.keys(EXCLUSION_TYPES)

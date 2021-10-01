@@ -70,3 +70,9 @@ fieldset:disabled input {
     background-color: rgba(184, 205, 255, 0.4) !important;
 }
 
+#loginPage {
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
