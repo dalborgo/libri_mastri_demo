@@ -12,21 +12,21 @@ import { useParams } from 'react-router-dom'
 
 // eslint-disable-next-line react/display-name
 const Body = memo(props => {
-  if (props.filtered) {
+ /* if (props.filtered) {
     props.policy.vehicles = props.policy.vehicles.map(row => {
-      if (row.licensePlate === 'FJ388BP') {
-        row.escludi = true
+      if (row.startDate && row.startDate !== props.policy.initDate) {
+        row.skipped = true
       }
       return row
     })
   } else {
-    props.policy.vehicles = props.policy.vehicles.map(row => {
-      if(row.escludi){
-        row.escludi = undefined
+    /!*props.policy.vehicles = props.policy.vehicles.map(row => {
+      if(row.skipped){
+        row.skipped = undefined
       }
       return row
-    })
-  }
+    })*!/
+  }*/
   return (
     <>
       <Header

@@ -114,9 +114,13 @@ const VehiclesTable = props => {
     taxableTotal,
     formRefHeader,
   } = props
-  const rows = vehicles.filter(veh => {
-    return !veh.escludi
-  })
+  
+  const rows = filtered ? vehicles.reduce((prev, row) => {
+    if (!row.startDate || row.startDate === props.policy.initDate) {
+      prev.push(row)
+    }
+    return prev
+  }, []) : vehicles
   const { tab } = useParams()
   const isPolicy = policy?.state?.isPolicy
   const updatePrize = useCallback(row => {
@@ -137,6 +141,7 @@ const VehiclesTable = props => {
     return valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   }, [policy.productDefinitions, tablePd])
   const [exclusionTypeList] = useState(() => cFunctions.getExclusionTypeList())
+  const [vatTypes] = useState(() => ['COMPRESA', 'SENZA'])
   const productList = useMemo(() => {
     const init = vehicleTypes.reduce((prev, curr) => {
       prev[curr.id] = []
@@ -210,6 +215,9 @@ const VehiclesTable = props => {
         getCellValue: getPdsData,
       },
       { name: 'value', title: '€ Valore' },
+      { name: 'vat', title: 'IVA' },
+      { name: 'c_vat', title: 'COMPRESO IVA', getCellValue: formatBool },
+      { name: 's_vat', title: 'SENZA IVA', getCellValue: formatBool },
       { name: 'hasGlass', title: 'Cristalli', getCellValue: formatBool },
       { name: 'hasTowing', title: 'Traino', getCellValue: formatBool },
       { name: 'leasingCompany', title: 'Società di Leasing' },
@@ -240,7 +248,7 @@ const VehiclesTable = props => {
   )
   
   const [numberColumns] = useState(['value', 'prize', 'weight', 'payment'])
-  const [booleanColumns] = useState(['hasGlass', 'hasTowing'])
+  const [booleanColumns] = useState(['hasGlass', 'hasTowing', 'c_vat', 's_vat'])
   const [textColumns] = useState(['licensePlate'])
   const [leftColumns] = useState(['state', 'licensePlate', 'startDate', 'startHour', 'finishDate', TableEditColumn.COLUMN_TYPE, TableRowDetail.COLUMN_TYPE])
   const [rightColumns] = useState(['prize', 'payment'])
@@ -259,6 +267,9 @@ const VehiclesTable = props => {
     { columnName: 'registrationDate', align: 'center', width: 120 },
     { columnName: 'brand', align: 'center' },
     { columnName: 'model', align: 'center' },
+    { columnName: 'vat', align: 'center' },
+    { columnName: 'c_vat', align: 'center' },
+    { columnName: 's_vat', align: 'center' },
     { columnName: 'productCode', align: 'center' },
     { columnName: 'coverageType', align: 'center', editingEnabled: false },
     { columnName: 'value', align: 'right' },
@@ -291,6 +302,8 @@ const VehiclesTable = props => {
       vehicleType: 'AUTO',
       hasTowing: 'NO',
       hasGlass: 'NO',
+      c_vat: 'NO',
+      s_vat: 'NO',
       value: 0,
     }
     if (added) {
@@ -444,6 +457,9 @@ const VehiclesTable = props => {
     if (column.name === 'exclusionType') {
       return <LookupEditCell {...props} hide={shortEditInfo} values={exclusionTypeList}/>
     }
+    if (column.name === 'vat') {
+      return <LookupEditCell {...props} hide={shortEdit} values={vatTypes}/>
+    }
     if (column.name === 'licensePlate' && shortEdit) {
       return <FastBaseCell {...props}/>
     }
@@ -466,7 +482,7 @@ const VehiclesTable = props => {
       return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.minDate)}/>
     }
     return <TableEditRow.Cell {...props}/>
-  }, [exclusionTypeList, isPolicy, policy.initDate, policy.minDate, productListFlat, vehicleList])
+  }, [exclusionTypeList, isPolicy, policy.initDate, policy.minDate, productListFlat, vehicleList, vatTypes])
   
   const OptimizedGridDetailContainerBase = useCallback(({ row }) => {
     const { licensePlate, state, attachments } = row

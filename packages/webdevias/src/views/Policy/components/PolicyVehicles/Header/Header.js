@@ -7,9 +7,9 @@ import {
   mdiCheckAll,
   mdiCloudDownloadOutline,
   mdiCloudUploadOutline,
-  mdiMicrosoftExcel,
   mdiCurrencyEur,
   mdiMenu,
+  mdiMicrosoftExcel,
   mdiViewList,
 } from '@mdi/js'
 
@@ -105,7 +105,7 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
             <ListItemIcon>
               <Icon path={mdiCurrencyEur} size={1}/>
             </ListItemIcon>
-            {filtered ? 'NON FILTRARE' : 'FILTRARE'}
+            {filtered ? 'TUTTI I DATI' : 'SOLO STATO DI RISCHIO INIZIALE'}
           </MenuItem>
         }
         {

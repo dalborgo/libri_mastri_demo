@@ -266,6 +266,7 @@ export default {
   getAuth,
   getExclusionTypeList,
   getFractName,
+  getFractMonths,
   getPrizeLine,
   getUUID,
   getVehicleCode,
