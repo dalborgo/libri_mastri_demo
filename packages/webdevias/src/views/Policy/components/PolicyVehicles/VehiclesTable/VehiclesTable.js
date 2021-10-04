@@ -479,10 +479,10 @@ const VehiclesTable = props => {
       return <FastBaseCell {...props} defaultValue={cDate.mom(props.value, null, 'DD/MM/YYYY')}/>
     }
     if (column.name === 'finishDate' && (['ADDED'].includes(props.row.state) || (!props.row.state && isPolicy))) {
-      return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.minDate)}/>
+      return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.midDate)}/>
     }
     return <TableEditRow.Cell {...props}/>
-  }, [exclusionTypeList, isPolicy, policy.initDate, policy.minDate, productListFlat, vehicleList, vatTypes])
+  }, [exclusionTypeList, isPolicy, policy.initDate, policy.midDate, productListFlat, vehicleList, vatTypes])
   
   const OptimizedGridDetailContainerBase = useCallback(({ row }) => {
     const { licensePlate, state, attachments } = row

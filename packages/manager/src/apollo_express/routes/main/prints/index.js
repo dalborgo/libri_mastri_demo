@@ -970,6 +970,7 @@ function addRouters (router) {
         zip,
       }
     })
+    const numTotTax = totInstalment - totTaxable
     const input = {
       number,
       counter,
@@ -990,8 +991,8 @@ function addRouters (router) {
       cosList,
       endDate,
       guaranteeList,
-      totInstalment: numeric.printDecimal(totInstalment),
-      totTax: numeric.printDecimal(totInstalment - totTaxable),
+      totInstalment: numeric.printDecimal(numTotTax > 0 ? totInstalment : totTaxable),
+      totTax: numeric.printDecimal(numTotTax > 0 ?  numTotTax : 0),
       totTaxable: numeric.printDecimal(totTaxable),
       vL,
     }

@@ -377,7 +377,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
         days: days360_ === undefined ? myDays360_2(policy.initDate, endDate) : days360_,
       }
     } else {
-      return printTaxable ? taxable : prize
+      return printTaxable ? taxable : prize// printTaxable ? taxable : taxable < 0 ? taxable : prize
     }
   }
   return 0

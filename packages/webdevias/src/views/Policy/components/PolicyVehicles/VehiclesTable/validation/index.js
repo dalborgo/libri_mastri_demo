@@ -6,7 +6,7 @@ import moment from 'moment'
 
 export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar, policy) {
   let abortError = false
-  const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.minDate)
+  const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate)
   if (!(row.licensePlate && row.state)) {
     row.licensePlate = `XXXXXX_${uuid()}`
     enqueueSnackbar('Targa obbligatoria!', { variant: 'error' })
