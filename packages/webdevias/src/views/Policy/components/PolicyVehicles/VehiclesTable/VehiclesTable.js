@@ -250,7 +250,7 @@ const VehiclesTable = props => {
   const [numberColumns] = useState(['value', 'prize', 'weight', 'payment'])
   const [booleanColumns] = useState(['hasGlass', 'hasTowing', 'c_vat', 's_vat'])
   const [textColumns] = useState(['licensePlate'])
-  const [leftColumns] = useState(['state', 'licensePlate', 'startDate', 'startHour', 'finishDate', TableEditColumn.COLUMN_TYPE, TableRowDetail.COLUMN_TYPE])
+  const [leftColumns] = useState(['state', 'licensePlate', 'startDate', 'startHour', 'finishDate', 'exclusionType', TableEditColumn.COLUMN_TYPE, TableRowDetail.COLUMN_TYPE])
   const [rightColumns] = useState(['prize', 'payment'])
   const [dateColumns] = useState(['registrationDate', 'leasingExpiry', 'finishDate', 'startDate'])
   const [hourColumns] = useState(['startHour'])
@@ -365,6 +365,7 @@ const VehiclesTable = props => {
           } else if (['ADDED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(row.state)) {
             updateRow = {
               ...row,
+              exclusionType: effFinishDate ? exclusionType : undefined,
               startDate: effStartDate,
               finishDate: effFinishDate,
               state: effStartDate || effFinishDate ? 'DELETED_FROM_INCLUDED' : 'ADDED_CONFIRMED',
@@ -447,6 +448,7 @@ const VehiclesTable = props => {
     const { column } = props
     const shortEdit = isPolicy && ['DELETED', 'ACTIVE', 'DELETED_FROM_INCLUDED', 'ADDED_CONFIRMED'].includes(props.row.state)
     const shortEditInfo = !['ACTIVE', 'DELETED'].includes(props.row.state)
+    const shortEditExclInfo = !['ACTIVE', 'DELETED', 'ADDED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(props.row.state)
     if (column.name === 'vehicleType') {
       return <LookupEditCell {...props} hide={shortEdit} values={vehicleList}/>
     }
@@ -455,10 +457,7 @@ const VehiclesTable = props => {
       return <LookupEditCell {...props} hide={shortEdit} values={list}/>
     }
     if (column.name === 'exclusionType') {
-      return <LookupEditCell {...props} hide={shortEditInfo} values={exclusionTypeList}/>
-    }
-    if (column.name === 'vat') {
-      return <LookupEditCell {...props} hide={shortEdit} values={vatTypes}/>
+      return <LookupEditCell {...props} hide={shortEditExclInfo} values={exclusionTypeList}/>
     }
     if (column.name === 'licensePlate' && shortEdit) {
       return <FastBaseCell {...props}/>

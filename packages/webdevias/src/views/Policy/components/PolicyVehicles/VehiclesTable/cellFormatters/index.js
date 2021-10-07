@@ -18,10 +18,11 @@ const styles = theme => ({
 })
 
 const LookupEditCellBase = ({
-  values, value, onValueChange, classes, hide,
+  values, value, onValueChange, classes, hide, className, style, theme,
 }) => (
   <TableCell
-    className={classes.lookupEditCell}
+    className={className}
+    style={{ ...style, textAlign: 'center', padding: theme.spacing(1) }}
   >
     {
       values.length ?
@@ -68,7 +69,7 @@ const LookupEditCellBase = ({
     }
   </TableCell>
 )
-export const LookupEditCell = withStyles(styles)(LookupEditCellBase)
+export const LookupEditCell = withStyles(styles, { withTheme: true })(LookupEditCellBase)
 
 const BaseCell = ({ value, classes, style, editingEnabled, onValueChange, defaultValue, empty = false, ...restProps }) => (
   <VirtualTable.Cell

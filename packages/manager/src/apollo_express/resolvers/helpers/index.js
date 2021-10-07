@@ -122,7 +122,6 @@ function calculate (meta, forceError = false) {
   }
 }
 
-
 export async function calculateSequenceNumber (meta_, state, tag) {
   let meta, number, _code
   let { offset = 0, fromDoc, version } = meta_
@@ -343,6 +342,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer) 
 
 export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer) {
   let { email: prodEmail } = producer //gestire filiale
+  let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
   if (!cFunctions.isProd()) { //per test in sviluppo
@@ -359,7 +359,7 @@ export async function manageMailEmitted (state, producer = {}, code, userRole, l
   }
   //la conferma deve andare ai clienti.
   const html = getNewChanges(number, primaryOrigin, code, formattedList.join('\n'), signer_)
-  return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Modifica stato di rischio - Polizza n. ${number} - ${signer_}`, html, null, null, prodEmail)
+  return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Modifica stato di rischio - Polizza n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
 }
 
 
