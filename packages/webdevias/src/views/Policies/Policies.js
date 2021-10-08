@@ -51,13 +51,19 @@ const Policies = ({ enqueueSnackbar }) => {
         if (toInclude && filters.docSigner && !curr.signer?.surname?.toLowerCase().includes(filters.docSigner.toLowerCase())) {
           toInclude &= false
         }
+        if (toInclude && filters.docProducer && !curr.producer?.username?.toLowerCase().includes(filters.docProducer.toLowerCase())) {
+          toInclude &= false
+        }
+        if (toInclude && filters.docSubAgent && !curr.subAgent?.username?.toLowerCase().includes(filters.docSubAgent.toLowerCase())) {
+          toInclude &= false
+        }
         toInclude && prev.push(curr)
         return prev
       }, [])
     } else {
       return data.policies
     }
-  }, [data, filters.docNumber, filters.docSigner, isFiltered])
+  }, [data, filters.docNumber, filters.docSubAgent, filters.docProducer, filters.docSigner, isFiltered])
   const { me: { priority } } = client.readQuery({ query: ME })
   const [delPolicy] = useMutation(DELETE_POLICY, {
     onError: gestError(throwError, enqueueSnackbar),

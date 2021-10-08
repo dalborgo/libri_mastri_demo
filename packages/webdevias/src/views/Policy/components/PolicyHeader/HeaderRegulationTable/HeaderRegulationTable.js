@@ -6,8 +6,6 @@ import { mdiCalendarMultiselect } from '@mdi/js'
 import Typography from '@material-ui/core/Typography'
 import { connect, Field } from 'formik'
 import compose from 'lodash/fp/compose'
-import { cFunctions } from '@adapter/common'
-import range from 'lodash/range'
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -33,7 +31,6 @@ const HeaderRegulationTable = props => {
   console.log('values:', values)
   const classes = useStyles()
   const disabledRecFract = (values.regulationFract !== values.paymentFract) || (['ANNUAL', 'UNIQUE'].includes(values.regulationFract))
-  const numberFract = values.regulationFract === 'UNIQUE' ? 1 : 12 / cFunctions.getFractMonths(values.regulationFract)
   return (
     <Toolbar
       className={classes.toolbar}
@@ -153,52 +150,6 @@ const HeaderRegulationTable = props => {
             >
               Mensile
             </option>
-          </Field>&nbsp;&nbsp;&nbsp;
-          <Field
-            as={TF}
-            disabled={!isPolicy}
-            InputLabelProps={
-              {
-                shrink: true,
-              }
-            }
-            style={{ width: 130 }}
-            InputProps={
-              {
-                classes: {
-                  disabled: globalClass.fieldDisabled,
-                },
-                className: globalClass.fieldBack,
-              }
-            }
-            label="Ultima Rata Pagata"
-            name="paidFract"
-            onChange={
-              async event => {
-                await handleChange(event)
-                generateRegDates()
-              }
-            }
-            select
-            SelectProps={{ native: true }}
-            size="small"
-            variant="outlined"
-          >
-            <option
-              value={0}
-            />
-            {
-              range(1, numberFract + 1).map(line => {
-                return (
-                  <option
-                    value={line}
-                    key={line}
-                  >
-                    {line}° Rata
-                  </option>
-                )
-              })
-            }
           </Field>
         </Grid>
       </Grid>

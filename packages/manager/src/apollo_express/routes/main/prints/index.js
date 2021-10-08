@@ -49,6 +49,7 @@ async function getVL (vehicles, vehicleTypes, productDefinitions, signer, cosign
         valore: numeric.printDecimal(vehicle.value / 1000),
         pL: numeric.printDecimal(prize / 1000),
         pN: numeric.printDecimal(taxable / 1000),
+        cVat: vehicle.vatIncluded,
         cri: vehicle.hasGlass,
         mCri: numeric.printDecimal(product.glassCap / 1000),
         tr: vehicle.hasTowing,
@@ -98,6 +99,7 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
       valore: numeric.printDecimal(vehicle.value),
       //pL: numeric.printDecimal(prize / 1000),
       pN: numeric.printDecimal(vehicle.prize),
+      cVat: vehicle.vatIncluded,
       cri: vehicle.hasGlass,
       mCri: numeric.printDecimal(product.glassCap / 1000),
       tr: vehicle.hasTowing,
@@ -356,6 +358,7 @@ function addRouters (router) {
     const vL = await getVL(vehicles, vehicleTypes, productDefinitions, signer, cosigners)
     const input = {
       number,
+      isPolicy,
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
       pLongName: get(producer, 'longName'),
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',

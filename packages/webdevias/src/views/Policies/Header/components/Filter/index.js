@@ -79,6 +79,8 @@ const useStyles = makeStyles(theme => ({
 export const filtersInitialValue = {
   docNumber: '',
   docSigner: '',
+  docProducer: '',
+  docSubAgent: '',
 }
 const focus = event => event.target.select()
 const Filter = props => {
@@ -180,6 +182,46 @@ const Filter = props => {
                     }
                     onFocus={focus}
                     value={values.docSigner}
+                    variant="outlined"
+                  />
+                </div>
+                <div className={classes.formGroup}>
+                  <TextField
+                    className={classes.field}
+                    fullWidth
+                    label="Intermediario"
+                    margin="dense"
+                    name="docProducer"
+                    onChange={
+                      event =>
+                        handleFieldChange(
+                          event,
+                          'docProducer',
+                          event.target.value
+                        )
+                    }
+                    onFocus={focus}
+                    value={values.docProducer}
+                    variant="outlined"
+                  />
+                </div>
+                <div className={classes.formGroup}>
+                  <TextField
+                    className={classes.field}
+                    fullWidth
+                    label="Filiale"
+                    margin="dense"
+                    name="docSubAgent"
+                    onChange={
+                      event =>
+                        handleFieldChange(
+                          event,
+                          'docSubAgent',
+                          event.target.value
+                        )
+                    }
+                    onFocus={focus}
+                    value={values.docSubAgent}
                     variant="outlined"
                   />
                 </div>
