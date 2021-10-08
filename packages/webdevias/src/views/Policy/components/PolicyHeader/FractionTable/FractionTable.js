@@ -33,6 +33,7 @@ const FractionTable = props => {
     { name: 'instalment', title: '€ Rata Lorda' },
     { name: 'taxable', title: '€ Imponibile' },
     { name: 'tax', title: '€ Tasse' },
+    { name: 'paid', title: 'Incassata' },
   ]
   const tableColumnExtensions = [
     { columnName: 'date', align: 'center' },
@@ -40,6 +41,7 @@ const FractionTable = props => {
     { columnName: 'instalment', align: 'right' },
     { columnName: 'taxable', align: 'right' },
     { columnName: 'tax', align: 'right' },
+    { columnName: 'paid', align: 'center' },
   ]
   const [totalSummaryItems] = useState([
     { columnName: 'instalment', type: 'euro_sum_instalment' },

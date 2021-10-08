@@ -28,7 +28,6 @@ const useStyles = makeStyles(theme => ({
 
 const HeaderRegulationTable = props => {
   const { formik: { handleChange, values }, generateRegDates, globalClass, isPolicy } = props
-  console.log('values:', values)
   const classes = useStyles()
   const disabledRecFract = (values.regulationFract !== values.paymentFract) || (['ANNUAL', 'UNIQUE'].includes(values.regulationFract))
   return (

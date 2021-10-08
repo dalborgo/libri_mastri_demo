@@ -76,3 +76,11 @@ fieldset:disabled input {
     -o-background-size: cover;
     background-size: cover;
 }
+
+.MuiSwitch-colorSecondary.Mui-disabled {
+    color: rgb(178, 202, 253) !important;
+}
+
+.MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track {
+    background-color: rgb(26, 93, 255) !important;
+}
