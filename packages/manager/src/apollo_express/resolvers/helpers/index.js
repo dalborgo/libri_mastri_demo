@@ -246,6 +246,13 @@ export const checkRecord = (record, line, policy, vehicleTypes, endDate) => {
       column: 'data immatricolazione',
     })
   }
+  if (!record.vatIncluded) {
+    errors.push({
+      reason: `"Attenzione campo "Compresa IVA" non impostato (default NO) [${record.licensePlate}]`,
+      line,
+      column: 'COMPRESA IVA',
+    })
+  }
   if (record.leasingExpiry && checkDate(record.leasingExpiry)) {
     errors.push({
       reason: `Data scadenza leasing "${record.leasingExpiry}" non valida [${record.licensePlate}]`,
@@ -288,19 +295,19 @@ export const checkRecord = (record, line, policy, vehicleTypes, endDate) => {
   const finishDate = record.finishDate ? parseDate(record.finishDate) : 'Invalid date'
   const checkedRecord = {
     ...record,
-    licensePlate: record.licensePlate.replace(/ /g, ''),
     finishDate: finishDate === 'Invalid date' ? isPolicy ? endDate : null : finishDate,
-    vatIncluded: manageBool(record.vatIncluded),
     hasGlass: manageBool(record.hasGlass),
     hasTowing: manageBool(record.hasTowing),
     leasingCompany: record.leasingCompany && record.leasingCompany.length < 11 ? padStart(record.leasingCompany, 11, '0') : record.leasingCompany,
     leasingExpiry: leasingExpiry === 'Invalid date' ? null : leasingExpiry,
+    licensePlate: record.licensePlate.replace(/ /g, ''),
     owner: record.owner && record.owner.length < 11 ? padStart(record.owner, 11, '0') : record.owner,
     registrationDate: registrationDate === 'Invalid date' ? null : registrationDate,
     startDate: startDate === 'Invalid date' ? isPolicy ? undefined : null : startDate,
     startHour: record.startHour ? cDate.roundTextTime(record.startHour) : undefined,
     state: isPolicy ? 'ADDED' : 'ACTIVE',
     value: numeric.toFloat(record.value),
+    vatIncluded: manageBool(record.vatIncluded),
   }
   return { checkedRecord, errors }
 }

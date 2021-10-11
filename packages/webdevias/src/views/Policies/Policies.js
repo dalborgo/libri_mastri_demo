@@ -45,16 +45,16 @@ const Policies = ({ enqueueSnackbar }) => {
     if (isFiltered) {
       return data.policies.reduce((prev, curr) => {
         let toInclude = true
-        if (filters.docNumber && !curr.number.includes(filters.docNumber)) {
+        if (filters.docNumber && !curr.number.includes(filters.docNumber.trim())) {
           toInclude &= false
         }
-        if (toInclude && filters.docSigner && !curr.signer?.surname?.toLowerCase().includes(filters.docSigner.toLowerCase())) {
+        if (toInclude && filters.docSigner && !curr.signer?.surname?.toLowerCase().includes(filters.docSigner.toLowerCase().trim())) {
           toInclude &= false
         }
-        if (toInclude && filters.docProducer && !curr.producer?.username?.toLowerCase().includes(filters.docProducer.toLowerCase())) {
+        if (toInclude && filters.docProducer && !curr.producer?.username?.toLowerCase().includes(filters.docProducer.toLowerCase().trim())) {
           toInclude &= false
         }
-        if (toInclude && filters.docSubAgent && !curr.subAgent?.username?.toLowerCase().includes(filters.docSubAgent.toLowerCase())) {
+        if (toInclude && filters.docSubAgent && !curr.subAgent?.username?.toLowerCase().includes(filters.docSubAgent.toLowerCase().trim())) {
           toInclude &= false
         }
         toInclude && prev.push(curr)
