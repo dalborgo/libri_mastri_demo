@@ -102,8 +102,8 @@ function createExcel (policies, vehicleTypes, data) {
     Object.assign(ws.getRow(rowIndex).getCell(2), bold)
   }
   ws.mergeCells(9, 1, 9, 3)
-  ws.getColumn(1).values = ['', '', 'Nome dell\'Agenzia', 'QUBO INSURANCE SOLUTIONS', '', '', 'Incassi dal', cDate.mom(data.startDate, null, 'DD/MM/YYYY')]
-  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT TUA ASSICURAZIONI 40313690000001 - 40313690000001', '', 'Periodo di incasso', 'Incassi al', cDate.mom(data.endDate, null, 'DD/MM/YYYY')]
+  ws.getColumn(1).values = ['', '', 'Nome dell\'Agenzia', 'QUBO INSURANCE SOLUTIONS', '', '', 'Estrazione dal', cDate.mom(data.startDate, null, 'DD/MM/YYYY')]
+  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT TUA ASSICURAZIONI 40313690000001 - 40313690000001', '', 'Periodo di estrazione', 'Estrazione al', cDate.mom(data.endDate, null, 'DD/MM/YYYY')]
   
   Object.assign(ws.getRow(2).getCell(1), { value: 'Codice Compagnia: 4 - Ragione Sociale Compagnia: TUA ASSICURAZIONI SPA' }, bold)
   Object.assign(ws.getRow(3).getCell(1), lightGray, fontWhite)
@@ -135,8 +135,8 @@ function createExcel (policies, vehicleTypes, data) {
     cap: 'Massimale Cristalli',
     over: '% Scoperto',
     exc: 'Franchigia',
-    prize: 'Premio Lordo',
-    prizeT: 'Premio Netto',
+    prize: 'Premio Lordo Annuo',
+    prizeT: 'Premio Netto Annuo',
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(10).getCell(colIndex), lightGray, fontWhite)

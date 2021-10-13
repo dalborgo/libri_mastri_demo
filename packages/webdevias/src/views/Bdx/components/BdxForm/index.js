@@ -99,7 +99,7 @@ const BdxForm = ({ formRefBdx }) => {
                     }
                     inputVariant="outlined"
                     KeyboardButtonProps={{ tabIndex: '-1' }}
-                    label="Incassi dal"
+                    label="Estrazione dal"
                     name="startDate"
                     onFocus={focus}
                     size="small"
@@ -124,7 +124,7 @@ const BdxForm = ({ formRefBdx }) => {
                     }
                     inputVariant="outlined"
                     KeyboardButtonProps={{ tabIndex: '-1' }}
-                    label="Incassi al"
+                    label="Estrazione al"
                     minDate={cDate.mom(values.startDate, null, 'YYYY-MM-DD', [1, 'd'])}
                     minDateMessage="Data iniziale maggiore della data ratina"
                     name="endDate"
