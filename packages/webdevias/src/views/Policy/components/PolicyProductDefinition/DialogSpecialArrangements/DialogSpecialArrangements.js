@@ -15,7 +15,7 @@ const Transition = React.forwardRef(function Transition (props, ref) {
 })
 
 const DialogSpecialArrangements = props => {
-  const { open, setOpen, setFieldValue, defaultValue } = props
+  const { open, setOpen, setFieldValue, defaultValue, isDisabled } = props
   const handleClose = () => {
     setOpen(false)
   }
@@ -39,6 +39,7 @@ const DialogSpecialArrangements = props => {
         <TextareaAutosize
           autoFocus
           defaultValue={defaultValue}
+          disabled={isDisabled}
           ref={textAreaRef}
           style={
             {
@@ -57,21 +58,24 @@ const DialogSpecialArrangements = props => {
           }
         />
       </DialogContent>
-      <DialogActions>
+      <DialogActions style={{marginRight: 10}}>
         <Button color="primary" onClick={handleClose}>
-          Annulla
+          {isDisabled ? 'Chiudi' : 'Annulla'}
         </Button>
-        <Button
-          color="primary"
-          onClick={
-            () => {
-              setFieldValue('specialArrangements', textAreaRef.current.value.trim())
-              handleClose()
+        {
+          !isDisabled &&
+          <Button
+            color="primary"
+            onClick={
+              () => {
+                setFieldValue('specialArrangements', textAreaRef.current.value.trim())
+                handleClose()
+              }
             }
-          }
-        >
-          Conferma
-        </Button>
+          >
+            Conferma
+          </Button>
+        }
       </DialogActions>
     </Dialog>
   )

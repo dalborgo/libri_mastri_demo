@@ -199,19 +199,19 @@ const RowMenu = props => {
       >
         {
           !isQuotation &&
-         <MenuItem
-           onClick={
-             () => {
-               onUpdate()
-               handleClose()
-             }
-           }
-         >
-           <ListItemIcon>
-             <Icon path={mdiUpdate} size={1}/>
-           </ListItemIcon>
-           Rinnova
-         </MenuItem>
+          <MenuItem
+            onClick={
+              () => {
+                onUpdate()
+                handleClose()
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiUpdate} size={1}/>
+            </ListItemIcon>
+            Rinnova
+          </MenuItem>
         }
         <MenuItem
           onClick={
@@ -288,14 +288,17 @@ const PolicyListTable = props => {
                 Elimina
               </Button>
             </ThemeProvider>*/}
-            <RowMenu
-              allowDelete={allowDelete}
-              classes={classes}
-              onClone={clonePolicy(policyId)}
-              onDelete={deletePolicy(policyId, number, __typename)}
-              onUpdate={updatePolicy(policyId)}
-              policyId={policyId}
-            />
+            {
+              priority === 3 &&
+              <RowMenu
+                allowDelete={allowDelete}
+                classes={classes}
+                onClone={clonePolicy(policyId)}
+                onDelete={deletePolicy(policyId, number, __typename)}
+                onUpdate={updatePolicy(policyId)}
+                policyId={policyId}
+              />
+            }
             <Button
               className={classes.actionButton}
               color="primary"
@@ -312,8 +315,8 @@ const PolicyListTable = props => {
         const isPolicy = state?.isPolicy
         let style = undefined
         const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
-        if(isPolicy && moment(endDate).isBefore(moment())){
-          style = {color: '#c2c2c2' }
+        if (isPolicy && moment(endDate).isBefore(moment())) {
+          style = { color: '#c2c2c2' }
         }
         return (
           <Table.Cell

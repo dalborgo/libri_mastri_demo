@@ -15,7 +15,7 @@ const Transition = React.forwardRef(function Transition (props, ref) {
 })
 
 const DialogEditConditions = props => {
-  const { index, setIndex, setFieldValue, defaultValue, coverageTypesToKey } = props
+  const { index, setIndex, setFieldValue, defaultValue, coverageTypesToKey, isDisabled } = props
   const handleClose = () => {
     setIndex(-1)
   }
@@ -24,17 +24,21 @@ const DialogEditConditions = props => {
   const theme = useTheme()
   return (
     <Dialog
+      disableBackdropClick
       fullWidth
       maxWidth="md"
       onClose={handleClose}
       open={index > -1}
       TransitionComponent={Transition}
     >
-      <DialogTitle disableTypography>
-        <Typography variant="h4">
-          Modifica Testi
-        </Typography>
-      </DialogTitle>
+      {
+        !isDisabled &&
+        <DialogTitle disableTypography>
+          <Typography variant="h4">
+            Modifica Testi
+          </Typography>
+        </DialogTitle>
+      }
       <DialogContent>
         <Typography
           gutterBottom
@@ -51,6 +55,7 @@ const DialogEditConditions = props => {
         <TextareaAutosize
           autoFocus
           defaultValue={defaultValue?.[index]?.conditions}
+          disabled={isDisabled}
           ref={firstTextAreaRef}
           style={
             {
@@ -68,20 +73,23 @@ const DialogEditConditions = props => {
             }
           }
         />
-        <Button
-          color="primary"
-          onClick={
-            () => {
-              const arr = coverageTypesToKey[defaultValue?.[index]?.coverageType]?.conditions ?? []
-              firstTextAreaRef.current.value = arr.reduce((prev, curr) => {
-                return `${prev}${curr} scoperto … % min. € …
+        {
+          !isDisabled &&
+          <Button
+            color="primary"
+            onClick={
+              () => {
+                const arr = coverageTypesToKey[defaultValue?.[index]?.coverageType]?.conditions ?? []
+                firstTextAreaRef.current.value = arr.reduce((prev, curr) => {
+                  return `${prev}${curr} scoperto … % min. € …
 `
-              }, '').trim()
+                }, '').trim()
+              }
             }
-          }
-        >
-          Predefinito {coverageTypesToKey[defaultValue?.[index]?.coverageType]?.display}
-        </Button>
+          >
+            Predefinito {coverageTypesToKey[defaultValue?.[index]?.coverageType]?.display}
+          </Button>
+        }
         <br/>
         <br/>
         <Typography
@@ -98,6 +106,7 @@ const DialogEditConditions = props => {
         </Typography>
         <TextareaAutosize
           defaultValue={defaultValue?.[index]?.statements}
+          disabled={isDisabled}
           ref={secondTextAreaRef}
           style={
             {
@@ -115,16 +124,19 @@ const DialogEditConditions = props => {
             }
           }
         />
-        <Button
-          color="primary"
-          onClick={
-            () => {
-              secondTextAreaRef.current.value = 'Art. II.1. Cristalli con Massimale di € … per sinistro e per periodo assicurativo - Franchigia € 150,00 (Nessuna franchigia per riparazione in rete convenzionata)'
+        {
+          !isDisabled &&
+          <Button
+            color="primary"
+            onClick={
+              () => {
+                secondTextAreaRef.current.value = 'Art. II.1. Cristalli con Massimale di € … per sinistro e per periodo assicurativo - Franchigia € 150,00 (Nessuna franchigia per riparazione in rete convenzionata)'
+              }
             }
-          }
-        >
-          Predefinito Cristalli
-        </Button>
+          >
+            Predefinito Cristalli
+          </Button>
+        }
       </DialogContent>
       <Grid
         container
@@ -138,21 +150,26 @@ const DialogEditConditions = props => {
         <Grid item/>
         <Grid item>
           <Button color="primary" onClick={handleClose}>
-            Annulla
+            {isDisabled ? 'Chiudi' : 'Annulla'}
           </Button>
-          &nbsp;&nbsp;
-          <Button
-            color="primary"
-            onClick={
-              () => {
-                setFieldValue(`productDefinitions.${index}.conditions`, firstTextAreaRef.current.value.trim() || '')
-                setFieldValue(`productDefinitions.${index}.statements`, secondTextAreaRef.current.value.trim() || '')
-                handleClose()
-              }
-            }
-          >
-            Conferma
-          </Button>
+          {
+            !isDisabled &&
+            <>
+              &nbsp;&nbsp;
+              <Button
+                color="primary"
+                onClick={
+                  () => {
+                    setFieldValue(`productDefinitions.${index}.conditions`, firstTextAreaRef.current.value.trim() || '')
+                    setFieldValue(`productDefinitions.${index}.statements`, secondTextAreaRef.current.value.trim() || '')
+                    handleClose()
+                  }
+                }
+              >
+                Conferma
+              </Button>
+            </>
+          }
         </Grid>
       </Grid>
     </Dialog>

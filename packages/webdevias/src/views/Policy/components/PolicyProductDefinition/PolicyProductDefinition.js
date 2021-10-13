@@ -29,7 +29,7 @@ import Add from '@material-ui/icons/Add'
 import Header from './Header'
 import { cFunctions, numeric } from '@adapter/common'
 import Icon from '@mdi/react'
-import { mdiContentDuplicate, mdiDeleteCircle, mdiIdCard, mdiPencilCircle } from '@mdi/js'
+import { mdiContentDuplicate, mdiDeleteCircle, mdiIdCard, mdiPencilCircle, mdiEyeCircle } from '@mdi/js'
 import { useParams } from 'react-router'
 import DialogSpecialArrangements from './DialogSpecialArrangements'
 import keyBy from 'lodash/keyBy'
@@ -544,7 +544,7 @@ const Body = props => {
                                     }
                                     className={classes.iconButton}
                                     color={(values.productDefinitions[index]?.conditions || values.productDefinitions[index]?.statements) ? 'primary' : 'default'}
-                                    disabled={isDisabled}
+                                    disabled={isDisabled && !values.productDefinitions[index]?.conditions && !values.productDefinitions[index]?.statements}
                                     onClick={() => setEditConditionsIndex(index)}
                                     style={
                                       {
@@ -552,7 +552,7 @@ const Body = props => {
                                       }
                                     }
                                   >
-                                    <Icon path={mdiPencilCircle} size={1}/>
+                                    {isDisabled ? <Icon path={mdiEyeCircle} size={1}/> : <Icon path={mdiPencilCircle} size={1}/>}
                                   </IconButton>
                                   <FastField
                                     component={TextField}
@@ -603,26 +603,29 @@ const Body = props => {
                     <IconButton
                       className={classes.iconButton}
                       color={values.specialArrangements ? 'primary' : 'default'}
-                      disabled={isDisabled}
                       onClick={() => setSpecialArrangementsOpen(true)}
                     >
-                      <Icon path={mdiPencilCircle} size={1}/>
+                      {isDisabled ? <Icon path={mdiEyeCircle} size={1}/> : <Icon path={mdiPencilCircle} size={1}/>}
                     </IconButton>
                     <br/>
-                    <IconButton
-                      className={classes.iconButton}
-                      color={values.specialArrangements ? 'primary' : 'default'}
-                      disabled={isDisabled}
-                      onClick={() => setFieldValue('specialArrangements', '')}
-                    >
-                      <Icon path={mdiDeleteCircle} size={1}/>
-                    </IconButton>
+                    {
+                      !isDisabled &&
+                      <IconButton
+                        className={classes.iconButton}
+                        color={values.specialArrangements ? 'primary' : 'default'}
+                        disabled={isDisabled}
+                        onClick={() => setFieldValue('specialArrangements', '')}
+                      >
+                        <Icon path={mdiDeleteCircle} size={1}/>
+                      </IconButton>
+                    }
                   </div>
                 </CardContent>
               </Card>
             </form>
             <DialogSpecialArrangements
               defaultValue={values['specialArrangements']}
+              isDisabled={isDisabled}
               open={specialArrangementsOpen}
               setFieldValue={setFieldValue}
               setOpen={setSpecialArrangementsOpen}
@@ -631,6 +634,7 @@ const Body = props => {
               coverageTypesToKey={coverageTypesToKey}
               defaultValue={values.productDefinitions}
               index={editConditionsIndex}
+              isDisabled={isDisabled}
               setFieldValue={setFieldValue}
               setIndex={setEditConditionsIndex}
             />

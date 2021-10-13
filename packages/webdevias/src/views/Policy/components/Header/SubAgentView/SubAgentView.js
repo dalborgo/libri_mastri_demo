@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
-import { Link, Typography } from '@material-ui/core'
-import { Link as RouterLink } from 'react-router-dom'
+import { Typography } from '@material-ui/core'
 import { makeStyles } from '@material-ui/styles'
 import { FastField, Formik } from 'formik'
 import { Autocomplete } from 'material-ui-formik-components/Autocomplete'
@@ -127,14 +126,7 @@ const SubAgentView = props => {
           subAgent &&
           <div className={classes.divLinkShort}>
             Filiale:&nbsp;
-            <Link
-              className={classes.link}
-              component={RouterLink}
-              target="_blank"
-              to={`/management/users/${subAgent}/summary`}
-            >
-              {subAgent}
-            </Link>
+            <strong>{subAgent?.username}</strong>
           </div>
           :
           children?.length ?
