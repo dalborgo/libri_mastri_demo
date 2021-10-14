@@ -13,6 +13,7 @@ import {
   ListItemIcon,
   ListItemText,
   TextField as TF,
+  Tooltip,
   Typography,
 } from '@material-ui/core'
 import ExpandLessIcon from '@material-ui/icons/ExpandLess'
@@ -284,54 +285,61 @@ const Body = props => {
                                       ))
                                     }
                                   </FastField>
-                                  <FastField
-                                    as={TF}
-                                    className={props.globalClass.field}
-                                    disabled={isDisabled}
-                                    InputLabelProps={
-                                      {
-                                        shrink: true,
-                                      }
-                                    }
-                                    InputProps={
-                                      {
-                                        classes: {
-                                          disabled: props.globalClass.fieldDisabled,
-                                        },
-                                        className: props.globalClass.fieldBack,
-                                      }
-                                    }
-                                    label="Tipo Copertura"
-                                    name={`productDefinitions.${index}.coverageType`}
-                                    onChange={
-                                      async event => {
-                                        await handleChange(event)
-                                        const { values: pds } = props.innerRef.current || {}
-                                        calculateRows(pds.productDefinitions, setFieldValue)
-                                      }
-                                    }
-                                    select
-                                    SelectProps={{ native: true }}
-                                    size="small"
-                                    style={{ width: 300 }}
-                                    variant="outlined"
+                                  <Tooltip
+                                    placement="bottom"
+                                    title={values.productDefinitions[index]?.coverageType}
                                   >
-                                    <option
-                                      value={''}
-                                    >
-                                      {''}
-                                    </option>
-                                    {
-                                      props.coverageTypes.map(pt => (
+                                    <span>
+                                      <FastField
+                                        as={TF}
+                                        className={props.globalClass.field}
+                                        disabled={isDisabled}
+                                        InputLabelProps={
+                                          {
+                                            shrink: true,
+                                          }
+                                        }
+                                        InputProps={
+                                          {
+                                            classes: {
+                                              disabled: props.globalClass.fieldDisabled,
+                                            },
+                                            className: props.globalClass.fieldBack,
+                                          }
+                                        }
+                                        label="Tipo Copertura"
+                                        name={`productDefinitions.${index}.coverageType`}
+                                        onChange={
+                                          async event => {
+                                            await handleChange(event)
+                                            const { values: pds } = props.innerRef.current || {}
+                                            calculateRows(pds.productDefinitions, setFieldValue)
+                                          }
+                                        }
+                                        select
+                                        SelectProps={{ native: true }}
+                                        size="small"
+                                        style={{ width: 200 }}
+                                        variant="outlined"
+                                      >
                                         <option
-                                          key={pt.id}
-                                          value={pt.id}
+                                          value={''}
                                         >
-                                          {pt.display}
+                                          {''}
                                         </option>
-                                      ))
-                                    }
-                                  </FastField>
+                                        {
+                                          props.coverageTypes.map(pt => (
+                                            <option
+                                              key={pt.id}
+                                              value={pt.id}
+                                            >
+                                              {pt.display}
+                                            </option>
+                                          ))
+                                        }
+                                      </FastField>
+                                    </span>
+                                  </Tooltip>
                                   <FastField
                                     as={TF}
                                     className={props.globalClass.field}
@@ -552,7 +560,15 @@ const Body = props => {
                                       }
                                     }
                                   >
-                                    {isDisabled ? <Icon path={mdiEyeCircle} size={1}/> : <Icon path={mdiPencilCircle} size={1}/>}
+                                    {
+                                      isDisabled ?
+                                        <Icon path={mdiEyeCircle} size={1}/>
+                                        :
+                                        <Icon
+                                          path={mdiPencilCircle}
+                                          size={1}
+                                        />
+                                    }
                                   </IconButton>
                                   <FastField
                                     component={TextField}
