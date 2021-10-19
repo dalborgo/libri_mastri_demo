@@ -90,6 +90,7 @@ export default {
         _updatedAt: undefined,
         meta: undefined,
         number,
+        paidFractions: undefined,
         payFractions: undefined,
         state: {
           code: 'DRAFT',
@@ -313,6 +314,7 @@ export default {
         initDate: endDate,
         meta: undefined,
         number,
+        paidFractions: undefined,
         payFractions: undefined,
         regFractions: regFractions_,
         state: {

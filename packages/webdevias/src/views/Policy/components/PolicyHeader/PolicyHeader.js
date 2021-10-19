@@ -45,7 +45,7 @@ const Body = memo(props => {
               globalClass={props.globalClass}
               isPolicy={props.isPolicy}
             />
-            <FractionTable fractions={props.payFractions}/>
+            <FractionTable fractions={props.payFractions} isPolicy={props.isPolicy} paidFractions={props.paidFractions} setPaidFractions={props.setPaidFractions}/>
             <HeaderRegulationTable
               generateRegDates={props.generateRegDates}
               globalClass={props.globalClass}
@@ -60,7 +60,7 @@ const Body = memo(props => {
 })
 
 const PolicyHeader = props => {
-  const { dispatch, handlePrint, isPolicy, isNew, innerRef, globalClass, number, initDate, midDate, paymentFract, regulationFract, isRecalculateFraction, regFractions, generateDates, generateRegDates, payFractionsDef } = props
+  const { dispatch, handlePrint, isPolicy, paidFractions, setPaidFractions, isNew, innerRef, globalClass, number, initDate, midDate, paymentFract, regulationFract, isRecalculateFraction, regFractions, generateDates, generateRegDates, payFractionsDef } = props
   const [expandHeader, setExpandHeader] = useState(true)
   const { tab } = useParams()
   const handleToggleHeader = () => {
@@ -75,21 +75,23 @@ const PolicyHeader = props => {
   }, [generateDates, payFractionsDef])
   const bodyProps = {
     dispatch,
-    globalClass,
-    isNew,
-    isPolicy,
-    handlePrint,
-    innerRef,
-    isRecalculateFraction,
-    number,
-    initDate,
-    midDate,
-    paymentFract,
-    regulationFract,
-    payFractions,
-    regFractions,
     generateDates,
     generateRegDates,
+    globalClass,
+    handlePrint,
+    initDate,
+    innerRef,
+    isNew,
+    isPolicy,
+    isRecalculateFraction,
+    midDate,
+    number,
+    paidFractions,
+    payFractions,
+    paymentFract,
+    regFractions,
+    regulationFract,
+    setPaidFractions,
   }
   if (tab === 'all') {
     return (

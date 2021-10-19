@@ -410,15 +410,16 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     //signer passando oggetto vuoto viene pulito nel salvataggio perché è di tipo oggetto in lounge
     const out = {
       ...statePolicy,
-      isRecalculateFraction: header?.isRecalculateFraction || statePolicy.isRecalculateFraction,
       _code: statePolicy.id,
-      cosigners,
       attachments: { files: statePolicy.attachments },
+      cosigners,
       createdBy: statePolicy?.createdBy?.username,
+      isRecalculateFraction: header?.isRecalculateFraction || statePolicy.isRecalculateFraction,
+      paidFractions: statePolicy?.paidFractions,
       producer: statePolicy?.producer?.username,
-      subAgent: statePolicy?.subAgent?.username,
-      signer: signer.id === '' ? {} : signer,
       productDefinitions,
+      signer: signer.id === '' ? {} : signer,
+      subAgent: statePolicy?.subAgent?.username,
       vehicles,
     }
     const input = {
@@ -565,7 +566,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     client.writeData({ data: { loading: true } })
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
-      `${typeLabel}_${getPolicyCode(statePolicy, header, isNew)}-${counter || targetLicensePlate}.pdf`,
+      `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${getPolicyCode(statePolicy, header, isNew)}-${counter || targetLicensePlate}.pdf`,
       'application/pdf',
       data,
       { toDownload: forceDownloadPdf }
@@ -1018,6 +1019,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     dispatch({ type: 'setRegFractions', regFractions })
   }, [dispatch, statePolicy.isRecalculateFraction, statePolicy.paymentFract, statePolicy.regFractions, statePolicy.regulationFract])
   
+  const setPaidFractions = useCallback((index, val) => {
+    const paidFractions = { [index]: val }
+    dispatch({ type: 'setPaidFractions', paidFractions })
+  }, [dispatch])
+  
   const tabs = [
     { value: 'holders', label: 'Anagrafica Intestatari' },
     { value: 'header', label: 'Intestazione' },
@@ -1122,10 +1128,12 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               isRecalculateFraction={statePolicy.isRecalculateFraction}
               midDate={statePolicy.midDate}
               number={statePolicy.number}
+              paidFractions={statePolicy.paidFractions}
               payFractionsDef={statePolicy.payFractions}
               paymentFract={statePolicy.paymentFract}
               regFractions={statePolicy.regFractions}
               regulationFract={statePolicy.regulationFract}
+              setPaidFractions={setPaidFractions}
             />
           }
           {

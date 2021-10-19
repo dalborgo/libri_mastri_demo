@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react'
 import Paper from '@material-ui/core/Paper'
 import { Grid, Table, TableHeaderRow, TableSummaryRow } from '@devexpress/dx-react-grid-material-ui'
-import { Cell, FooterCell, HeaderCell } from './cellFormatters'
+import { cell, FooterCell, HeaderCell } from './cellFormatters'
 import { DateTypeProvider, NumberTypeProvider } from 'helpers/tableFormatters'
 import { IntegratedSummary, SummaryState } from '@devexpress/dx-react-grid'
 
@@ -26,6 +26,7 @@ const summaryCalculator = (type, rows, getValue) => {
       return IntegratedSummary.defaultCalculator(type, rows, getValue)
   }
 }
+
 const FractionTable = props => {
   const columns = [
     { name: 'date', title: 'Data Pagamento' },
@@ -43,6 +44,7 @@ const FractionTable = props => {
     { columnName: 'tax', align: 'right' },
     { columnName: 'paid', align: 'center' },
   ]
+  !props.isPolicy && columns.pop()
   const [totalSummaryItems] = useState([
     { columnName: 'instalment', type: 'euro_sum_instalment' },
     { columnName: 'taxable', type: 'euro_sum_taxable' },
@@ -76,7 +78,7 @@ const FractionTable = props => {
           calculator={summaryCalculator}
         />
         <Table
-          cellComponent={Cell}
+          cellComponent={cell(props.paidFractions, props.setPaidFractions)}
           columnExtensions={tableColumnExtensions}
           messages={messages}
         />

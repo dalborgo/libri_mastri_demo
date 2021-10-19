@@ -90,6 +90,7 @@ export default gql`
     cosigners: JSON
     createdBy: String
     endDate: String
+    paidFractions: JSON
     paymentFract: String
     payFractions: JSON
     isRecalculateFraction: String
@@ -138,6 +139,7 @@ export default gql`
     children: [Policy]
     cosigners: [Holder]
     createdBy: User
+    paidFractions: JSON
     paymentFract: String
     payFractions: JSON
     isRecalculateFraction: String

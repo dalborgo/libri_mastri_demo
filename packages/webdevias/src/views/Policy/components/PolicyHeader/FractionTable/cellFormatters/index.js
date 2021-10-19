@@ -19,18 +19,11 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 
-export const Cell = props => {
-  const { column: { name }, row: { date, daysDiff }, tableRow: {rowId} } = props
+export const cell = (paidFractions, setPaidFractions) => props => {
+  const { column: { name }, row: { date, daysDiff }, tableRow: { rowId } } = props
   const classes = useStyles()
   const today = moment()
   const plusDay = moment(date).add(daysDiff, 'd')
-  const [state, setState] = React.useState({
-    checkedA: today.isAfter(plusDay),
-  })
-  
-  const handleChange = (event) => {
-    setState({ ...state, [event.target.name]: event.target.checked })
-  }
   if (name === 'paid' && today.isAfter(date)) {
     return (
       <Table.Cell
@@ -39,7 +32,7 @@ export const Cell = props => {
         style={{ padding: 0 }}
       >
         <Switch
-          checked={state.checkedA}
+          checked={paidFractions?.[rowId + 1]}
           classes={
             {
               disabled: classes.switchDisabled,
@@ -49,7 +42,7 @@ export const Cell = props => {
           disabled={today.isAfter(plusDay)}
           inputProps={{ 'aria-label': 'secondary checkbox' }}
           name="checkedA"
-          onChange={handleChange}
+          onChange={event => setPaidFractions(rowId + 1, event.target.checked)}
         />
       </Table.Cell>
     )

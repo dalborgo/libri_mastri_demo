@@ -114,6 +114,7 @@ export const POLICY_FRAGMENT = (gql`
       createdBy{
         ...createdByFragment
       }
+      paidFractions
       paymentFract
       payFractions
       isRecalculateFraction
@@ -216,6 +217,7 @@ export const POLICY_SAVE_FRAGMENT = (gql`
       meta{
         ...metaSaveFragment
       }
+      paidFractions
       paymentFract
       isRecalculateFraction
       regulationFract

@@ -435,7 +435,7 @@ function addRouters (router) {
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
-    const fileName = `inclusione_${_code}-${target.counter || 'XXX'}.pdf`
+    const fileName = `inclusione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.counter || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
       const pathExists = fs.existsSync(savedFilePath)
@@ -579,7 +579,7 @@ function addRouters (router) {
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = cDate.mom(initDate, null, 'DD/MM/YYYY')
-    const fileName = `applicazione_${_code}-${target.inPolicy || 'XXX'}.pdf`
+    const fileName = `applicazione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.inPolicy || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
       const pathExists = fs.existsSync(savedFilePath)
@@ -719,7 +719,7 @@ function addRouters (router) {
     //const target = find(vehicles, inp => ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
-    const fileName = `esclusione_${_code}-${target.counter || 'XXX'}.pdf`
+    const fileName = `esclusione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.counter || 'XXX'}.pdf`
     {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
       const pathExists = fs.existsSync(savedFilePath)

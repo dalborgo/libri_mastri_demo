@@ -19,6 +19,9 @@ export function reducerPolicy (draft, action) {
     case 'setRegFractions':
       draft.regFractions = action.regFractions
       return
+    case 'setPaidFractions':
+      draft.paidFractions = action.paidFractions
+      return
     case 'confirmAllInclExcl':
       const partial_ = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, index: -1 }
       for (let i = 0; i < draft.vehicles.length; i++) {
@@ -166,7 +169,7 @@ export function comparePolicy (new_, old) {
 
 export function initPolicy (policy) {
   const {
-    productDefinitions: pds, signer = null, cosigners = [], vehicles = [], regFractions = [], attachments = [],
+    productDefinitions: pds, signer = null, cosigners = [], vehicles = [], regFractions = [], attachments = [], paidFractions = {},
   } = policy
   const newPD = pdsToArray(pds).map(val => (
     {
@@ -192,7 +195,7 @@ export function initPolicy (policy) {
     return prev
   }, [])
   const holders = signer ? [signer, ...cosigners] : cosigners
-  return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments }
+  return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments, paidFractions }
 }
 
 const bold = { font: { bold: true } }

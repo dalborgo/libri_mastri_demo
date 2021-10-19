@@ -23,6 +23,7 @@ const policySchema = lounge.schema({
   },
   midDate: String,
   number: String,
+  paidFractions: {},
   payFractions: [{}],
   paymentFract: String,
   producer: User,
