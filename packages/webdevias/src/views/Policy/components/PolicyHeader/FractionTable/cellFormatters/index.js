@@ -3,6 +3,8 @@ import { Table, TableHeaderRow } from '@devexpress/dx-react-grid-material-ui'
 import React from 'react'
 import { Switch } from '@material-ui/core'
 import moment from 'moment'
+import { ME } from 'queries'
+import { useApolloClient } from '@apollo/react-hooks'
 
 const useStyles = makeStyles(theme => ({
   tableCell: {
@@ -11,19 +13,16 @@ const useStyles = makeStyles(theme => ({
   tableHeaderFooterCell: {
     padding: theme.spacing(0.8, 2),
   },
-  switchDisabled: {
-    color: 'red',
-    '&:disabled': {
-      color: 'red',
-    },
-  },
 }))
 
 export const cell = (paidFractions, setPaidFractions) => props => {
   const { column: { name }, row: { date, daysDiff }, tableRow: { rowId } } = props
+  const client = useApolloClient()
+  const { me: { priority } } = client.readQuery({ query: ME })
   const classes = useStyles()
   const today = moment()
   const plusDay = moment(date).add(daysDiff, 'd')
+  const isDisabled = today.isAfter(plusDay) || priority < 3
   if (name === 'paid' && today.isAfter(date)) {
     return (
       <Table.Cell
@@ -33,13 +32,8 @@ export const cell = (paidFractions, setPaidFractions) => props => {
       >
         <Switch
           checked={paidFractions?.[rowId + 1]}
-          classes={
-            {
-              disabled: classes.switchDisabled,
-            }
-          }
           color="secondary"
-          disabled={today.isAfter(plusDay)}
+          disabled={isDisabled}
           inputProps={{ 'aria-label': 'secondary checkbox' }}
           name="checkedA"
           onChange={event => setPaidFractions(rowId + 1, event.target.checked)}

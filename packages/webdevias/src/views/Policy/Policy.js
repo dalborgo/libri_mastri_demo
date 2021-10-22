@@ -55,6 +55,7 @@ import { useImmerReducer } from 'use-immer'
 import {
   comparePolicy,
   createExportTotal,
+  getLastFraction,
   getProductDefinitions,
   initPolicy,
   reducerInsertModal,
@@ -908,6 +909,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       /* eslint-disable no-unused-vars */
       const { values: header } = formRefHeader.current || {}
       const header_ = formRefHeader?.current?.values || statePolicy
+      const { payFractions } = statePolicy
+      const lastFract = getLastFraction(payFractions)
       const { values: pds, setFieldValue } = formRefPDS.current || {}
       const { values: holders } = formRefHolders.current || {}
       /* eslint-enable no-unused-vars */
@@ -918,6 +921,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: newPds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
       const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
+      if (!input.paidFractions[lastFract]) {
+        return enqueueSnackbar('L\'ultima rata non è stata pagata!', { variant: 'error' })
+      }
       input.endDate = getPolicyEndDate(input.initDate, input.midDate)
       log.debug('input', input)
       let result

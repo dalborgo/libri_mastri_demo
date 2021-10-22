@@ -7,6 +7,7 @@ import ExcelJS from 'exceljs'
 import { ctol } from '../../Bdx/Bdx'
 import saveAs from 'file-saver'
 import { axiosGraphqlQuery } from 'utils/axios'
+import moment from 'moment'
 
 export function reducerPolicy (draft, action) {
   switch (action.type) {
@@ -122,6 +123,19 @@ export function reducerInsertModal (draft, action) {
     default:
       throw new Error('Invalid action type!')
   }
+}
+
+export function getLastFraction (payFractions) {
+  const today = moment()
+  let count = 1
+  for (let { date, daysDiff } of payFractions) {
+    const plusDay = moment(date).add(daysDiff, 'd')
+    if (today.isAfter(plusDay)) {
+      return count
+    }
+    count++
+  }
+  return false
 }
 
 export const comparator = (values, index) => inp => cFunctions.camelDeburr(inp.productCode + inp.vehicleType) === cFunctions.camelDeburr(values[index].productCode + values[index].vehicleType)
