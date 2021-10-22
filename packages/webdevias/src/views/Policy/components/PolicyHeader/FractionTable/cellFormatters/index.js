@@ -21,7 +21,7 @@ export const cell = (paidFractions, setPaidFractions) => props => {
   const { me: { priority } } = client.readQuery({ query: ME })
   const classes = useStyles()
   const today = moment()
-  const plusDay = moment(date).add(daysDiff, 'd')
+  const plusDay = moment(date).add(daysDiff * 2, 'd')// due rate di tempo per settare la pagata
   const isDisabled = today.isAfter(plusDay) || priority < 3
   if (name === 'paid' && today.isAfter(date)) {
     return (

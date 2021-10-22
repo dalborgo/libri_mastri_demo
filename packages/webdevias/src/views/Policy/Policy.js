@@ -921,7 +921,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: newPds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
       const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
-      if (!input.paidFractions[lastFract]) {
+      if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority < 4) {
         return enqueueSnackbar('L\'ultima rata non è stata pagata!', { variant: 'error' })
       }
       input.endDate = getPolicyEndDate(input.initDate, input.midDate)
@@ -937,7 +937,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     } catch ({ message }) {
       enqueueSnackbar(message, { variant: 'error' })
     }
-  }, [calculateEmittedPolicy, client, dispatch, editPolicy, enqueueSnackbar, statePolicy])
+  }, [calculateEmittedPolicy, client, dispatch, editPolicy, enqueueSnackbar, me.priority, statePolicy])
   //endregion
   
   //region POLICY UPLOAD

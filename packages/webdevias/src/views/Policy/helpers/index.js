@@ -127,15 +127,15 @@ export function reducerInsertModal (draft, action) {
 
 export function getLastFraction (payFractions) {
   const today = moment()
-  let count = 1
+  let count = 0
   for (let { date, daysDiff } of payFractions) {
     const plusDay = moment(date).add(daysDiff, 'd')
-    if (today.isAfter(plusDay)) {
-      return count
+    if (!today.isAfter(plusDay)) {
+      break
     }
     count++
   }
-  return false
+  return count
 }
 
 export const comparator = (values, index) => inp => cFunctions.camelDeburr(inp.productCode + inp.vehicleType) === cFunctions.camelDeburr(values[index].productCode + values[index].vehicleType)
