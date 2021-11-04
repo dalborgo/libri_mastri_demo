@@ -291,6 +291,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const newPolicy = {
       ...statePolicy,
       ...header,
+      number: statePolicy.number,
       productDefinitions,
       specialArrangements: pds?.specialArrangements || statePolicy.specialArrangements || '',
       holders: holders?.holders ?? statePolicy.holders,
@@ -511,9 +512,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
+    let fileName = `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`
+    if(type === 'regulation'){
+      fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${regCounter}.pdf`
+    }
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
-      `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`,
+      fileName,
       'application/pdf',
       data,
       { toDownload: forceDownloadPdf }
@@ -686,6 +691,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         input.payFractions = payFractionsNorm
         input.endDate = getPolicyEndDate(input.initDate, input.midDate)
       }
+      input.number=statePolicy.number
       if (!['DRAFT', 'ACCEPTED', 'CHANGED'].includes(stateCode)) {
         if (stateCode === 'TO_POLICY') {
           toNew = !input.meta
@@ -1026,10 +1032,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [dispatch, statePolicy.isRecalculateFraction, statePolicy.paymentFract, statePolicy.regFractions, statePolicy.regulationFract])
   
   const setPaidFractions = useCallback((index, val) => {
-    const paidFractions = { [index]: val }
-    dispatch({ type: 'setPaidFractions', paidFractions })
+    const paidFraction =  { index, val }
+    dispatch({ type: 'setPaidFractions', paidFraction })
   }, [dispatch])
   
+  console.log('policy:', policy)
   const tabs = [
     { value: 'holders', label: 'Anagrafica Intestatari' },
     { value: 'header', label: 'Intestazione' },
@@ -1056,6 +1063,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         meta={statePolicy.meta}
         number={statePolicy.number}
         producer={statePolicy.producer}
+        dispatch={dispatch}
         setOpenDiff={setOpenDiff}
         state={statePolicy.state}
         subAgent={statePolicy.subAgent}

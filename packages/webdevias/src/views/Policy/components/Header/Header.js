@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/styles'
 import {
   Button,
   CircularProgress,
-  colors,
+  colors, Dialog, DialogTitle,
   Fab,
   Grid,
   Link,
@@ -294,6 +294,32 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
   })()
 }
 
+function SimpleDialog(props) {
+  const { onClose, open, dispatch } = props
+  
+  const handleClose = () => {
+    onClose()
+  }
+  
+  return (
+    <Dialog onClose={onClose} open={open}>
+      <DialogTitle id="simple-dialog-title">Set backup account</DialogTitle>
+      <Button
+        onClick={
+          () => {
+            dispatch({
+              type: 'setNumber',
+              value: { number: 'miao' },
+            })
+          }
+        }
+      >
+        Cambio
+      </Button>
+    </Dialog>
+  )
+}
+
 const Header = props => {
   const {
     _code,
@@ -301,6 +327,7 @@ const Header = props => {
     handleSave,
     handlePolicySave,
     handleModeChange,
+    dispatch,
     producer: prodDefault,
     subAgent: subAgentDefault,
     handlePrint, state, formRefProd, formRefSub, meta, top, loadDiff, calledDiff, loadingDiff, setOpenDiff,
@@ -311,6 +338,13 @@ const Header = props => {
   const { me: { priority } } = client.readQuery({ query: ME })
   const [producer, setProducer] = useState(prodDefault)
   const [subAgent, setSubAgent] = useState(subAgentDefault)
+  const [open, setOpen] = React.useState(false)
+  const handleClickOpen = () => {
+    setOpen(true)
+  }
+  const handleClose = () => {
+    setOpen(false)
+  }
   const stateChip = getPolicyState(state, meta, top, priority)
   const { code: stateCode, isPolicy } = state || {}
   const showDiff = !top && meta?.modified === false && stateCode !== 'ACCEPTED' && meta?.version > 0
@@ -345,13 +379,31 @@ const Header = props => {
                     Doc n.&nbsp;
                     {
                       priority === 3 ?
-                        <Link
-                          color={'inherit'}
-                          href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/MB_POLICY%7C${_code}?bucket=${envConfig.BUCKET}`}
-                          target="_blank"
-                        >
-                          {number}
-                        </Link>
+                        <>
+                          <Link
+                            color={'inherit'}
+                            href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/MB_POLICY%7C${_code}?bucket=${envConfig.BUCKET}`}
+                            target="_blank"
+                          >
+                            {number}
+                          </Link>
+                          {
+                            (!isPolicy && number.includes('CL.')) &&
+                            <Button
+                              onClick={handleClickOpen}
+                              /* onClick={
+                                () => {
+                                  dispatch({
+                                    type: 'setNumber',
+                                    value: { number: 'miao' },
+                                  })
+                                }
+                              }*/
+                            >
+                              Cambio
+                            </Button>
+                          }
+                        </>
                         :
                         <span>{number}</span>
                     }
@@ -360,6 +412,7 @@ const Header = props => {
                   priority === 3 ? 'Nuova Offerta' : 'Nuova Proposta'
               } &nbsp;{number ? stateChip : ''}
             </span>
+            <SimpleDialog open={open} onClose={handleClose} dispatch={dispatch}/>
             {
               showDiff &&
               <div className={classes.rootButton}>

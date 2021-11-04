@@ -297,10 +297,12 @@ export default {
             ...curr,
             constraintCounter: undefined,
             counter: undefined,
+            finishDate: undefined,
             inPolicy: count++,
             startDate: undefined,
             startHour: undefined,
             state: 'ACTIVE',
+            vatIncluded: curr.vatIncluded || 'NO',
           }
           prev.push(newCurr)
         }

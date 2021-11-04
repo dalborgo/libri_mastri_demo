@@ -11,6 +11,9 @@ import moment from 'moment'
 
 export function reducerPolicy (draft, action) {
   switch (action.type) {
+    case 'setNumber':
+      draft.number = action.value.number
+      return
     case 'setAttachments':
       draft.attachments = action.attachments
       return
@@ -21,7 +24,7 @@ export function reducerPolicy (draft, action) {
       draft.regFractions = action.regFractions
       return
     case 'setPaidFractions':
-      draft.paidFractions = action.paidFractions
+      draft.paidFractions[action.paidFraction.index] = action.paidFraction.val
       return
     case 'confirmAllInclExcl':
       const partial_ = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, index: -1 }
@@ -209,7 +212,7 @@ export function initPolicy (policy) {
     return prev
   }, [])
   const holders = signer ? [signer, ...cosigners] : cosigners
-  return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments, paidFractions }
+  return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments, paidFractions: paidFractions || {} }
 }
 
 const bold = { font: { bold: true } }
