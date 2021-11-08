@@ -1052,6 +1052,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       <Header
         _code={statePolicy.id}
         calledDiff={calledDiff}
+        dispatch={dispatch}
         formRefProd={formRefProd}
         formRefSub={formRefSub}
         handleModeChange={handleModeChange}
@@ -1063,7 +1064,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         meta={statePolicy.meta}
         number={statePolicy.number}
         producer={statePolicy.producer}
-        dispatch={dispatch}
         setOpenDiff={setOpenDiff}
         state={statePolicy.state}
         subAgent={statePolicy.subAgent}

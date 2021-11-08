@@ -1,15 +1,20 @@
 import React, { memo, useState } from 'react'
 import { makeStyles } from '@material-ui/styles'
 import {
+  Box,
   Button,
   CircularProgress,
-  colors, Dialog, DialogTitle,
+  colors,
+  Dialog,
+  DialogContent,
   Fab,
   Grid,
+  IconButton,
   Link,
   ListItemIcon,
   Menu,
   MenuItem,
+  TextField,
   Tooltip,
   Typography,
 } from '@material-ui/core'
@@ -18,6 +23,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom'
 import ViewDay from '@material-ui/icons/ViewDay'
 import ViewWeek from '@material-ui/icons/ViewWeek'
 import CompareArrows from '@material-ui/icons/CompareArrows'
+import EditIcon from '@material-ui/icons/BorderColorRounded'
 import clsx from 'clsx'
 import { ME } from 'queries/users'
 import { useApolloClient } from '@apollo/react-hooks'
@@ -30,6 +36,13 @@ import Icon from '@mdi/react'
 import { envConfig } from 'init'
 
 const useStyles = makeStyles(theme => ({
+  box: {
+    gap: theme.spacing(2.5),
+    margin: theme.spacing(0.5, 0, 1.5),
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
   whiteButton: {
     backgroundColor: theme.palette.white,
     margin: theme.spacing(0.5),
@@ -294,28 +307,50 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
   })()
 }
 
-function SimpleDialog(props) {
-  const { onClose, open, dispatch } = props
-  
-  const handleClose = () => {
+function ChangeNumberDialog (props) {
+  const { onClose, open, dispatch, number } = props
+  const classes = useStyles()
+  const handleChange = () => {
+    const { value } = document.getElementById('changeNumberButton')
+    value && dispatch({
+      type: 'setNumber',
+      value: { number: value },
+    })
     onClose()
   }
-  
   return (
     <Dialog onClose={onClose} open={open}>
-      <DialogTitle id="simple-dialog-title">Set backup account</DialogTitle>
-      <Button
-        onClick={
-          () => {
-            dispatch({
-              type: 'setNumber',
-              value: { number: 'miao' },
-            })
-          }
-        }
-      >
-        Cambio
-      </Button>
+      <DialogContent>
+        <Box className={classes.box}>
+          <TextField
+            autoFocus
+            defaultValue={number}
+            id="changeNumberButton"
+            label="Cambia Numero"
+            onFocus={event => {event.target.select()}}
+            onKeyUp={
+              event => {
+                if (event.key === 'Enter') {
+                  const button = document.getElementById('changeButtonConfirm')
+                  button.click()
+                }
+              }
+            }
+            size="small"
+            variant="filled"
+          />
+          <Button
+            color="primary"
+            id="changeButtonConfirm"
+            onClick={handleChange}
+            size="small"
+            style={{ marginTop: 20 }}
+            variant="contained"
+          >
+            Conferma
+          </Button>
+        </Box>
+      </DialogContent>
     </Dialog>
   )
 }
@@ -388,20 +423,15 @@ const Header = props => {
                             {number}
                           </Link>
                           {
-                            (!isPolicy && number.includes('CL.')) &&
-                            <Button
+                            (!isPolicy) &&
+                            <IconButton
+                              disableFocusRipple
                               onClick={handleClickOpen}
-                              /* onClick={
-                                () => {
-                                  dispatch({
-                                    type: 'setNumber',
-                                    value: { number: 'miao' },
-                                  })
-                                }
-                              }*/
+                              size="small"
+                              style={{ marginLeft: 5 }}
                             >
-                              Cambio
-                            </Button>
+                              <EditIcon style={{ fontSize: '12pt' }}/>
+                            </IconButton>
                           }
                         </>
                         :
@@ -412,7 +442,7 @@ const Header = props => {
                   priority === 3 ? 'Nuova Offerta' : 'Nuova Proposta'
               } &nbsp;{number ? stateChip : ''}
             </span>
-            <SimpleDialog open={open} onClose={handleClose} dispatch={dispatch}/>
+            <ChangeNumberDialog dispatch={dispatch} number={number} onClose={handleClose} open={open}/>
             {
               showDiff &&
               <div className={classes.rootButton}>
