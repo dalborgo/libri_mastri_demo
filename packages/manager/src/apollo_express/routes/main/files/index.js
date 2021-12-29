@@ -48,6 +48,19 @@ function addRouters (router) {
     const policies = await Policy.getByQuery(query)
     res.send({ policies, vehicleTypes })
   })
+  router.post('/files/get_regulations', async function (req, res) {
+    const { _name } = bucket
+    const { vehicleTypes } = await Gs.findById('general_settings')
+    let { startDate, endDate } = req.body
+    startDate = '2020-12-31'
+    endDate = '2020-12-31'
+    const query = 'SELECT lb.* FROM ' + _name + ' lb '
+                  + 'WHERE _type = "MB_POLICY" AND (initDate between "' + startDate + '" '
+                  + 'AND "' + endDate + '" OR midDate between "' + startDate + '" AND "' + endDate + '") '
+                  + 'AND state.isPolicy = TRUE AND vehicles is not missing AND _code = "2020_633001342" order by `number`'
+    const policies = await Policy.getByQuery(query)
+    res.send({ policies, vehicleTypes })
+  })
 }
 
 export default {

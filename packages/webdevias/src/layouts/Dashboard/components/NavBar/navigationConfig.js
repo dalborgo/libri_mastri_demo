@@ -36,6 +36,10 @@ function navigationConfig (user, policy, registry, priority, pathname) {
     title: 'Bdx',
     href: '/policies/bdx',
   })
+  priority === 3 && policyChildren.push({
+    title: 'Regolazioni',
+    href: '/policies/regulations',
+  })
   
   const companyChildren = [
     {

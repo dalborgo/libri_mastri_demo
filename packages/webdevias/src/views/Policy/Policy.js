@@ -14,9 +14,9 @@ import {
 } from './components'
 import { useLazyQuery, useMutation } from '@apollo/react-hooks'
 import {
+  calculateIsRecalculatePaymentTable,
   calculatePaymentDates,
   calculatePaymentTable,
-  calculatePaymentTable2,
   calculatePrizeTable,
   calculateRegulationPayment,
   gestError,
@@ -291,10 +291,12 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const newPolicy = {
       ...statePolicy,
       ...header,
-      number: statePolicy.number,
       productDefinitions,
       specialArrangements: pds?.specialArrangements || statePolicy.specialArrangements || '',
       holders: holders?.holders ?? statePolicy.holders,
+    }
+    if (statePolicy.number) {
+      newPolicy.number = statePolicy.number
     }
     dispatch({ type: 'setPolicy', policy: newPolicy })
     if (value === 'tab') {
@@ -318,6 +320,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     if (clone.vehicleType === 'RIMORCHIO' && clone.hasGlass === 'SI') {
       throw Error(`Cristalli a "SI" per tipo veicolo "Rimorchio" non ammesso [${clone.licensePlate}]`)
     }
+    if (!clone.productCode) {
+      throw Error(`Codice prodotto mancante per ${clone.vehicleType} non definito [${clone.licensePlate}]`)
+    }
   }
   
   const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState, targetCounter, typeLabel) => {
@@ -328,13 +333,14 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const clone = { ...curr }
       const vehicleCode = `${cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)}`
       const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
-      checkVehicleErrors(clone)
       clone.value = numeric.normNumb(clone.value)
       clone.weight = numeric.toFloat(clone.weight) //not in millis
       clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
+      checkVehicleErrors(clone)
+      
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
         if (typeLabel === 'vincolo') {
@@ -390,7 +396,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const clone = { ...curr }
       const vehicleCode = `${cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)}`
       const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
-      checkVehicleErrors(clone)
       clone.value = numeric.normNumb(clone.value)
       clone.weight = numeric.toFloat(clone.weight) //not in millis
       clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
@@ -399,6 +404,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
+      checkVehicleErrors(clone)
       if (['DELETED_CONFIRMED', 'ADDED_CONFIRMED'].includes(clone.state)) {
         payObj[`${clone.licensePlate}${clone.state}`] = calculateRegulationPayment([clone], tablePd, statePolicy, header_, statePolicy.regFractions)
       }
@@ -431,8 +437,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [gs.vehicleTypes, statePolicy])
   
   //region HANDLE PRINT
-  const handlePrint = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter) => async () => {
-    console.log('hasRegulation:', hasRegulation)
+  const handlePrint = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter, toSave = false) => async () => {
     const header = formRefHeader?.current?.values || statePolicy
     const { values: pds } = formRefPDS.current || {}
     const tablePd = formRefPDS.current
@@ -458,8 +463,49 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }
     if (type === 'proposal') {
       const payFractions = calculatePaymentDates(statePolicy.vehicles, tablePd, statePolicy, header)
-      const { payFractionsNorm } = getPayFractionsNorm(payFractions, false)
+      const { payFractionsNorm } = statePolicy?.payFractions?.length ? getPayFractionsNorm(statePolicy.payFractions, false, false, true) : getPayFractionsNorm(payFractions, false)
       data.payFractions = payFractionsNorm
+    }
+    if (type === 'receipt') {
+      const { payFractions: originalPayFractions } = statePolicy
+      data.endDate = getPolicyEndDate(data.initDate, data.midDate)
+      const resultVehicles = []
+      let count_ = 1
+      const _vehicles = statePolicy.vehicles.filter(row => {
+        const condition = (!row.startDate || moment(row.startDate).isSameOrBefore(moment(endRegDate))) && (!row.finishDate || moment(row.finishDate).isAfter(endRegDate))
+        if (condition) {
+          resultVehicles.push({ ...row, [`inPolicy_${endRegDate}`]: count_++ })
+        }
+        return condition
+      })
+      const calculatedPayFractions = calculatePaymentDates(_vehicles, tablePd, statePolicy, header)
+      const { payFractionsNorm: calculatedPayFractionNorm } = getPayFractionsNorm(calculatedPayFractions, true, true)
+      data.startRecDate = endRegDate
+      data.resultPayFractions = []
+      let count = 0, index
+      for (let opf of originalPayFractions) {
+        if (moment(opf.date).isBefore(endRegDate)) {
+          data.resultPayFractions.push(opf)
+        }
+        count++
+      }
+      for (let npf of calculatedPayFractionNorm) {
+        if (moment(npf.date).isSameOrAfter(endRegDate)) {
+          data.resultPayFractions.push(npf)
+          count++
+        }
+        if (moment(npf.date).isSame(endRegDate)) {
+          data.toPrintPayFraction = npf
+          index = count - 1
+        }
+      }
+      data.resultVehicles = resultVehicles
+      data.resultRegFractions = data.regFractions.map((row, i) => {
+        return { ...row, toCon: data.regFractions.length - 1 === i ? undefined : data.toPrintPayFraction.date }
+      })
+      data.endRecDate = data.resultPayFractions?.[index]?.date ?? cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+      data.totTaxable = data.toPrintPayFraction.taxable / 1000
+      data.totInstalment = data.toPrintPayFraction.instalment / 1000
     }
     if (type === 'regulation') {
       data.endDate = getPolicyEndDate(data.initDate, data.midDate)
@@ -468,7 +514,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       data.counter = regCounter
       let totTaxable = 0
       const newVehicles = []
-      //data.toSave = true
       for (let vehicle of statePolicy.vehicles) { // non in millesimi qua
         if (hasRegulation === 'SI') {
           const isStartDate = vehicle.startDate === data.initDate
@@ -480,7 +525,10 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
               vehicle.state = 'ADDED_CONFIRMED'
             }
-            const { payment, days } = calculatePaymentTable2(tablePd, statePolicy, vehicle, true, true, endRegDate)
+            const {
+              payment,
+              days,
+            } = calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate)
             const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
             totTaxable += payment
             newVehicles.push({ ...vehicle, payment, prize, days })
@@ -501,21 +549,22 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             newVehicles.push({ ...vehicle, payment, prize, days })
           }
         }
-        
       }
       data.vehicles = newVehicles
       data.totTaxable = Number(totTaxable.toFixed(2))
       data.totInstalment = (totTaxable * ((100 + 13.5) / 100))
-      console.log('vehicle:', data.vehicles[0])
-      console.log('totTaxable:', data.totTaxable)
     }
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
     let fileName = `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`
-    if(type === 'regulation'){
-      fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${regCounter}.pdf`
+    if (type === 'regulation') {
+      fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${data.endRegDate}.pdf`
     }
+    if (type === 'receipt') {
+      fileName = `quietanza_${getPolicyCode(statePolicy, header, isNew)}-${data.startRecDate}.pdf`
+    }
+    data.toSave = toSave
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
       fileName,
@@ -525,7 +574,27 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     )
     client.writeData({ data: { loading: false } })
     !ok && enqueueSnackbar(message, { variant: 'error' })
+    return data
   }, [calculatePolicy, client, dispatch, enqueueSnackbar, isNew, me, statePolicy, tab])
+  //endregion
+  
+  //region CONSOLIDATION
+  const consolidatePolicy = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter) => async () => {
+    
+    //await handlePrint('regulation', startRegDate, endRegDate, hasRegulation, regCounter)()
+    const {
+      resultPayFractions,
+      resultVehicles,
+      resultRegFractions,
+    } = await handlePrint('receipt', startRegDate, endRegDate, hasRegulation, regCounter)()
+    await dispatch({
+      payFractions: resultPayFractions,
+      regFractions: resultRegFractions,
+      vehicles: resultVehicles,
+      type: 'setConsolidate',
+    })
+    //document.getElementById('headerButton').click()
+  }, [dispatch, handlePrint])
   //endregion
   
   //region HANDLE PRINT EmittedPolicy
@@ -691,7 +760,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         input.payFractions = payFractionsNorm
         input.endDate = getPolicyEndDate(input.initDate, input.midDate)
       }
-      input.number=statePolicy.number
+      if (statePolicy.number) {
+        input.number = statePolicy.number
+      }
       if (!['DRAFT', 'ACCEPTED', 'CHANGED'].includes(stateCode)) {
         if (stateCode === 'TO_POLICY') {
           toNew = !input.meta
@@ -1032,11 +1103,10 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [dispatch, statePolicy.isRecalculateFraction, statePolicy.paymentFract, statePolicy.regFractions, statePolicy.regulationFract])
   
   const setPaidFractions = useCallback((index, val) => {
-    const paidFraction =  { index, val }
+    const paidFraction = { index, val }
     dispatch({ type: 'setPaidFractions', paidFraction })
   }, [dispatch])
   
-  console.log('policy:', policy)
   const tabs = [
     { value: 'holders', label: 'Anagrafica Intestatari' },
     { value: 'header', label: 'Intestazione' },
@@ -1130,6 +1200,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           {
             (tab === 'all' || tab === 'header') &&
             <PolicyHeader
+              consolidatePolicy={consolidatePolicy}
               dispatch={dispatch}
               generateDates={generateDates}
               generateRegDates={generateRegDates}

@@ -159,7 +159,7 @@ function getFractMonths (fract) {
 
 const taxRate = 13.5
 
-/*function isLastFebruary (data) {
+function isLastFebruary (data) {
   const endDay = moment(data).endOf('month').format('D')
   const day = moment(data).format('D')
   if (day === endDay) {
@@ -167,7 +167,7 @@ const taxRate = 13.5
   } else {
     return 0
   }
-}*/
+}
 
 /*function myDays360 (startCalc, endCalc, midDate) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
@@ -179,9 +179,10 @@ const taxRate = 13.5
 
 function myDays360_2 (startCalc, endCalc) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
-  /*if (isLastFebruary(startCalc) || isLastFebruary(endCalc)) {
-    daysDiff = Math.round(daysDiff / 30) * 30
-  }*/
+  const diff = isLastFebruary(startCalc)
+  if (diff && (endCalc !== startCalc)) {
+    daysDiff -= 30 - diff
+  }
   return daysDiff
 }
 
@@ -390,12 +391,14 @@ function calcDaysBetweenTwoDateRanges (startDate, endDate, dateRanges) {
   
   const endDateToConsider = moment(dateRanges.EndDate).isAfter(inputEndDate) ? inputEndDate : dateRanges.EndDate
   const startDateToConsider = moment(dateRanges.startDate).isAfter(inputStartDate) ? dateRanges.startDate : inputStartDate
-  const daysDifference = moment(endDateToConsider).diff(moment(startDateToConsider), 'days')
+  const daysDifference = myDays360_2(startDateToConsider, endDateToConsider)
   return daysDifference
 }
 
-export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, regDay) {
+export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, regDay) {
   const { values: valuesTPd } = tablePd || {}
+  //console.log('regDay:', regDay)
+  //console.log('payFractions:', policy.payFractions)
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
   if (!productDefinitions.length) {return 0}
@@ -454,13 +457,14 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
           break
         }
       }
-      console.log('' + vehicle.licensePlate, startDate, finishDate)
-      console.log('current_fract', currentFract.startDate, currentFract.endDate)
+      //console.log('' + vehicle.licensePlate, startDate, finishDate)
+      //console.log('current_fract', currentFract.startDate, currentFract.endDate)
       const dateRanges = { startDate: currentFract.startDate, EndDate: currentFract.endDate }
       
       const vehicleDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(startDate, finishDate, dateRanges), 0)
+      
       const fractDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(currentFract.startDate, currentFract.endDate, dateRanges), 0)
-      console.log('vehicleDaysInCurrentFract:', vehicleDaysInCurrentFract)
+      //console.log('vehicleDaysInCurrentFract:', vehicleDaysInCurrentFract)
       /*  let totalPaidAtInitRange
         if (moment(finishDate).isBefore(moment(currentFract.startDate))) {// è stato escluso precedentemente al currentFract
           totalPaidAtInitRange = 0
@@ -474,15 +478,15 @@ export function calculatePaymentTable2 (tablePd, policy, vehicle, printTaxable =
           moment(currentFract.startDate).isBefore(moment(finishDate)) &&
           moment(finishDate).isBefore(moment(currentFract.endDate))) {
         const reversal = (vehicleDaysInCurrentFract - currentFract.days) * dayAmount
-        console.log('pura_esclusione', reversal)
+        //console.log('pura_esclusione', reversal)
         rangePrice = reversal
       } else if (vehicleDaysInCurrentFract === fractDaysInCurrentFract) {
         const fractRate = currentFract.days * dayAmount
-        console.log('veicolo presente nell intero periodo', fractRate)
+        //console.log('veicolo presente nell intero periodo', fractRate)
         rangePrice = fractRate
       } else {
         const fractRate = vehicleDaysInCurrentFract * dayAmount
-        console.log(`veicolo inserito nel periodo per ${vehicleDaysInCurrentFract}`, fractRate)
+        //console.log(`veicolo inserito nel periodo per ${vehicleDaysInCurrentFract}`, fractRate)
         rangePrice = fractRate
       }
       daysLifeTime = vehicleDaysInCurrentFract

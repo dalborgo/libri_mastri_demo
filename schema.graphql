@@ -123,6 +123,7 @@ type Mutation {
     signUpRegistry(email: String!, name: String, password: String!, username: String!): Registry
     uploadFile(input: PolicyUploadInput!): UploadResponse
     updatePolicy(id: ID!): Policy
+    consolidatePolicy(id: ID!): Policy
 }
 
 type PageInfo {

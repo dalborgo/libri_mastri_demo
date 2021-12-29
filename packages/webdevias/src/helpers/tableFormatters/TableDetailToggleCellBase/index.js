@@ -35,7 +35,7 @@ const TableDetailToggleCellBase = ({
     event.stopPropagation()
     onToggle()
   }
-  if (row.children || row.state === 'ADDED' || (row.state === 'ADDED_CONFIRMED' && row?.attachments?.length)) {
+  if (row.children || ['ADDED', 'DELETED'].includes(row.state) || (['ADDED_CONFIRMED', 'DELETED_CONFIRMED'].includes(row.state) && row?.attachments?.length)) {
     return (
       <TableCell
         className={clsx(classes.toggleCell, className)}

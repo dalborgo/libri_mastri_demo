@@ -797,6 +797,8 @@ function addRouters (router) {
       _code,
       cosigners,
       number,
+      endDate,
+      initDate,
       productDefinitions,
       signer,
       toSave,
@@ -866,8 +868,8 @@ function addRouters (router) {
       pLongName: get(producer, 'longName'),
       lic: target.licensePlate,
       vType,
-      sHour,
-      sDate,
+      sHour: sHour || '24:00',
+      sDate: sDate || (initDate && cDate.mom(initDate, null, 'DD/MM/YYYY')),
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -885,7 +887,7 @@ function addRouters (router) {
       rCity: get(realSigner, 'city'),
       rState: get(realSigner, 'state'),
       rId: `${get(realSigner, 'name') ? 'C.F.' : get(realSigner, 'id') ? 'P.IVA ' : ''} ${get(realSigner, 'id') || empty}`,
-      endDate: target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY'),
+      endDate: (target.finishDate && cDate.mom(target.finishDate, null, 'DD/MM/YYYY') || endDate),
       lExp: target.leasingExpiry && cDate.mom(target.leasingExpiry, null, 'DD/MM/YYYY'),
       lVat,
       lAdd,
@@ -914,6 +916,96 @@ function addRouters (router) {
     }
   })
   
+  router.post('/prints/print_receipt', async function (req, res) {
+    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_quietanza.docx')
+    const partial = {}, empty = ' '
+    const data = req.body
+    const {
+      _code,
+      cosigners,
+      endDate,
+      endRecDate,
+      initDate,
+      number,
+      signer,
+      startRecDate,
+      state: { isPolicy },
+      toSave,
+      totInstalment,
+      totTaxable,
+    } = data
+    const fileName = `quietanza_${_code}-{startRecDate}.pdf`
+    if (isPolicy) {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const producer = await User.findById(data.producer) || {}
+    /*eslint-disable sort-keys*/
+    const cosList = cosigners.map((cosigner, index) => {
+      const name = get(cosigner, 'name')
+      const sur = get(cosigner, 'surname')
+      const addr = get(cosigner, 'address')
+      const addrNumb = get(cosigner, 'address_number')
+      const zip = get(cosigner, 'zip')
+      const city = get(cosigner, 'city')
+      const state = get(cosigner, 'state')
+      const id = get(cosigner, 'id') || empty
+      return {
+        addr,
+        addrNumb,
+        city,
+        first: index === 0,
+        id: `${get(cosigner, 'name') ? 'C.F.' : 'P.IVA '} ${id}${index !== cosigners.length - 1 ? '' : ''}`,
+        name: `${name ? `${name}` : ''}`,
+        state,
+        sur: `${name ? ' ' + sur : sur}`,
+        zip,
+      }
+    })
+    const numTotTax = totInstalment - totTaxable
+    const input = {
+      number,
+      today: cDate.mom(null, null, 'DD/MM/YYYY'),
+      startRecDate: cDate.mom(startRecDate, null, 'DD/MM/YYYY'),
+      endRecDate: cDate.mom(endRecDate, null, 'DD/MM/YYYY'),
+      pLongName: get(producer, 'longName'),
+      sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
+      sSur: get(signer, 'surname'),
+      sAddr: get(signer, 'address'),
+      sAddrNumb: get(signer, 'address_number'),
+      sZip: get(signer, 'zip'),
+      sCity: get(signer, 'city'),
+      sState: get(signer, 'state'),
+      sId: `${get(signer, 'name') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      initDate: initDate && cDate.mom(initDate, null, 'DD/MM/YYYY'),
+      hasCosig: !!cosList.length,
+      cosList,
+      endDate,
+      totInstalment: numeric.printDecimal(numTotTax > 0 ? totInstalment : totTaxable),
+      totTax: numeric.printDecimal(numTotTax > 0 ?  numTotTax : 0),
+      totTaxable: numeric.printDecimal(totTaxable),
+    }
+    /*eslint-enable sort-keys*/
+    {
+      const { ok, message, results } = await ioFiles.fillDocxTemplate(filePath, input)
+      if (!ok) {return res.status(412).send({ ok, message })}
+      partial.buffer = results
+      partial.correct = ok
+    }
+    {
+      const { ok, message, results } = await ioFiles.docxToPdf(partial.buffer)
+      if (!ok) {return res.status(412).send({ ok, message })}
+      partial.correct &= ok
+      res.send(results)
+      if (partial.correct && toSave) {
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, `quietanza_${_code}.pdf`, results)
+      }
+    }
+  })
   router.post('/prints/print_regulation', async function (req, res) {
     const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_regolazione_premio.docx')
     const partial = {}, empty = ' '
@@ -935,7 +1027,7 @@ function addRouters (router) {
       totTaxable,
       vehicles,
     } = data
-    const fileName = `regolazione_${_code}-${counter || ''}.pdf`
+    const fileName = `regolazione_${_code}-${endRegDate}.pdf`
     if (isPolicy) {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
       const pathExists = fs.existsSync(savedFilePath)

@@ -77,7 +77,7 @@ export const MenuTypeProvider = memo(props => {
     }
     const classes = useStyles()
     const isInclusion = useMemo(() => ['ADDED', 'ADDED_CONFIRMED'].includes(state), [state])
-    if ((state === 'ACTIVE' && !row.inPolicy) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
+    if ((state === 'ACTIVE' && !row.inPolicy && !row.constraintCounter) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
       return null
     } else {
       return (
@@ -191,7 +191,7 @@ export const MenuTypeProvider = memo(props => {
               </MenuItem>
             }
             {
-              (['ADDED', 'ADDED_CONFIRMED'].includes(state) && row.leasingCompany) &&
+              ((['ADDED', 'ADDED_CONFIRMED'].includes(state) || row.constraintCounter) && row.leasingCompany) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}

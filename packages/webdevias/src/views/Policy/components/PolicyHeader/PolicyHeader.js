@@ -45,13 +45,24 @@ const Body = memo(props => {
               globalClass={props.globalClass}
               isPolicy={props.isPolicy}
             />
-            <FractionTable fractions={props.payFractions} isPolicy={props.isPolicy} paidFractions={props.paidFractions} setPaidFractions={props.setPaidFractions}/>
+            <FractionTable
+              fractions={props.payFractions}
+              isPolicy={props.isPolicy}
+              paidFractions={props.paidFractions}
+              setPaidFractions={props.setPaidFractions}
+            />
             <HeaderRegulationTable
               generateRegDates={props.generateRegDates}
               globalClass={props.globalClass}
               isPolicy={props.isPolicy}
             />
-            <RegulationTable fractions={props.regFractions} handlePrint={props.handlePrint} isPolicy={props.isPolicy}/>
+            <RegulationTable
+              consolidatePolicy={props.consolidatePolicy}
+              fractions={props.regFractions}
+              handlePrint={props.handlePrint}
+              isPolicy={props.isPolicy}
+              isRecalculateFraction={props.isRecalculateFraction}
+            />
           </form>
         )
       }
@@ -60,7 +71,27 @@ const Body = memo(props => {
 })
 
 const PolicyHeader = props => {
-  const { dispatch, handlePrint, isPolicy, paidFractions, setPaidFractions, isNew, innerRef, globalClass, number, initDate, midDate, paymentFract, regulationFract, isRecalculateFraction, regFractions, generateDates, generateRegDates, payFractionsDef } = props
+  const {
+    consolidatePolicy,
+    dispatch,
+    handlePrint,
+    isPolicy,
+    paidFractions,
+    setPaidFractions,
+    isNew,
+    innerRef,
+    globalClass,
+    number,
+    initDate,
+    midDate,
+    paymentFract,
+    regulationFract,
+    isRecalculateFraction,
+    regFractions,
+    generateDates,
+    generateRegDates,
+    payFractionsDef,
+  } = props
   const [expandHeader, setExpandHeader] = useState(true)
   const { tab } = useParams()
   const handleToggleHeader = () => {
@@ -74,6 +105,7 @@ const PolicyHeader = props => {
     }
   }, [generateDates, payFractionsDef])
   const bodyProps = {
+    consolidatePolicy,
     dispatch,
     generateDates,
     generateRegDates,

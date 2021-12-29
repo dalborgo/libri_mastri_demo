@@ -198,6 +198,7 @@ export const POLICIES_FRAGMENT = (gql`
       }
       top
       initDate
+      midDate
       _createdAt
       __typename
     }

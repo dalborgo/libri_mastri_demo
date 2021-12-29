@@ -5,16 +5,16 @@ import { Page } from 'components'
 import { Header } from './components'
 import { withSnackbar } from 'notistack'
 import compose from 'lodash/fp/compose'
-import { bdxQuery } from 'utils/axios'
+import { regulationsQuery } from 'utils/axios'
 import { Button } from '@material-ui/core'
 import ExcelJS from 'exceljs'
 import saveAs from 'file-saver'
-import { cDate, cFunctions, numeric } from '@adapter/common'
-import { calculatePrizeTable, getPolicyEndDate } from '../../helpers'
+import { cDate, cFunctions } from '@adapter/common'
+import { calculateIsRecalculatePaymentTable, calculatePaymentTable, getPolicyEndDate } from '../../helpers'
 import { initPolicy } from '../Policy/helpers'
 import numberToLetter from 'number-to-letter'
-import BdxForm from './components/BdxForm'
-import find from 'lodash/find'
+import RegulationsForm from './components/RegulationsForm'
+import moment from 'moment'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -64,21 +64,16 @@ function createExcel (policies, vehicleTypes, data) {
   const columns = [
     { key: 'pol', width: 25 },
     { key: 'sign', width: 35 },
-    { key: 'cos', width: 35 },
-    { key: 'st', width: 25 },
-    { key: 'lic', width: 20 },
-    { key: 'model', width: 35 },
+    { key: 'st', width: 45 },
+    { key: 'id', width: 20 },
     { key: 'init', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'end', width: 20 },
-    { key: 'cov', width: 30 },
-    { key: 'val', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'gla', width: 15 },
-    { key: 'tow', width: 15 },
-    { key: 'cap', width: 15, style: { numFmt: '#,##0.00' } },
-    { key: 'over', width: 15, style: { numFmt: '#,##0.00' } },
-    { key: 'exc', width: 15, style: { numFmt: '#,##0.00' } },
-    { key: 'prize', width: 20, style: { numFmt: '#,##0.00' } },
-    { key: 'prizeT', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'broker', width: 30 },
+    { key: 'dec', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
+    { key: 'sca', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
+    { key: 'totTaxable', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'tax', width: 20, style: { numFmt: '#,##0.00' } },
+    { key: 'totInstalment', width: 20, style: { numFmt: '#,##0.00' } },
   ]
   ws.columns = columns
   const letter = ctol(columns)
@@ -122,94 +117,123 @@ function createExcel (policies, vehicleTypes, data) {
   ws.addRow({
     pol: 'NR Polizza',
     sign: 'Contraente',
-    cos: 'Assicurato',
-    st: 'Ubicazione Assicurato',
-    lic: 'Targa',
-    model: 'Tipo Veicolo',
+    st: 'Indirizzo',
+    id: 'Iva/CF',
     init: 'Decorrenza Copertura',
     end: 'Scadenza Copertura',
-    cov: 'Garanzia',
-    val: 'Valore Assicurato',
-    gla: 'Cristalli',
-    tow: 'Traino',
-    cap: 'Massimale Cristalli',
-    over: '% Scoperto',
-    exc: 'Franchigia',
-    prize: 'Premio Lordo Annuo',
-    prizeT: 'Premio Netto Annuo',
+    broker: 'Broker',
+    dec: 'Decorrenza Regolazione',
+    sca: 'Scadenza Regolazione',
+    totTaxable: 'Premio Netto',
+    tax: 'Tasse',
+    totInstalment: 'Premio Lordo',
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(10).getCell(colIndex), lightGray, fontWhite)
   }
-  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0
+  let totalVehicles = 0, totalTaxable = 0, totalInstalment = 0, totalTaxes = 0
   for (let policy of policies) {
     const newPolicy = initPolicy(policy)
-    for (let vehicle of policy.vehicles) {
-      if (!['DELETED', 'DELETED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
-      totalVehicles++
-      const prize = calculatePrizeTable(null, newPolicy, {
-        ...vehicle,
-        value: numeric.toFloat(vehicle.value / 1000),
-      })
-      const signer = newPolicy?.holders?.[0] ?? {}
-      const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
-      let realSigner
-      if (vehicle.owner && signer.id !== vehicle.owner) {
-        realSigner = find(policy.cosigners, { id: vehicle.owner }) || {}
-      }
-      const prizeT = (prize / ((100 + 13.5) / 100))
-      totalPrize += prize
-      totalPrizeT += prizeT
-      const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
-      const prodKey = cFunctions.camelDeburr(vehicle.productCode + vehicleCode)
-      const product = policy.productDefinitions[prodKey] || {}
-      ws.addRow({
-        pol: newPolicy.number,
-        sign,
-        cos: realSigner ? realSigner.surname + (realSigner.name ? ` ${realSigner.name}` : '') : sign,
-        st: signer.state,
-        lic: vehicle.licensePlate,
-        model: vehicle.vehicleType,
-        init: newPolicy.initDate && new Date(newPolicy.initDate),
-        end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
-        cov: product.coverageType,
-        val: numeric.toFloat(vehicle.value / 1000),
-        gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
-        tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
-        cap: numeric.toFloat(product.glassCap / 1000),
-        over: product.overdraft / 1000,
-        exc: product.excess / 1000,
-        prize,
-        prizeT,
-      })
+    const data = {
+      ...newPolicy,
     }
+    let totTaxable = 0
+    const endRegDate = '2021-12-31'
+    const startRegDate = '2020-12-31'
+    const hasRegulation = newPolicy.isRecalculateFraction
+    const tablePd = { values: { productDefinitions: newPolicy.productDefinitions } }
+    for (let vehicle of policy.vehicles) {
+      if (hasRegulation === 'SI') {
+        const isStartDate = vehicle.startDate === data.initDate
+        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+          continue
+        }
+        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
+          }
+          const {
+            payment,
+          } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
+          totTaxable += payment
+        }
+      } else {
+        const isStartDate = vehicle.startDate === data.initDate
+        vehicle.value = vehicle.value / 1000
+        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+          continue
+        }
+        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
+          }
+          const { payment } = calculatePaymentTable(tablePd, data, vehicle, true, true)
+          totTaxable += payment
+        }
+      }
+    }
+    totalVehicles++
+    data.totTaxable = Number(totTaxable.toFixed(2))
+    data.totInstalment = (totTaxable * ((100 + 13.5) / 100))
+    const signer = newPolicy?.holders?.[0] ?? {}
+    const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
+    totalTaxable += data.totTaxable
+    totalInstalment += data.totInstalment
+    const tax = data.totInstalment - data.totTaxable
+    totalTaxes += tax
+    ws.addRow({
+      pol: newPolicy.number,
+      sign,
+      st: `${signer.address}, ${signer.address_number} - ${signer.city} (${signer.zip}) - ${signer.state}`,
+      id: signer.id,
+      init: newPolicy.initDate && new Date(newPolicy.initDate),
+      end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
+      broker: newPolicy.producer,
+      dec: startRegDate && new Date(startRegDate),
+      sca: endRegDate && new Date(endRegDate),
+      totTaxable: data.totTaxable,
+      tax,
+      totInstalment: data.totInstalment,
+    })
   }
   const headerCount = 11
   const rl = totalVehicles + headerCount - 1
   ws.addRow({
-    exc: 'Importi Totali',
-    prize: { formula: `SUM(${letter['prize']}${headerCount}:${letter['prize']}${rl})`, result: totalPrize || '' },
-    prizeT: { formula: `SUM(${letter['prizeT']}${headerCount}:${letter['prizeT']}${rl})`, result: totalPrizeT || '' },
+    sca: 'Importi Totali',
+    totTaxable: {
+      formula: `SUM(${letter['totTaxable']}${headerCount}:${letter['totTaxable']}${rl})`,
+      result: totalTaxable || '',
+    },
+    tax: {
+      formula: `SUM(${letter['tax']}${headerCount}:${letter['tax']}${rl})`,
+      result: totalTaxes || '',
+    },
+    totInstalment: {
+      formula: `SUM(${letter['totInstalment']}${headerCount}:${letter['totInstalment']}${rl})`,
+      result: totalInstalment || '',
+    },
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(rl + 1).getCell(colIndex), bold)
   }
   workbook.xlsx.writeBuffer().then(buffer => {
-    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'DataGrid.xlsx')
+    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'RegulationsGrid.xlsx')
   })
 }
 
-const Bsx = ({ enqueueSnackbar }) => {
+const Regulations = ({ enqueueSnackbar }) => {
   const classes = useStyles()
-  const formRefBdx = useRef()
+  const formRefRegulations = useRef()
   const onClick = useCallback(async () => {
-    const { values } = formRefBdx.current || {}
+    const { values } = formRefRegulations.current || {}
     const data = {
       startDate: cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
       endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
     }
-    const { ok, message, results } = await bdxQuery(
-      'files/get_bdx',
+    const { ok, message, results } = await regulationsQuery(
+      'files/get_regulations',
       data
     )
     !ok && enqueueSnackbar(message, { variant: 'error' })
@@ -219,11 +243,11 @@ const Bsx = ({ enqueueSnackbar }) => {
   return (
     <Page
       className={classes.root}
-      title="Bdx"
+      title="Regolazioni"
     >
       <Header/>
       <div>
-        <BdxForm formRefBdx={formRefBdx}/>
+        <RegulationsForm formRefRegulations={formRefRegulations}/>
       </div>
       <div className={classes.results}>
         <Button color="primary" disableFocusRipple onClick={onClick} size="small" variant="contained">Genera</Button>
@@ -232,10 +256,10 @@ const Bsx = ({ enqueueSnackbar }) => {
   )
 }
 
-Bsx.propTypes = {
+Regulations.propTypes = {
   enqueueSnackbar: PropTypes.any,
 }
 
 export default compose(
   withSnackbar
-)(Bsx)
+)(Regulations)

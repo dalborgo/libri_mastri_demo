@@ -22,7 +22,12 @@ import {
 } from '@devexpress/dx-react-grid-material-ui'
 import { Container, Paper } from '@material-ui/core'
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { calculatePaymentTable, calculatePaymentTable2, calculatePrizeTable, getPolicyEndDate } from 'helpers'
+import {
+  calculateIsRecalculatePaymentTable,
+  calculatePaymentTable,
+  calculatePrizeTable,
+  getPolicyEndDate,
+} from 'helpers'
 import {
   DateTypeProvider,
   NumberTypeProvider,
@@ -116,8 +121,14 @@ const VehiclesTable = props => {
   } = props
   
   const rows = filtered ? vehicles.reduce((prev, row) => {
-    if (!row.startDate || row.startDate === props.policy.initDate) {
-      prev.push(row)
+    if(filtered === true) {
+      if (!row.startDate || row.startDate === props.policy.initDate) {
+        prev.push(row)
+      }
+    } else {
+      if(row[`inPolicy_${filtered}`]){
+        prev.push(row)
+      }
     }
     return prev
   }, []) : vehicles
@@ -130,7 +141,7 @@ const VehiclesTable = props => {
     const { values: header } = formRefHeader.current || {}
     const isRecalculateFraction = header?.isRecalculateFraction || policy.isRecalculateFraction
     if (isRecalculateFraction === 'SI') {
-      return calculatePaymentTable2(tablePd, policy, row, taxableTotal)
+      return calculateIsRecalculatePaymentTable(tablePd, policy, row, taxableTotal)
     } else {
       return calculatePaymentTable(tablePd, policy, row, taxableTotal)
     }
@@ -265,8 +276,8 @@ const VehiclesTable = props => {
     { columnName: 'brand', align: 'center' },
     { columnName: 'model', align: 'center' },
     { columnName: 'vatIncluded', align: 'center' },
-    { columnName: 'productCode', align: 'center' },
-    { columnName: 'coverageType', align: 'center', editingEnabled: false },
+    { columnName: 'productCode', align: 'center', width: 250 },
+    { columnName: 'coverageType', align: 'center', editingEnabled: false, width: 250},
     { columnName: 'value', align: 'right' },
     { columnName: 'hasGlass', align: 'center' },
     { columnName: 'hasTowing', align: 'center' },
@@ -294,7 +305,7 @@ const VehiclesTable = props => {
     const defCommon = {
       state: isPolicy ? 'ADDED' : 'ACTIVE',
       finishDate: isPolicy ? cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate) : undefined,
-      vehicleType: 'AUTO',
+      vehicleType: defaultVehicleCode,
       hasTowing: 'NO',
       hasGlass: 'NO',
       vatIncluded: 'NO',

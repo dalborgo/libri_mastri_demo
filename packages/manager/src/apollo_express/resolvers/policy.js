@@ -251,6 +251,14 @@ export default {
           method: 'POST',
           responseType: 'blob',
         })
+        let constraintCounter_ =  1
+        input.vehicles = input.vehicles.map((vehicle, index) => {
+          return {
+            ...vehicle,
+            inPolicy: ++index,
+            constraintCounter: vehicle.leasingCompany ? constraintCounter_++ : undefined,
+          }
+        })
       }
       input.attachments = attachments
       input.meta = meta
@@ -289,13 +297,16 @@ export default {
       const year_ = (endDate.split('-'))[0]
       const code = `RENEWED_${year_}_${serie}`
       const number = `Bozza (RV. ${year_}/${serie})`
-      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, { ...policy, initDate: endDate }, isRecalculateFraction)
-      let count = 1
+      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {
+        ...policy,
+        initDate: endDate,
+      }, isRecalculateFraction)
+      let count = 1, constraintCounter_ = 1
       const newVehicles = vehicles.reduce((prev, curr) => {
-        if(['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)){
+        if (['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)) {
           const newCurr = {
             ...curr,
-            constraintCounter: undefined,
+            constraintCounter: curr.leasingCompany ? constraintCounter_++ : undefined,
             counter: undefined,
             finishDate: undefined,
             inPolicy: count++,

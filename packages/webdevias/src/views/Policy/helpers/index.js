@@ -71,6 +71,11 @@ export function reducerPolicy (draft, action) {
     case 'appendVehicles':
       draft.vehicles.push(...action.vehicles)
       return
+    case 'setConsolidate':
+      draft.payFractions = action.payFractions
+      draft.regFractions = action.regFractions
+      draft.vehicles = action.vehicles
+      return
     case 'setVehicleStateByIndex':
       const partial = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, index: -1 }
       for (let i = 0; i < draft.vehicles.length; i++) {

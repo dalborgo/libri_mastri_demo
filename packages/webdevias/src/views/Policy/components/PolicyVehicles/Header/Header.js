@@ -1,9 +1,10 @@
 import React, { memo } from 'react'
 import { makeStyles, useTheme } from '@material-ui/styles'
-import { Button, Grid, ListItemIcon, Menu, MenuItem, Toolbar, Tooltip } from '@material-ui/core'
+import { Button, Divider, Grid, ListItemIcon, Menu, MenuItem, Toolbar, Tooltip } from '@material-ui/core'
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab'
 import Icon from '@mdi/react'
 import {
+  mdiCarMultiple,
   mdiCheckAll,
   mdiCloudDownloadOutline,
   mdiCloudUploadOutline,
@@ -76,7 +77,6 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
           </MenuItem>
         }
         {
-          isPolicy &&
           <MenuItem
             onClick={
               () => {
@@ -89,23 +89,6 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
               <Icon path={mdiMicrosoftExcel} size={1}/>
             </ListItemIcon>
             Esporta xlsx veicoli
-          </MenuItem>
-        }
-        {
-          <MenuItem
-            onClick={
-              () => {
-                handleClose()
-                setTimeout(() => {
-                  setFiltered(!filtered)
-                }, 20)
-              }
-            }
-          >
-            <ListItemIcon>
-              <Icon path={mdiCurrencyEur} size={1}/>
-            </ListItemIcon>
-            {filtered ? 'TUTTI I DATI' : 'SOLO STATO DI RISCHIO INIZIALE'}
           </MenuItem>
         }
         {
@@ -139,6 +122,66 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
               <Icon path={mdiCheckAll} size={1}/>
             </ListItemIcon>
             Conferma inclusioni ed esclusioni
+          </MenuItem>
+        }
+        {
+          isPolicy &&
+          <>
+            <Divider/>
+            <MenuItem
+              onClick={
+                () => {
+                  handleClose()
+                  setTimeout(() => {
+                    setFiltered(false)
+                  }, 20)
+                }
+              }
+              selected={!filtered}
+            >
+              <ListItemIcon>
+                <Icon path={mdiCarMultiple} size={1}/>
+              </ListItemIcon>
+              {'TUTTI I DATI'}
+            </MenuItem>
+          </>
+        }
+        {
+          isPolicy &&
+          <MenuItem
+            onClick={
+              () => {
+                handleClose()
+                setTimeout(() => {
+                  setFiltered(true)
+                }, 20)
+              }
+            }
+            selected={filtered === true}
+          >
+            <ListItemIcon>
+              <Icon path={mdiCarMultiple} size={1}/>
+            </ListItemIcon>
+            {'SOLO STATO DI RISCHIO INIZIALE'}
+          </MenuItem>
+        }
+        {
+          isPolicy &&
+          <MenuItem
+            onClick={
+              () => {
+                handleClose()
+                setTimeout(() => {
+                  setFiltered('2021-06-30')
+                }, 20)
+              }
+            }
+            selected={filtered === '2021-06-30'}
+          >
+            <ListItemIcon>
+              <Icon path={mdiCarMultiple} size={1}/>
+            </ListItemIcon>
+            {'30/06/2021'}
           </MenuItem>
         }
       </Menu>

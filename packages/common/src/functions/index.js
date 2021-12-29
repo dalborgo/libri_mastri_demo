@@ -233,10 +233,19 @@ function calcPolicyEndDate (init, mid) {
   }
 }
 
-function myDays360 (startCalc, endCalc, midDate) {
+function myDays360_old (startCalc, endCalc, midDate) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
   if (!midDate && (isLastFebruary(startCalc) || isLastFebruary(endCalc))) {
     daysDiff = Math.round(daysDiff / 30) * 30
+  }
+  return daysDiff
+}
+
+function myDays360 (startCalc, endCalc) {
+  let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
+  const diff = isLastFebruary(startCalc)
+  if (diff && (endCalc !== startCalc)) {
+    daysDiff -= 30 - diff
   }
   return daysDiff
 }

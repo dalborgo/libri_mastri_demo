@@ -416,7 +416,7 @@ const Header = props => {
                       priority === 3 ?
                         <>
                           <Link
-                            color={'inherit'}
+                            color="inherit"
                             href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/MB_POLICY%7C${_code}?bucket=${envConfig.BUCKET}`}
                             target="_blank"
                           >

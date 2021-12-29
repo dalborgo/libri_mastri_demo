@@ -176,6 +176,11 @@ const routesSuper = [
         component: lazy(() => import('views/Bdx')),
       },
       {
+        path: '/policies/regulations',
+        exact: true,
+        component: lazy(() => import('views/Regulations')),
+      },
+      {
         path: '/policies',
         exact: true,
         component: () => <Redirect to="/policies/list"/>,
