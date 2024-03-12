@@ -71,7 +71,16 @@ const LookupEditCellBase = ({
 )
 export const LookupEditCell = withStyles(styles, { withTheme: true })(LookupEditCellBase)
 
-const BaseCell = ({ value, classes, style, editingEnabled, onValueChange, defaultValue, empty = false, ...restProps }) => (
+const BaseCell = ({
+  value,
+  classes,
+  style,
+  editingEnabled,
+  onValueChange,
+  defaultValue,
+  empty = false,
+  ...restProps
+}) => (
   <VirtualTable.Cell
     className={classes.lookupEditCell}
     style={{ ...style }}
@@ -88,7 +97,7 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
     isError |= !value
   }
   if (restProps.column.name === 'vehicleType') {
-    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTOCARRO USO NOLEGGIO', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA'].includes(value)
+    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTOCARRO USO NOLEGGIO', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA', 'CICLOMOTORE', 'MACCHINA AGRICOLA', 'TRATTRICE AGRICOLA'].includes(value)
   }
   if (restProps.column.name === 'prize') {
     isError |= !value || value === '0,00'

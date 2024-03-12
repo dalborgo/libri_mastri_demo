@@ -145,6 +145,7 @@ type Policy {
     isRecalculateFraction: String
     meta: PolicyMeta
     midDate: String
+    notes: String
     number: String!
     payFractions: JSON
     paymentFract: String
@@ -430,6 +431,7 @@ input SavePolicyInput {
     isRecalculateFraction: String
     meta: PolicyMetaInput
     midDate: String
+    notes: String
     newEvent: Boolean
     number: String
     payFractions: JSON

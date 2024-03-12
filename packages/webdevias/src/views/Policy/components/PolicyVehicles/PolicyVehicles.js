@@ -27,17 +27,26 @@ const Body = memo(props => {
       return row
     })*!/
   }*/
+  const isPolicy = props.policy?.state?.isPolicy
+  let resultRegFractions = []
+  if(isPolicy) {
+    const arr = props.policy?.regFractions ?? []
+    resultRegFractions = arr.filter(row => row.toCon)
+  }
   return (
     <>
       <Header
+        checkPolicy={props.checkPolicy}
         dispatch={props.dispatch}
         filtered={props.filtered}
+        handleApplicationZip={props.handleApplicationZip}
         handleExport={props.handleExport}
         handleExportTotal={props.handleExportTotal}
         handleModeChange={props.handleModeChange}
         isPolicy={props.policy?.state?.isPolicy}
         mode={props.mode}
         priority={props.priority}
+        resultRegFractions={resultRegFractions}
         setFiltered={props.setFiltered}
         setTaxableTotal={props.setTaxableTotal}
         taxableTotal={props.taxableTotal}
@@ -46,6 +55,7 @@ const Body = memo(props => {
         props.mode === 'list'
           ?
           <VehiclesTable
+            checkPolicy={props.checkPolicy}
             dispatch={props.dispatch}
             filtered={props.filtered}
             forceUpdate={props.forceUpdate}
@@ -70,8 +80,10 @@ const PolicyVehicles = (
     globalClass,
     dispatch,
     forceUpdate,
+    handleApplicationZip,
     handleExport,
     handleExportTotal,
+    checkPolicy,
     policy,
     setChanging,
     tablePd,
@@ -95,8 +107,10 @@ const PolicyVehicles = (
     formRefHeader,
     handleExport,
     handleExportTotal,
+    handleApplicationZip,
     handleModeChange,
     handlePrint,
+    checkPolicy,
     handleUpload,
     mode,
     policy,

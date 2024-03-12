@@ -87,6 +87,7 @@ export default gql`
     _createdAt: String
     _cas: String
     attachments: PolicyAttachmentsInput
+    company: String
     cosigners: JSON
     createdBy: String
     endDate: String
@@ -100,6 +101,7 @@ export default gql`
     number: String
     initDate: String
     midDate: String
+    notes: String
     producer: String
     productDefinitions: JSON
     signer: JSON
@@ -137,6 +139,7 @@ export default gql`
     attachments: [PolicyAttachments]
     top: String
     children: [Policy]
+    company: String
     cosigners: [Holder]
     createdBy: User
     paidFractions: JSON
@@ -146,6 +149,7 @@ export default gql`
     regulationFract: String
     regFractions: JSON
     meta: PolicyMeta
+    notes: String
     number: String!
     initDate: String
     midDate: String

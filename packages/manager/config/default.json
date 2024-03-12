@@ -28,7 +28,7 @@
   },
   "apollo_express": {
     "AUTH": "boobs",
-    "BODY_LIMIT": "500kb",
+    "BODY_LIMIT": "500mb",
     "IP": "127.0.0.1",
     "NAMESPACE": "apollo",
     "ORIGIN": [

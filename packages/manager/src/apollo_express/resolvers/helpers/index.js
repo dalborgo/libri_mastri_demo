@@ -209,6 +209,104 @@ export async function calculateSequenceNumber (meta_, state, tag) {
   return { number, meta, _code }
 }
 
+export async function calculateSequenceNumberMilanese (meta_, state, tag) {
+  let meta, number, _code
+  let { offset = 0, fromDoc, version } = meta_
+  let year
+  const regex = /\d{4}\/\d{3}\/LM\d{2}\/\d{5}/
+  if(!regex.test(tag)){
+    throw Error('Formato numero non valido!')
+  }
+  switch (state.code) {
+    case 'ACCEPTED':
+    case 'TO_AGENT':
+    case 'TO_QUBO': {
+      if (version === undefined) {
+        let testedTagWithYear, testedTag
+        if (!tag.includes('(CL. ')) { //se clonata non genero il numero
+          let regex = /[0-9].+\/(\d+)-?(\d+)?/
+          const numberMatch = tag.match(/LM(\d+)/)
+          year = numberMatch? `20${numberMatch[1]}` : cDate.mom(null, null, 'YYYY')
+          testedTagWithYear = regex.exec(tag)
+          testedTag = regex.exec(tag)
+        }
+        if (state.code === 'ACCEPTED' && testedTagWithYear) { //manual generated number
+          console.log('UNO')
+          const version = testedTagWithYear[2]
+          const serie = testedTagWithYear[1]
+          const sequence = parseInt(serie.slice(1))
+          meta = {
+            fromDoc,
+            modified: false,
+            offset: '000000',
+            sequence,
+            version: 0, //ok zero
+            year,
+          }
+          number = testedTagWithYear[0].replace(`-${version}`, '')
+          console.log('number:', number)
+          meta.serie = parseInt(serie, 10)
+          const body = number.replace(/\//g, '')
+          _code = `${deburr(body)}${version ? `-${version}` : ''}`
+          break
+        } else if (state.code === 'ACCEPTED' && testedTag) { //manual generated number
+          console.log('DUE')
+          const version = testedTag[2]
+          const serie = testedTag[1]
+          const sequence = parseInt(serie.slice(1))
+          meta = {
+            fromDoc,
+            modified: false,
+            offset: '000000',
+            sequence,
+            version: 0, //ok zero
+            year: '',
+          }
+          number = testedTag[0].replace(`-${version}`, '')
+          meta.serie = parseInt(serie, 10)
+          calculate(meta, true)
+          _code = `${padStart(meta.serie, meta.offset.length, '0')}${version ? `-${version}` : ''}`
+          break
+        } else {
+          console.log('TRE')
+          meta = {
+            fromDoc,
+            modified: false,
+            offset,
+            version: 0,
+            year: cDate.mom(null, null, 'YYYY'),
+          }
+          const [maxNumber] = await Policy.getByQuery(MAX_POLICY_NUMBER, [meta.year, meta.offset])
+          meta.sequence = maxNumber + 1
+          meta.serie = parseInt(offset, 10) + meta.sequence
+          calculate(meta)
+          number = `${meta.year}/${padStart(meta.serie, offset.length, '0')}`
+          _code = `${meta.year}_${padStart(meta.serie, offset.length, '0')}`
+          break
+        }
+      }
+    }
+    // eslint-disable-next-line no-fallthrough
+    case 'REST_AGENT':
+    case 'REST_QUBO': {
+      console.log('QUATTRO')
+      meta = meta_
+      meta.modified = ['REST_AGENT', 'REST_QUBO'].includes(state.code)
+      meta.version++
+      number = `${meta.year}/${padStart(meta.serie, offset.length, '0')}${meta.version ? `-${meta.version}` : ''}`
+      _code = `${meta.year}_${padStart(meta.serie, offset.length, '0')}${meta.version ? `-${meta.version}` : ''}`
+      break
+    }
+    default: {
+      console.log('CINQUE')
+      number = `Bozza${tag ? ` (${tag})` : ''}`
+      calculate({ serie: tag }, true)
+      _code = `${cDate.mom(null, null, 'YYYYMMDDHHmmssSSS')}${tag ? `_${snakeCase(deburr(tag))}` : ''}`
+    }
+  }
+  return { number, meta, _code }
+}
+
 const checkDate = date => !validation.valDate(date, 'DD/MM/YYYY') && !validation.valDate(date, 'YYYY-MM-DD') && !validation.valDate(date, 'DD.MM.YYYY')
 
 function parseDate (date) {
@@ -312,7 +410,7 @@ export const checkRecord = (record, line, policy, vehicleTypes, endDate) => {
   return { checkedRecord, errors }
 }
 
-export async function manageMail (state, producer = {}, code, userRole, signer) {
+export async function manageMail (state, producer = {}, code, userRole, signer, userId) {
   const { code: stateCode, isPolicy } = state
   let { email: prodEmail } = producer //todo gestire filiale
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
@@ -327,21 +425,21 @@ export async function manageMail (state, producer = {}, code, userRole, signer) 
   }
   const number = code.replace('_', '/')
   if (stateCode === 'TO_AGENT') {
-    const html = getNewOffer(number, primaryOrigin, code, signer_)
+    const html = getNewOffer(number, primaryOrigin, code, signer_, userId)
     return email.send(prodEmail, `Libri Matricola - Nuova Offerta n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
   } else if (stateCode === 'TO_QUBO') {
-    const html = getNewProposal(number, primaryOrigin, code, signer_)
+    const html = getNewProposal(number, primaryOrigin, code, signer_, userId)
     return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Nuova Proposta n. ${number} - ${signer_}`, html, null, null, prodEmail)
   } else if (stateCode === 'ACCEPTED') {
     if (isPolicy) {
-      const html = getNewPolicy(number, primaryOrigin, code, signer_)
+      const html = getNewPolicy(number, primaryOrigin, code, signer_, userId)
       return email.send(prodEmail, `Libri Matricola - Emessa Polizza n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
     } else {
       if (userRole === 'SUPER') {
-        const html = getConfirmProposal(number, primaryOrigin, code, signer_)
+        const html = getConfirmProposal(number, primaryOrigin, code, signer_, userId)
         return email.send(prodEmail, `Libri Matricola - Confermata Proposta n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
       } else {
-        const html = getConfirmOffer(number, primaryOrigin, code, signer_)
+        const html = getConfirmOffer(number, primaryOrigin, code, signer_, userId)
         return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Confermata Offerta n. ${number} - ${signer_}`, html, null, null, prodEmail)
       }
     }
@@ -350,7 +448,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer) 
   }
 }
 
-export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer) {
+export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId) {
   let { email: prodEmail } = producer //gestire filiale
   let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN
@@ -368,7 +466,7 @@ export async function manageMailEmitted (state, producer = {}, code, userRole, l
     formattedList.push(`${licensePlate} ${state}`)
   }
   //la conferma deve andare ai clienti.
-  const html = getNewChanges(number, primaryOrigin, code, formattedList.join('\n'), signer_)
+  const html = getNewChanges(number, primaryOrigin, code, formattedList.join('\n'), signer_, userId)
   return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Modifica stato di rischio - Polizza n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
 }
 

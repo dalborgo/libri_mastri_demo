@@ -34,6 +34,7 @@ import truncate from 'lodash/truncate'
 import { mdiFilePdfOutline, mdiPrinterSettings } from '@mdi/js'
 import Icon from '@mdi/react'
 import { envConfig } from 'init'
+import CompanyView from './CompanyView'
 
 const useStyles = makeStyles(theme => ({
   box: {
@@ -358,6 +359,7 @@ function ChangeNumberDialog (props) {
 const Header = props => {
   const {
     _code,
+    company: companyDefault,
     number,
     handleSave,
     handlePolicySave,
@@ -366,12 +368,14 @@ const Header = props => {
     producer: prodDefault,
     subAgent: subAgentDefault,
     handlePrint, state, formRefProd, formRefSub, meta, top, loadDiff, calledDiff, loadingDiff, setOpenDiff,
+    formRefComp,
   } = props
   const { tab } = useParams()
   const classes = useStyles()
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
   const [producer, setProducer] = useState(prodDefault)
+  const [company, setCompany] = useState(companyDefault || 'TUA ASSICURAZIONI SPA')
   const [subAgent, setSubAgent] = useState(subAgentDefault)
   const [open, setOpen] = React.useState(false)
   const handleClickOpen = () => {
@@ -480,14 +484,23 @@ const Header = props => {
               switch (priority) {
                 case 3:
                   return (
-                    <ProducerView
-                      formRefProd={formRefProd}
-                      priority={priority}
-                      producer={producer}
-                      setProducer={setProducer}
-                      state={state}
-                      subAgent={subAgent}
-                    />
+                    <>
+                      <ProducerView
+                        formRefProd={formRefProd}
+                        priority={priority}
+                        producer={producer}
+                        setProducer={setProducer}
+                        state={state}
+                        subAgent={subAgent}
+                      />
+                      <CompanyView
+                        company={company}
+                        formRefComp={formRefComp}
+                        priority={priority}
+                        setCompany={setCompany}
+                        state={state}
+                      />
+                    </>
                   )
                 case 2:
                   return (

@@ -6,7 +6,7 @@ import { Header } from './components'
 import { withSnackbar } from 'notistack'
 import compose from 'lodash/fp/compose'
 import { regulationsQuery } from 'utils/axios'
-import { Button } from '@material-ui/core'
+import { Button, Typography } from '@material-ui/core'
 import ExcelJS from 'exceljs'
 import saveAs from 'file-saver'
 import { cDate, cFunctions } from '@adapter/common'
@@ -24,6 +24,8 @@ const useStyles = makeStyles(theme => ({
     marginTop: theme.spacing(3),
   },
 }))
+
+const taxRate = 13.5
 
 const size10 = { font: { size: '10' } }
 const bold = { font: { bold: true, size: '10' } }
@@ -131,75 +133,83 @@ function createExcel (policies, vehicleTypes, data) {
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(10).getCell(colIndex), lightGray, fontWhite)
   }
-  let totalVehicles = 0, totalTaxable = 0, totalInstalment = 0, totalTaxes = 0
+  let totalRows = 0, totalTaxable = 0, totalInstalment = 0, totalTaxes = 0
   for (let policy of policies) {
+    if (policy.company === 'ASSICURATRICE MILANESE SPA') {
+      continue
+    }
+    if (policy.producer === 'qubo') {
+      continue
+    }
     const newPolicy = initPolicy(policy)
     const data = {
       ...newPolicy,
     }
-    let totTaxable = 0
-    const endRegDate = '2021-12-31'
-    const startRegDate = '2020-12-31'
-    const hasRegulation = newPolicy.isRecalculateFraction
     const tablePd = { values: { productDefinitions: newPolicy.productDefinitions } }
-    for (let vehicle of policy.vehicles) {
-      if (hasRegulation === 'SI') {
-        const isStartDate = vehicle.startDate === data.initDate
-        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-          continue
-        }
-        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-            vehicle.state = 'ADDED_CONFIRMED'
-          }
-          const {
-            payment,
-          } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
-          totTaxable += payment
-        }
-      } else {
-        const isStartDate = vehicle.startDate === data.initDate
+    for (let regulation of newPolicy.regFractions) {
+      let totTaxable = 0
+      const startRegDate = regulation.startDate
+      const endRegDate = regulation.endDate
+      const hasRegulation = regulation.hasRegulation
+      for (let vehicle of policy.vehicles) {
         vehicle.value = vehicle.value / 1000
-        if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-          continue
-        }
-        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-            vehicle.state = 'ADDED_CONFIRMED'
+        if (hasRegulation === 'SI') {
+          const isStartDate = vehicle.startDate === data.initDate
+          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+            continue
           }
-          const { payment } = calculatePaymentTable(tablePd, data, vehicle, true, true)
-          totTaxable += payment
+          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.state = 'ADDED_CONFIRMED'
+            }
+            const {
+              payment,
+            } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
+            totTaxable += payment
+          }
+        } else {
+          const isStartDate = vehicle.startDate === data.initDate
+          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+            continue
+          }
+          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.state = 'ADDED_CONFIRMED'
+            }
+            const { payment } = calculatePaymentTable(tablePd, data, vehicle, true, true)
+            totTaxable += payment
+          }
         }
       }
+      totalRows++
+      data.totTaxable = Number(totTaxable.toFixed(2))
+      data.totInstalment = (totTaxable * ((100 + taxRate) / 100))
+      const signer = newPolicy?.holders?.[0] ?? {}
+      const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
+      totalTaxable += data.totTaxable
+      totalInstalment += data.totInstalment
+      const tax = data.totInstalment - data.totTaxable
+      totalTaxes += tax
+      ws.addRow({
+        pol: newPolicy.number,
+        sign,
+        st: `${signer.address}, ${signer.address_number} ${signer.city} (${signer.zip}) - ${signer.state}`,
+        id: signer.id,
+        init: newPolicy.initDate && new Date(newPolicy.initDate),
+        end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
+        broker: newPolicy.producer,
+        dec: startRegDate && new Date(startRegDate),
+        sca: endRegDate && new Date(endRegDate),
+        totTaxable: data.totTaxable,
+        tax: data.totInstalment > 0 ? tax : 0,
+        totInstalment: data.totInstalment > 0 ? data.totInstalment : data.totTaxable,
+      })
     }
-    totalVehicles++
-    data.totTaxable = Number(totTaxable.toFixed(2))
-    data.totInstalment = (totTaxable * ((100 + 13.5) / 100))
-    const signer = newPolicy?.holders?.[0] ?? {}
-    const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
-    totalTaxable += data.totTaxable
-    totalInstalment += data.totInstalment
-    const tax = data.totInstalment - data.totTaxable
-    totalTaxes += tax
-    ws.addRow({
-      pol: newPolicy.number,
-      sign,
-      st: `${signer.address}, ${signer.address_number} - ${signer.city} (${signer.zip}) - ${signer.state}`,
-      id: signer.id,
-      init: newPolicy.initDate && new Date(newPolicy.initDate),
-      end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
-      broker: newPolicy.producer,
-      dec: startRegDate && new Date(startRegDate),
-      sca: endRegDate && new Date(endRegDate),
-      totTaxable: data.totTaxable,
-      tax,
-      totInstalment: data.totInstalment,
-    })
   }
   const headerCount = 11
-  const rl = totalVehicles + headerCount - 1
+  const rl = totalRows + headerCount - 1
   ws.addRow({
     sca: 'Importi Totali',
     totTaxable: {
@@ -246,6 +256,7 @@ const Regulations = ({ enqueueSnackbar }) => {
       title="Regolazioni"
     >
       <Header/>
+      <Typography>Indicare l'intervallo delle date di scadenza</Typography>
       <div>
         <RegulationsForm formRefRegulations={formRefRegulations}/>
       </div>

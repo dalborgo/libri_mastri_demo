@@ -2,7 +2,8 @@ import path from 'path'
 import { ioFiles } from '@adapter/io'
 import { cDate, cFunctions, numeric } from '@adapter/common'
 import { Gs, User } from '../../../models'
-import { axiosGraphqlQuery } from '../../../resolvers/helpers/axios'
+import { axiosGraphqlQuery, axiosLocalhostInstance } from '../../../resolvers/helpers/axios'
+import archiver from 'archiver'
 import get from 'lodash/get'
 import find from 'lodash/find'
 import groupBy from 'lodash/groupBy'
@@ -12,7 +13,10 @@ import reduce from 'lodash/reduce'
 import { COLLISION_TEXT, elaborateMap, MAP_GUARANTEES, REG_TEXT, TEXT_KASKO } from './maps'
 import fs from 'fs'
 import Q from 'q'
-import { calculateSequenceNumber } from '../../../resolvers/helpers'
+import { calculateSequenceNumber, calculateSequenceNumberMilanese } from '../../../resolvers/helpers'
+
+const MASTER_NUMBER = '40313690000001'
+const INFORTUNI_NUMBER = '40313612000002'
 
 async function getVL (vehicles, vehicleTypes, productDefinitions, signer, cosigners) {
   const leasingSet = {}
@@ -114,7 +118,7 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
 }
 
 // globalGlass per non scrivere gli art per i non glass
-function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', target) {
+function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', target, noPrize = false) {
   const globalGlass = target ? target.hasGlass : null
   const globalTowing = target ? target.hasTowing : null
   
@@ -133,7 +137,7 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         if (conditions.includes('collisione')) {
           hasKnote |= true
         }
-        if (hideRate) {currentMAP = rest}
+        if (hideRate || !prod.rate) {currentMAP = rest}
         const hasGlass = prod.glass ? '"Cristalli"' : ''
         const hasTowing = prod.towing ? hasGlass ? ' "Traino"' : '"Traino"' : ''
         const obj = {
@@ -171,7 +175,7 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         if (prod.conditions) {
           currentMAP.overdraft = '\n' + prod.conditions
         }
-        if (!prod.minimum) {
+        if (!prod.minimum || noPrize) {
           delete currentMAP.min
         }
         prev.push(elaborateMap(obj, currentMAP))
@@ -182,13 +186,18 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
   return { guaranteeList: sortBy(guaranteeList, 'index'), hasKnote }
 }
 
+const getCompanyFile = (name, company) => {
+  const folderName = company === 'ASSICURATRICE MILANESE SPA' ? 'mil' : 'tua'
+  return { folderName, fileName: `${name}_${folderName}` }
+}
+
 function addRouters (router) {
   router.post('/prints/print_proposal', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_quotazione_qubo.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _createdAt,
+      company,
       cosigners,
       initDate,
       midDate,
@@ -203,7 +212,18 @@ function addRouters (router) {
       specialArrangements,
       vehicles,
     } = data
-    const { number } = await calculateSequenceNumber(meta || {}, { code: 'ACCEPTED' }, number_) //accepted in caso di bozza per stampa
+    const { folderName, fileName } = getCompanyFile('modello_quotazione_qubo', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
+    //const filePath = path.resolve('src/apollo_express/public/templates/modello_quotazione_qubo.docx')
+    console.log('company:', company)
+    let number
+    if (company === 'ASSICURATRICE MILANESE SPA') {
+      const { number: num } = await calculateSequenceNumberMilanese(meta || {}, { code: 'ACCEPTED' }, number_) //accepted in caso di bozza per stampa
+      number = num
+    } else {
+      const { number: num } = await calculateSequenceNumber(meta || {}, { code: 'ACCEPTED' }, number_) //accepted in caso di bozza per stampa
+      number = num
+    }
     const { activities, vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
     const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
     const coverageTypesByKey = keyBy(coverageTypes, 'id')
@@ -271,7 +291,7 @@ function addRouters (router) {
       specialArrangements: specialArrangements || '',
       payFract: cFunctions.getFractName(paymentFract),
       initDate: initDate && cDate.mom(initDate, null, 'DD/MM/YYYY'),
-      validityDate: _createdAt && cDate.mom(_createdAt, null, 'DD/MM/YYYY', [30, 'd']),
+      validityDate: cDate.mom(null, null, 'DD/MM/YYYY', [30, 'd']),
       guaranteeList,
       vL,
     }
@@ -289,11 +309,11 @@ function addRouters (router) {
   })
   
   router.post('/prints/print_policy', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/testo_ard_definitivo_2019_2020.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       number,
       initDate,
@@ -310,6 +330,9 @@ function addRouters (router) {
       state,
       vehicles,
     } = data
+    const { folderName, fileName } = getCompanyFile('testo_ard_definitivo', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
+    //const filePath = path.resolve('src/apollo_express/public/templates/testo_ard_definitivo_2019_2020.docx')
     const { isPolicy } = state || {}
     if (isPolicy) {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${_code}.pdf`)
@@ -347,6 +370,10 @@ function addRouters (router) {
         date: `${startRegDate} - ${endRegDate}${index < regFractions.length - 1 ? '\n' : ''}`,
       }
     })
+    let newNumber
+    const [target] = Object.values(productDefinitions) || {}
+    if (target && target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
+    
     const { vehicleTypes, coverageTypes } = await Gs.findById('general_settings')
     const vehicleTypesByKey = keyBy(vehicleTypes, 'id')
     const coverageTypesByKey = keyBy(coverageTypes, 'id')
@@ -357,6 +384,7 @@ function addRouters (router) {
     let totTax = 0, totTaxable = 0
     const vL = await getVL(vehicles, vehicleTypes, productDefinitions, signer, cosigners)
     const input = {
+      master: newNumber || MASTER_NUMBER,
       number,
       isPolicy,
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
@@ -369,6 +397,7 @@ function addRouters (router) {
       sCity: get(signer, 'city'),
       sState: get(signer, 'state'),
       sId: `${get(signer, 'name') ? 'C.F.' : get(signer, 'id') ? 'P.IVA ' : ''} ${get(signer, 'id') || empty}`,
+      id: get(signer, 'id') || empty,
       payFract: cFunctions.getFractName(paymentFract),
       initDate: initDate && cDate.mom(initDate, null, 'DD/MM/YYYY'),
       hasCosig: !!cosList.length,
@@ -418,11 +447,11 @@ function addRouters (router) {
   })
   
   router.post('/prints/print_inclusion', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_inclusione.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       number,
       productDefinitions,
@@ -432,12 +461,17 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
+    const { folderName, fileName } = getCompanyFile('modello_appendice_inclusione', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
+    let newNumber
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
+    console.log('target:', target)
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
-    const fileName = `inclusione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.counter || 'XXX'}.pdf`
+    const fileNamePdf = `inclusione_${noPrize ? 'senza_premi_' : ''}${_code}-${target.licensePlate}-${target.counter || 'XXX'}.pdf`
     {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
@@ -451,10 +485,11 @@ function addRouters (router) {
     const producer = await User.findById(data.producer) || {}
     let sHour, sDate, targetLeasing = {}, coverageType, gars = [], guaranteeList = [], hasKnote
     if (target.productCode) {
-      const objCov = groupedPd[target.productCode]
+      const mainP = target.productCode.split('_')[0]
+      const objCov = groupedPd[mainP]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
-      const found = find(objCov, { vehicleType: vehicleCode })
-      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
+      const found = find(objCov, { vehicleType: vehicleCode, productCode: target.productCode })
+      const data = getGuaranteeList({ [mainP]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
       guaranteeList = data.guaranteeList
       hasKnote = data.hasKnote
       if (objCov) {
@@ -495,6 +530,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      master: newNumber || MASTER_NUMBER,
       today,
       number,
       counter: target.counter,
@@ -555,16 +591,152 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileName, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })
+  router.post('/prints/application_zip_senza_premi', async function (req, res) {
+    const vehicles = req.body
+    let counter = 1
+    const [first] = vehicles
+    const zipFileName = `applicazioni_senza_premi_${first._code}.zip`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${first._code}/${zipFileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const zip = archiver('zip', {})
+    const toSavePath = path.resolve(`src/apollo_express/crypt/${first._code}/`)
+    const dirExists = fs.existsSync(toSavePath)
+    !dirExists && await Q.nfcall(fs.mkdir, toSavePath)
+    const output = fs.createWriteStream(path.resolve(toSavePath, zipFileName))
+    zip.pipe(res)
+    zip.pipe(output)
+    for (let vehicle of vehicles) {
+      const [firstVehicle] = vehicle.vehicles
+      const buffer = await axiosLocalhostInstance('prints/print_application', {
+        data: { ...vehicle, noPrize: true },
+        method: 'POST',
+        responseType: 'arraybuffer',
+      })
+      zip.append(buffer.data, { name: `applicazione_senza_premio_${first._code}-${firstVehicle.licensePlate}-${counter++}.pdf` })
+    }
+    await zip.finalize()
+  })
+  router.post('/prints/application_zip_con_premi', async function (req, res) {
+    const vehicles = req.body
+    let counter = 1
+    const [first] = vehicles
+    const zipFileName = `applicazioni_con_premi_${first._code}.zip`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${first._code}/${zipFileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const zip = archiver('zip', {})
+    const toSavePath = path.resolve(`src/apollo_express/crypt/${first._code}/`)
+    const dirExists = fs.existsSync(toSavePath)
+    !dirExists && await Q.nfcall(fs.mkdir, toSavePath)
+    const output = fs.createWriteStream(path.resolve(toSavePath, zipFileName))
+    zip.pipe(res)
+    zip.pipe(output)
+    for (let vehicle of vehicles) {
+      const [firstVehicle] = vehicle.vehicles
+      const buffer = await axiosLocalhostInstance('prints/print_application', {
+        data: { ...vehicle, noPrize: false },
+        method: 'POST',
+        responseType: 'arraybuffer',
+      })
+      zip.append(buffer.data, { name: `applicazione_con_premio_${first._code}-${firstVehicle.licensePlate}-${counter++}.pdf` })
+    }
+    await zip.finalize()
+  })
+  router.post('/prints/application_zip_di_vincolo', async function (req, res) {
+    const vehicles = req.body
+    let counter = 1
+    const [first] = vehicles
+    const zipFileName = `applicazioni_di_vincolo_${first._code}.zip`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${first._code}/${zipFileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const zip = archiver('zip', {})
+    const toSavePath = path.resolve(`src/apollo_express/crypt/${first._code}/`)
+    const dirExists = fs.existsSync(toSavePath)
+    !dirExists && await Q.nfcall(fs.mkdir, toSavePath)
+    const output = fs.createWriteStream(path.resolve(toSavePath, zipFileName))
+    zip.pipe(res)
+    zip.pipe(output)
+    for (let vehicle of vehicles) {
+      const [firstVehicle] = vehicle.vehicles
+      const buffer = await axiosLocalhostInstance('prints/print_constraint', {
+        data: { ...vehicle },
+        method: 'POST',
+        responseType: 'arraybuffer',
+      })
+      zip.append(buffer.data, { name: `applicazione_di_vincolo_${first._code}-${firstVehicle.licensePlate}-${counter++}.pdf` })
+    }
+    await zip.finalize()
+  })
+  /*router.post('/prints/application__zip', async function (req, res) {
+    const vehicles = req.body
+    let counter = 1
+    const zip = archiver('zip', {})
+    zip.pipe(res)
+    const [first] = vehicles
+    const promises = []
+    for (let vehicle of vehicles) {
+      promises.push(axiosLocalhostInstance('prints/print_application', {
+        data: vehicle,
+        method: 'POST',
+        responseType: 'arraybuffer',
+      }))
+    }
+    const buffers = await Promise.all(promises)
+    for (let buffer of buffers) {
+      zip.append(buffer.data, { name: `applicazione_${first._code}-${counter++}.pdf` })
+    }
+    await zip.finalize()
+  })
+  router.post('/prints/application___zip', async function (req, res) {
+    const vehicles = req.body
+    let counter = 1
+    const zip = archiver('zip', {})
+    zip.pipe(res)
+    const [first] = vehicles
+    const promises = []
+    for (let vehicle of vehicles) {
+      promises.push(axiosLocalhostInstance('prints/print_application', {
+        data: vehicle,
+        method: 'POST',
+        responseType: 'arraybuffer',
+      }))
+    }
+    const buffers = await Q.allSettled(promises)
+    buffers.forEach(result => {
+      const { state, value } = result
+      if (state === 'fulfilled') {
+        zip.append(value.data, { name: `applicazione_${first._code}-${counter++}.pdf` })
+      } else {}
+    })
+    await zip.finalize()
+  })*/
   router.post('/prints/print_application', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_applicazione_stato_di_rischio.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       initDate,
       midDate,
@@ -576,12 +748,16 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
+    let newNumber
+    const { folderName, fileName } = getCompanyFile('modello_applicazione_stato_di_rischio', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
     //const target = find(vehicles, inp => ['ADDED', 'ADDED_CONFIRMED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
-    const today = cDate.mom(initDate, null, 'DD/MM/YYYY')
-    const fileName = `applicazione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.inPolicy || 'XXX'}.pdf`
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
+    const today = cDate.mom(null, null, 'DD/MM/YYYY')
+    const fileNamePdf = `applicazione_${noPrize ? 'senza_premi_' : ''}${_code}-${target.inPolicy || 'XXX'}.pdf`
     {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
@@ -595,10 +771,11 @@ function addRouters (router) {
     const producer = await User.findById(data.producer) || {}
     let sHour, sDate, targetLeasing = {}, coverageType, gars = [], guaranteeList = [], hasKnote
     if (target.productCode) {
-      const objCov = groupedPd[target.productCode]
+      const mainP = target.productCode.split('_')[0]
+      const objCov = groupedPd[mainP]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
-      const found = find(objCov, { vehicleType: vehicleCode })
-      const data = getGuaranteeList({ [target.productCode]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
+      const found = find(objCov, { vehicleType: vehicleCode, productCode: target.productCode })
+      const data = getGuaranteeList({ [mainP]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target, noPrize)
       guaranteeList = data.guaranteeList
       hasKnote = data.hasKnote
       if (objCov) {
@@ -637,6 +814,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      master: newNumber || MASTER_NUMBER,
       today,
       number,
       counter: target.inPolicy,
@@ -697,16 +875,16 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileName, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })
   router.post('/prints/print_exclusion', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_esclusione.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       number,
       priceObj,
@@ -716,12 +894,16 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
+    const { folderName, fileName } = getCompanyFile('modello_appendice_esclusione', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
     //const target = find(vehicles, inp => ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(inp.state) && inp.licensePlate === targetLicensePlate) || {}
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
-    const fileName = `esclusione_${noPrize ? 'senza_premi_' : '' }${_code}-${target.counter || 'XXX'}.pdf`
+    const fileNamePdf = `esclusione_${noPrize ? 'senza_premi_' : ''}${_code}-${target.licensePlate}-${target.counter || 'XXX'}.pdf`
+    let newNumber
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
     {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
@@ -741,6 +923,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      master: newNumber || MASTER_NUMBER,
       today,
       number,
       counter: target.counter,
@@ -785,16 +968,16 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileName, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })
   router.post('/prints/print_constraint', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_vincolo.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       number,
       endDate,
@@ -804,11 +987,13 @@ function addRouters (router) {
       toSave,
       vehicles,
     } = data
+    const { folderName, fileName } = getCompanyFile('modello_appendice_vincolo', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
     const [target] = vehicles
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
-    const fileName = `vincolo_${_code}-${target.constraintCounter || 'XXX'}.pdf`
+    const fileNamePdf = `vincolo_${_code}-${target.licensePlate}-${target.constraintCounter || 'XXX'}.pdf`
     {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
@@ -820,10 +1005,13 @@ function addRouters (router) {
     const groupedPd = groupBy(productDefinitions, 'coverageType')
     const producer = await User.findById(data.producer) || {}
     let sHour, sDate, targetLeasing = {}, coverageType, gars = []
+    let newNumber
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
     if (target.productCode) {
-      const objCov = groupedPd[target.productCode]
+      const mainP = target.productCode.split('_')[0]
+      const objCov = groupedPd[mainP]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
-      const found = find(objCov, { vehicleType: vehicleCode })
+      const found = find(objCov, { vehicleType: vehicleCode, productCode: target.productCode })
       if (objCov) {
         coverageType = found.coverageType
       }
@@ -862,6 +1050,7 @@ function addRouters (router) {
     const vType = `${target.brand || ''}${target.model ? ` ${target.model}` : ''} ${target.vehicleType}`
     /*eslint-disable sort-keys*/
     const input = {
+      master: newNumber || MASTER_NUMBER,
       today,
       number,
       counter: target.constraintCounter,
@@ -911,40 +1100,49 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileName, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })
   
   router.post('/prints/print_receipt', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_quietanza.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       endDate,
       endRecDate,
       initDate,
       number,
+      productDefinitions,
       signer,
       startRecDate,
       state: { isPolicy },
       toSave,
       totInstalment,
       totTaxable,
+      resultVehiclesToPrint,
     } = data
-    const fileName = `quietanza_${_code}-{startRecDate}.pdf`
+    const { folderName, fileName } = getCompanyFile('modello_appendice_quietanza', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
+    const fileNamePdf = `quietanza_${_code}-${startRecDate}.pdf`
     if (isPolicy) {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
         return res.send(data)
       }
     }
+    const { vehicleTypes } = await Gs.findById('general_settings')
     const producer = await User.findById(data.producer) || {}
+    let newNumber
+    const [target] = Object.values(productDefinitions) || {}
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
     /*eslint-disable sort-keys*/
+    const vL = await getVLReg(resultVehiclesToPrint, vehicleTypes, productDefinitions, signer, cosigners)
     const cosList = cosigners.map((cosigner, index) => {
       const name = get(cosigner, 'name')
       const sur = get(cosigner, 'surname')
@@ -968,6 +1166,7 @@ function addRouters (router) {
     })
     const numTotTax = totInstalment - totTaxable
     const input = {
+      master: newNumber || MASTER_NUMBER,
       number,
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
       startRecDate: cDate.mom(startRecDate, null, 'DD/MM/YYYY'),
@@ -986,8 +1185,9 @@ function addRouters (router) {
       cosList,
       endDate,
       totInstalment: numeric.printDecimal(numTotTax > 0 ? totInstalment : totTaxable),
-      totTax: numeric.printDecimal(numTotTax > 0 ?  numTotTax : 0),
+      totTax: numeric.printDecimal(numTotTax > 0 ? numTotTax : 0),
       totTaxable: numeric.printDecimal(totTaxable),
+      vL,
     }
     /*eslint-enable sort-keys*/
     {
@@ -1002,16 +1202,16 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, `quietanza_${_code}.pdf`, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })
   router.post('/prints/print_regulation', async function (req, res) {
-    const filePath = path.resolve('src/apollo_express/public/templates/modello_appendice_regolazione_premio.docx')
     const partial = {}, empty = ' '
     const data = req.body
     const {
       _code,
+      company,
       cosigners,
       counter,
       endDate,
@@ -1027,9 +1227,11 @@ function addRouters (router) {
       totTaxable,
       vehicles,
     } = data
-    const fileName = `regolazione_${_code}-${endRegDate}.pdf`
+    const { folderName, fileName } = getCompanyFile('modello_appendice_regolazione_premio', company)
+    const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
+    const fileNamePdf = `regolazione_${_code}-${counter || ''}.pdf`
     if (isPolicy) {
-      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileName}`)
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${fileNamePdf}`)
       const pathExists = fs.existsSync(savedFilePath)
       if (pathExists) {
         const data = await Q.nfcall(fs.readFile, savedFilePath)
@@ -1042,6 +1244,9 @@ function addRouters (router) {
     const groupedPd = groupBy(productDefinitions, 'coverageType')
     const { guaranteeList } = getGuaranteeList(groupedPd, vehicleTypesByKey, true, coverageTypesByKey)
     const producer = await User.findById(data.producer) || {}
+    let newNumber
+    const [target] = Object.values(productDefinitions)
+    if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
     /*eslint-disable sort-keys*/
     const vL = await getVLReg(vehicles, vehicleTypes, productDefinitions, signer, cosigners)
     const cosList = cosigners.map((cosigner, index) => {
@@ -1067,8 +1272,11 @@ function addRouters (router) {
     })
     const numTotTax = totInstalment - totTaxable
     const input = {
+      master: newNumber || MASTER_NUMBER,
       number,
       counter,
+      draft: !toSave,
+      sign: toSave,
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
       startRegDate: cDate.mom(startRegDate, null, 'DD/MM/YYYY'),
       endRegDate: cDate.mom(endRegDate, null, 'DD/MM/YYYY'),
@@ -1087,7 +1295,7 @@ function addRouters (router) {
       endDate,
       guaranteeList,
       totInstalment: numeric.printDecimal(numTotTax > 0 ? totInstalment : totTaxable),
-      totTax: numeric.printDecimal(numTotTax > 0 ?  numTotTax : 0),
+      totTax: numeric.printDecimal(numTotTax > 0 ? numTotTax : 0),
       totTaxable: numeric.printDecimal(totTaxable),
       vL,
     }
@@ -1104,7 +1312,7 @@ function addRouters (router) {
       partial.correct &= ok
       res.send(results)
       if (partial.correct && toSave) {
-        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, `regolazione_${_code}.pdf`, results)
+        await ioFiles.saveAndCreateDir(`src/apollo_express/crypt/${_code}/`, fileNamePdf, results)
       }
     }
   })

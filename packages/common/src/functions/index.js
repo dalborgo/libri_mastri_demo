@@ -107,12 +107,12 @@ function getVehicleCode (vehicleType, weight = -1, vehicleTypes) {
 
 function getPrizeLine (product, vehicle) {
   let prize = 0, taxable = 0
-  const taxRate = 13.5
   if (product) {
     const glass = vehicle.hasGlass === 'SI' ? product.glass || 0 : 0
     const towing = vehicle.hasTowing === 'SI' ? product.towing || 0 : 0
     const rate = product.rate || 0
     const minimum = numeric.toFloat(product.minimum) || 0
+    const taxRate = product.taxRate ? numeric.toFloat(product.taxRate) / 1000 : 13.5
     const accessories = numeric.toFloat(glass) + numeric.toFloat(towing)
     const totalAmount = (numeric.toFloat(vehicle.value) * numeric.toFloat(rate) / 100000)
     prize = (totalAmount < minimum ? minimum : totalAmount) || 0
@@ -183,6 +183,9 @@ function getFractMonths (fract) {
   }
 }
 
+/*
+
+
 function calculateRegulationDates (regFractions, header, isRecalculateFraction = 'NO') {
   const { initDate, midDate, regulationFract } = header
   const fractions = []
@@ -209,6 +212,55 @@ function calculateRegulationDates (regFractions, header, isRecalculateFraction =
   }
   return fractions
 }
+*/
+
+
+
+function isEndOfMonth (date) {
+  const m1 = moment(date).endOf('month')
+  const m2 = moment(date)
+  return m1.format('YYYY-MM-DD') === m2.format('YYYY-MM-DD')
+}
+
+
+function calculateRegulationDates (regFractions, header, isRecalculateFraction = 'NO') {
+  const { initDate, midDate, regulationFract } = header
+  const fractions = []
+  const period = getFractMonths(regulationFract)
+  if (initDate) {
+    const start = midDate || initDate
+    if (period === 0) {
+      const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
+      fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, regFractions, isRecalculateFraction))
+    } else {
+      midDate && fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), regFractions, isRecalculateFraction, midDate))
+      let date = cDate.mom(start, null, 'YYYY-MM-DD')
+      const daysPeriod360 = period * 30
+      for (let i = 0; i < 12; i += period) {
+        let dateNext
+        if (isEndOfMonth(date)) {
+          let tmp = cDate.mom(date, null, 'YYYY-MM-DD', [daysPeriod360 + 7, 'd'])//dirty trick
+          while (!isEndOfMonth(tmp)) {
+            tmp = cDate.mom(tmp, null, 'YYYY-MM-DD', [-1, 'd'])//dirty trick
+          }
+          dateNext = tmp
+        } else {
+          dateNext = cDate.mom(date, null, 'YYYY-MM-DD', [period, 'M'])
+        }
+        fractions.push(
+          calcDateReg(
+            date,
+            dateNext,
+            regFractions,
+            isRecalculateFraction
+          ))
+        date = dateNext
+      }
+    }
+  }
+  return fractions
+}
+
 
 function calcDateReg (startDate, endDate, regFractions, hasRegulation, midDate = false) {
   const startCalc = cDate.mom(startDate, null, 'YYYY-MM-DD')
@@ -241,12 +293,31 @@ function myDays360_old (startCalc, endCalc, midDate) {
   return daysDiff
 }
 
+
 function myDays360 (startCalc, endCalc) {
+  const sd = new Date(startCalc+' 00:00:00')
+  const ed = new Date(endCalc+' 00:00:00')
+  if ((isEndOfMonth(sd) && isEndOfMonth(ed)) || (isLastFebruary(ed))) {//|| (isLastFebruary(ed)
+    const duration = moment.duration(moment(ed).diff(moment(sd)))
+    const dd=Math.round(duration.asMonths())
+    return dd * 30
+  } else {
+    const diff = days360(new Date(startCalc), new Date(endCalc), 2)
+    const endDay = parseInt(moment(endCalc).format('DD'))
+    const startDay = parseInt(moment(startCalc).format('DD'))
+    if(endDay === 31 && startDay === 30 && diff === 0){
+      return 1
+    }
+    return diff
+  }
+}
+
+function myDays360_1 (startCalc, endCalc) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
-  const diff = isLastFebruary(startCalc)
+ /* const diff = isLastFebruary(startCalc)
   if (diff && (endCalc !== startCalc)) {
     daysDiff -= 30 - diff
-  }
+  }*/
   return daysDiff
 }
 
@@ -280,6 +351,7 @@ export default {
   getPrizeLine,
   getUUID,
   getVehicleCode,
+  isEndOfMonth,
   isError,
   isFunc,
   isObj,

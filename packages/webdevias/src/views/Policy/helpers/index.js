@@ -134,7 +134,7 @@ export function reducerInsertModal (draft, action) {
 }
 
 export function getLastFraction (payFractions) {
-  const today = moment()
+  const today = moment().add(-15, 'd')// 15 giorni di tempo
   let count = 0
   for (let { date, daysDiff } of payFractions) {
     const plusDay = moment(date).add(daysDiff, 'd')
@@ -143,7 +143,7 @@ export function getLastFraction (payFractions) {
     }
     count++
   }
-  return count
+  return Math.min(count, payFractions.length)
 }
 
 export const comparator = (values, index) => inp => cFunctions.camelDeburr(inp.productCode + inp.vehicleType) === cFunctions.camelDeburr(values[index].productCode + values[index].vehicleType)
@@ -155,6 +155,7 @@ export function getProductDefinitions (pds) {
     clone.rate = numeric.normNumb(clone.rate)
     clone.excess = numeric.normNumb(clone.excess)
     clone.minimum = numeric.normNumb(clone.minimum)
+    clone.taxRate = numeric.normNumb(clone.taxRate)
     clone.overdraft = numeric.normNumb(clone.overdraft)
     clone.glassCap = numeric.normNumb(clone.glassCap)
     clone.glass = numeric.normNumb(clone.glass)
@@ -168,7 +169,7 @@ export function getProductDefinitions (pds) {
 }
 
 export function comparePolicy (new_, old) {
-  const excludedFields = ['id', '__typename', '_type', 'producer', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
+  const excludedFields = ['id', '__typename', '_type', 'producer', 'company', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
   const restNew = chain(new_).omit(excludedFields).omitBy(isEmpty).value()
   const restOld = chain(old).omit(excludedFields).omitBy(isEmpty).value()
   const d1 = cFunctions.difference(restNew, restOld)
@@ -203,6 +204,7 @@ export function initPolicy (policy) {
       glass: numeric.toFloat(val.glass) / 1000 || 0,
       towing: numeric.toFloat(val.towing) / 1000 || 0,
       minimum: numeric.toFloat(val.minimum) / 1000 || 0,
+      taxRate: numeric.toFloat(val.taxRate) / 1000 || 0,
     }
   ))
   const newVehicles = vehicles.reduce((prev, curr) => {

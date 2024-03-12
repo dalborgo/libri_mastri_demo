@@ -110,6 +110,7 @@ const VehiclesTable = props => {
     policy: { vehicles },
     policy,
     tablePd,
+    checkPolicy,
     dispatch,
     filtered,
     enqueueSnackbar,
@@ -179,7 +180,8 @@ const VehiclesTable = props => {
   }, [priority, vehicleTypes])
   const defaultVehicleCode = vehicleTypes[0].id
   const getProdCode = useCallback(row => {
-    const list = productList[cFunctions.getVehicleCode(row.vehicleType, row.weight, vehicleTypes) || defaultVehicleCode]
+    const list_ = productList[cFunctions.getVehicleCode(row.vehicleType, row.weight, vehicleTypes) || defaultVehicleCode]
+    const list = Array.isArray(list_) ?  list_.sort() : list_
     const product = row.productCode ? list.indexOf(row.productCode) > -1 ? row.productCode : list[0] : list[0]
     return product
   }, [defaultVehicleCode, productList, vehicleTypes])
@@ -458,7 +460,8 @@ const VehiclesTable = props => {
       return <LookupEditCell {...props} hide={shortEdit} values={vehicleList}/>
     }
     if (column.name === 'productCode') {
-      const list = [...new Set(productListFlat)]
+      const list_ = [...new Set(productListFlat)]
+      const list = Array.isArray(list_) ? list_.sort() : list_
       return <LookupEditCell {...props} hide={shortEdit} values={list}/>
     }
     if (column.name === 'exclusionType') {
@@ -579,6 +582,7 @@ const VehiclesTable = props => {
                 for={booleanColumns}
               />
               <MenuTypeProvider
+                checkPolicy={checkPolicy}
                 dispatch={dispatch}
                 for={menuColumns}
                 handlePrint={handlePrint}

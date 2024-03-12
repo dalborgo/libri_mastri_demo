@@ -108,6 +108,7 @@ export const POLICY_FRAGMENT = (gql`
       attachments {
         ...attachmentsFragment
       }
+      company
       cosigners {
         ...holderFragment
       }
@@ -126,6 +127,7 @@ export const POLICY_FRAGMENT = (gql`
       meta {
         ...metaFragment
       }
+      notes
       producer{
         ...producerFragment
       }
@@ -212,6 +214,7 @@ export const POLICY_SAVE_FRAGMENT = (gql`
       attachments
       _cas
       createdBy
+      company
       cosigners {
         ...holderSaveFragment
       }
@@ -226,6 +229,7 @@ export const POLICY_SAVE_FRAGMENT = (gql`
       number
       initDate
       midDate
+      notes
       producer
       productDefinitions
       signer {

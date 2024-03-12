@@ -9,10 +9,12 @@ import {
   mdiCloudDownloadOutline,
   mdiCloudUploadOutline,
   mdiCurrencyEur,
+  mdiFolderZipOutline,
   mdiMenu,
   mdiMicrosoftExcel,
   mdiViewList,
 } from '@mdi/js'
+import { cDate } from '@adapter/common'
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -23,7 +25,21 @@ const useStyles = makeStyles(theme => ({
 }))
 
 // eslint-disable-next-line react/display-name
-const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, handleExport, handleExportTotal, dispatch, setTaxableTotal, taxableTotal }) => {
+const ExportMenu = memo(({
+  priority,
+  filtered,
+  setFiltered,
+  isPolicy,
+  classes,
+  handleApplicationZip,
+  handleExport,
+  handleExportTotal,
+  checkPolicy,
+  dispatch,
+  setTaxableTotal,
+  resultRegFractions,
+  taxableTotal,
+}) => {
   const [anchorEl, setAnchorEl] = React.useState(null)
   
   const handleClick = (event) => {
@@ -95,6 +111,51 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
           <MenuItem
             onClick={
               () => {
+                handleApplicationZip('senza_premi')
+                handleClose()
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiFolderZipOutline} size={1}/>
+            </ListItemIcon>
+            Esporta applicazioni stato di rischio senza premi
+          </MenuItem>
+        }
+        {
+          <MenuItem
+            onClick={
+              () => {
+                handleApplicationZip('con_premi')
+                handleClose()
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiFolderZipOutline} size={1}/>
+            </ListItemIcon>
+            Esporta applicazioni stato di rischio con premi
+          </MenuItem>
+        }
+        {
+          <MenuItem
+            onClick={
+              () => {
+                handleApplicationZip('di_vincolo')
+                handleClose()
+              }
+            }
+          >
+            <ListItemIcon>
+              <Icon path={mdiFolderZipOutline} size={1}/>
+            </ListItemIcon>
+            Esporta applicazioni stato di rischio di vincolo
+          </MenuItem>
+        }
+        {
+          <MenuItem
+            onClick={
+              () => {
                 handleClose()
                 setTimeout(() => {
                   setTaxableTotal(!taxableTotal)
@@ -112,9 +173,13 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
           (priority === 3 && isPolicy) &&
           <MenuItem
             onClick={
-              () => {
-                dispatch({ type: 'confirmAllInclExcl' })
-                handleClose()
+              async () => {
+                const value = await checkPolicy()
+                if(!value){
+                  await dispatch({ type: 'confirmAllInclExcl' })
+                  document.getElementById('headerButton').click()
+                  handleClose()
+                }
               }
             }
           >
@@ -125,26 +190,26 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
           </MenuItem>
         }
         {
+          isPolicy && <Divider/>
+        }
+        {
           isPolicy &&
-          <>
-            <Divider/>
-            <MenuItem
-              onClick={
-                () => {
-                  handleClose()
-                  setTimeout(() => {
-                    setFiltered(false)
-                  }, 20)
-                }
+          <MenuItem
+            onClick={
+              () => {
+                handleClose()
+                setTimeout(() => {
+                  setFiltered(false)
+                }, 20)
               }
-              selected={!filtered}
-            >
-              <ListItemIcon>
-                <Icon path={mdiCarMultiple} size={1}/>
-              </ListItemIcon>
-              {'TUTTI I DATI'}
-            </MenuItem>
-          </>
+            }
+            selected={!filtered}
+          >
+            <ListItemIcon>
+              <Icon path={mdiCarMultiple} size={1}/>
+            </ListItemIcon>
+            TUTTI I DATI
+          </MenuItem>
         }
         {
           isPolicy &&
@@ -162,27 +227,31 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
             <ListItemIcon>
               <Icon path={mdiCarMultiple} size={1}/>
             </ListItemIcon>
-            {'SOLO STATO DI RISCHIO INIZIALE'}
+            SOLO STATO DI RISCHIO INIZIALE
           </MenuItem>
         }
         {
-          isPolicy &&
-          <MenuItem
-            onClick={
-              () => {
-                handleClose()
-                setTimeout(() => {
-                  setFiltered('2021-06-30')
-                }, 20)
-              }
-            }
-            selected={filtered === '2021-06-30'}
-          >
-            <ListItemIcon>
-              <Icon path={mdiCarMultiple} size={1}/>
-            </ListItemIcon>
-            {'30/06/2021'}
-          </MenuItem>
+          isPolicy && resultRegFractions.map((fract, i) => {
+            return (
+              <MenuItem
+                key={i}
+                onClick={
+                  () => {
+                    handleClose()
+                    setTimeout(() => {
+                      setFiltered(fract.endDate)
+                    }, 20)
+                  }
+                }
+                selected={filtered === fract.endDate}
+              >
+                <ListItemIcon>
+                  <Icon path={mdiCarMultiple} size={1}/>
+                </ListItemIcon>
+                Regolazione del {cDate.mom(fract.endDate, null, 'DD/MM/YYYY')}
+              </MenuItem>
+            )
+          })
         }
       </Menu>
     </div>
@@ -190,7 +259,22 @@ const ExportMenu = memo(({ priority, filtered, setFiltered, isPolicy, classes, h
 })
 
 const Header = props => {
-  const { handleModeChange, handleExport, handleExportTotal, mode, priority, isPolicy, dispatch, setTaxableTotal, taxableTotal, setFiltered, filtered } = props
+  const {
+    handleModeChange,
+    handleApplicationZip,
+    handleExport,
+    handleExportTotal,
+    checkPolicy,
+    mode,
+    priority,
+    isPolicy,
+    dispatch,
+    setTaxableTotal,
+    taxableTotal,
+    setFiltered,
+    filtered,
+    resultRegFractions,
+  } = props
   const classes = useStyles()
   const theme = useTheme()
   return (
@@ -246,10 +330,13 @@ const Header = props => {
               classes={classes}
               dispatch={dispatch}
               filtered={filtered}
+              handleApplicationZip={handleApplicationZip}
               handleExport={handleExport}
               handleExportTotal={handleExportTotal}
+              checkPolicy={checkPolicy}
               isPolicy={isPolicy}
               priority={priority}
+              resultRegFractions={resultRegFractions}
               setFiltered={setFiltered}
               setTaxableTotal={setTaxableTotal}
               taxableTotal={taxableTotal}

@@ -6,7 +6,7 @@ import { Header } from './components'
 import { withSnackbar } from 'notistack'
 import compose from 'lodash/fp/compose'
 import { bdxQuery } from 'utils/axios'
-import { Button } from '@material-ui/core'
+import { Button, Typography } from '@material-ui/core'
 import ExcelJS from 'exceljs'
 import saveAs from 'file-saver'
 import { cDate, cFunctions, numeric } from '@adapter/common'
@@ -15,6 +15,7 @@ import { initPolicy } from '../Policy/helpers'
 import numberToLetter from 'number-to-letter'
 import BdxForm from './components/BdxForm'
 import find from 'lodash/find'
+import moment from 'moment'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -25,6 +26,7 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 
+const taxRate = 13.5
 const size10 = { font: { size: '10' } }
 const bold = { font: { bold: true, size: '10' } }
 const noBold = { font: { bold: false, size: '10' } }
@@ -32,6 +34,8 @@ const right = { alignment: { horizontal: 'right' } }
 const lightGray = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '969696' } } }
 const cyan = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFFFF' } } }
 const fontWhite = { font: { color: { argb: 'FFFFFF' }, bold: true, size: '10' } }
+const fontRed = { font: { color: { argb: 'FF0000' }, size: '10' } }
+const fontGreen = { font: { color: { argb: '008000' }, size: '10' } }
 const border = {
   top: { style: 'thin', color: { argb: '000000' } },
   left: { style: 'thin', color: { argb: '000000' } },
@@ -71,6 +75,8 @@ function createExcel (policies, vehicleTypes, data) {
     { key: 'init', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'end', width: 20 },
     { key: 'cov', width: 30 },
+    { key: 'dateFrom', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
+    { key: 'dateTo', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'val', width: 20, style: { numFmt: '#,##0.00' } },
     { key: 'gla', width: 15 },
     { key: 'tow', width: 15 },
@@ -129,6 +135,8 @@ function createExcel (policies, vehicleTypes, data) {
     init: 'Decorrenza Copertura',
     end: 'Scadenza Copertura',
     cov: 'Garanzia',
+    dateFrom: 'Data da',
+    dateTo: 'Data a',
     val: 'Valore Assicurato',
     gla: 'Cristalli',
     tow: 'Traino',
@@ -141,12 +149,21 @@ function createExcel (policies, vehicleTypes, data) {
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(10).getCell(colIndex), lightGray, fontWhite)
   }
-  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0
+  let totalVehicles = 0, totalPrize = 0, totalPrizeT = 0, index = 11
   for (let policy of policies) {
     const newPolicy = initPolicy(policy)
+    const defaultTaxes = newPolicy.productDefinitions[0].taxRate
+    if (policy.company === 'ASSICURATRICE MILANESE SPA') {
+      continue
+    }
+    if (policy.producer === 'qubo') {
+      continue
+    }
+    if (defaultTaxes === 2.5) {
+      console.log('skipped 2.5 %')
+      continue
+    }
     for (let vehicle of policy.vehicles) {
-      if (!['DELETED', 'DELETED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
-      totalVehicles++
       const prize = calculatePrizeTable(null, newPolicy, {
         ...vehicle,
         value: numeric.toFloat(vehicle.value / 1000),
@@ -157,22 +174,39 @@ function createExcel (policies, vehicleTypes, data) {
       if (vehicle.owner && signer.id !== vehicle.owner) {
         realSigner = find(policy.cosigners, { id: vehicle.owner }) || {}
       }
-      const prizeT = (prize / ((100 + 13.5) / 100))
+      const prizeT = (prize / ((100 + taxRate) / 100))
       totalPrize += prize
       totalPrizeT += prizeT
       const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
       const prodKey = cFunctions.camelDeburr(vehicle.productCode + vehicleCode)
       const product = policy.productDefinitions[prodKey] || {}
+      const init = newPolicy.initDate && new Date(newPolicy.initDate)
+      const end = getPolicyEndDate(newPolicy.initDate, newPolicy.midDate)
+      const dateFrom = vehicle.startDate ? new Date(vehicle.startDate) : init
+      const dateTo = vehicle.finishDate ? new Date(vehicle.finishDate) : end
+      if (!['DELETED_CONFIRMED', 'ADDED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
+      if (vehicle.state?.startsWith('DELETE')) {
+        if (!moment(dateTo).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
+          continue
+        }
+      } else {
+        if (!moment(dateFrom).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
+          continue
+        }
+      }
+      totalVehicles++
       ws.addRow({
         pol: newPolicy.number,
         sign,
         cos: realSigner ? realSigner.surname + (realSigner.name ? ` ${realSigner.name}` : '') : sign,
-        st: signer.state,
+        st: signer.state, //newPolicy?.holders?.[0].state
         lic: vehicle.licensePlate,
         model: vehicle.vehicleType,
-        init: newPolicy.initDate && new Date(newPolicy.initDate),
-        end: getPolicyEndDate(newPolicy.initDate, newPolicy.midDate),
+        init,
+        end,
         cov: product.coverageType,
+        dateFrom,
+        dateTo,
         val: numeric.toFloat(vehicle.value / 1000),
         gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
         tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
@@ -182,6 +216,17 @@ function createExcel (policies, vehicleTypes, data) {
         prize,
         prizeT,
       })
+      if (vehicle.state?.startsWith('DELETE')) {
+        for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
+          Object.assign(ws.getRow(index).getCell(colIndex), fontRed)
+        }
+      }
+      if (vehicle.state?.startsWith('ADDED')) {
+        for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
+          Object.assign(ws.getRow(index).getCell(colIndex), fontGreen)
+        }
+      }
+      index++
     }
   }
   const headerCount = 11
@@ -205,15 +250,19 @@ const Bsx = ({ enqueueSnackbar }) => {
   const onClick = useCallback(async () => {
     const { values } = formRefBdx.current || {}
     const data = {
-      startDate: cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
+      startDate: '2021-01-01',//cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
       endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
     }
     const { ok, message, results } = await bdxQuery(
       'files/get_bdx',
       data
     )
+    const range = {
+      startDate: cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
+      endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
+    }
     !ok && enqueueSnackbar(message, { variant: 'error' })
-    createExcel(results.policies, results.vehicleTypes, data)
+    createExcel(results.policies, results.vehicleTypes, range)
   }, [enqueueSnackbar])
   
   return (
@@ -222,6 +271,7 @@ const Bsx = ({ enqueueSnackbar }) => {
       title="Bdx"
     >
       <Header/>
+      <Typography>Indicare l'intervallo delle date di movimentazione</Typography>
       <div>
         <BdxForm formRefBdx={formRefBdx}/>
       </div>

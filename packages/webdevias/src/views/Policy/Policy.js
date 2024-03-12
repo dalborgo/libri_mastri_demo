@@ -20,6 +20,7 @@ import {
   calculatePrizeTable,
   calculateRegulationPayment,
   gestError,
+  getGlobalTaxation,
   getPayFractionsNorm,
   getPolicyCode,
   getPolicyEndDate,
@@ -52,6 +53,7 @@ import get from 'lodash/get'
 import clsx from 'clsx'
 import useRouter from 'utils/useRouter'
 import { useImmerReducer } from 'use-immer'
+import cloneDeep from 'lodash/cloneDeep'
 import {
   comparePolicy,
   createExportTotal,
@@ -125,7 +127,7 @@ const useStyles = makeStyles(theme => {
     },
     field: {
       margin: theme.spacing(1, 1),
-      minWidth: 100,
+      //minWidth: 100,
     },
     fieldNum: {
       width: 100,
@@ -237,6 +239,7 @@ const Main = ({ enqueueSnackbar }) => {
 
 //endregion
 
+//const taxRate = 13.5
 let Policy = ({ policy, enqueueSnackbar }) => {
   const classes = useStyles()
   const throwError = useAsyncError()
@@ -276,6 +279,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const formRefPDS = useRef(null)
   const formRefHolders = useRef(null)
   const formRefProd = useRef(null)
+  const formRefComp = useRef(null)
   const formRefSub = useRef(null)
   const [statePolicy, dispatch] = useImmerReducer(reducerPolicy, policy, initPolicy)
   const [stateInsertModal, dispatchInsertModal] = useImmerReducer(reducerInsertModal, { index: -1, open: false })
@@ -292,7 +296,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       ...statePolicy,
       ...header,
       productDefinitions,
-      specialArrangements: pds?.specialArrangements || statePolicy.specialArrangements || '',
+      specialArrangements: (pds?.specialArrangements || pds?.specialArrangements === '') ? pds?.specialArrangements : statePolicy.specialArrangements || '',
+      notes: (header?.notes || header?.notes === '') ? header?.notes : statePolicy.notes || '',
       holders: holders?.holders ?? statePolicy.holders,
     }
     if (statePolicy.number) {
@@ -340,7 +345,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       checkVehicleErrors(clone)
-      
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
         if (typeLabel === 'vincolo') {
@@ -377,7 +381,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       producer,
       productDefinitions,
       signer: signer.id === '' ? {} : signer,
-      specialArrangements: pds?.specialArrangements || null,
+      specialArrangements: (pds?.specialArrangements || pds?.specialArrangements === '') ? pds?.specialArrangements : statePolicy.specialArrangements || '',
+      notes: (header?.notes || header?.notes === '') ? header?.notes : statePolicy.notes || '',
       vehicles,
     }
     out.number = out.number ? out.number : getPolicyCode(statePolicy, header, isNew)
@@ -423,6 +428,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       cosigners,
       createdBy: statePolicy?.createdBy?.username,
       isRecalculateFraction: header?.isRecalculateFraction || statePolicy.isRecalculateFraction,
+      notes: (header?.notes || header?.notes === '') ? header?.notes : statePolicy.notes || '',
       paidFractions: statePolicy?.paidFractions,
       producer: statePolicy?.producer?.username,
       productDefinitions,
@@ -443,6 +449,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const tablePd = formRefPDS.current
     const { values: holders } = formRefHolders.current || {}
     const { values: prodSelected = {} } = formRefProd.current || {}
+    const { values: compSelected = {} } = formRefComp.current || {}
     const data = calculatePolicy(header, pds, holders)
     const dataProducer = prodSelected?.producer || data?.producer
     if (dataProducer) {
@@ -452,6 +459,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         data.producer = prodSelected?.producer?.username ?? data.producer.username
       }
     }
+    data.company = compSelected?.company || data?.company
     if (type === 'policy') {
       const payFractions = calculatePaymentDates(statePolicy.vehicles, tablePd, statePolicy, header)
       const { payFractionsNorm } = statePolicy?.payFractions?.length ? getPayFractionsNorm(statePolicy.payFractions, false, false, true) : getPayFractionsNorm(payFractions, false)
@@ -459,6 +467,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       data.endDate = getPolicyEndDate(data.initDate, data.midDate)
       if (data?.state?.isPolicy) {
         data.toSave = true
+      }
+      if (statePolicy.number) {
+        data.number = statePolicy.number
       }
     }
     if (type === 'proposal') {
@@ -472,6 +483,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const resultVehicles = []
       let count_ = 1
       const _vehicles = statePolicy.vehicles.filter(row => {
+        //includere solo veicoli confermati
         const condition = (!row.startDate || moment(row.startDate).isSameOrBefore(moment(endRegDate))) && (!row.finishDate || moment(row.finishDate).isAfter(endRegDate))
         if (condition) {
           resultVehicles.push({ ...row, [`inPolicy_${endRegDate}`]: count_++ })
@@ -479,6 +491,16 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         return condition
       })
       const calculatedPayFractions = calculatePaymentDates(_vehicles, tablePd, statePolicy, header)
+      const resultVehiclesToPrint = resultVehicles.map(row => {
+        const prize = calculatePrizeTable(tablePd, statePolicy, row, true) / calculatedPayFractions.length
+        return {
+          ...row,
+          days: calculatedPayFractions[regCounter].daysDiff,
+          prize,
+          startDate: endRegDate,
+          finishDate: data.regFractions?.[regCounter]?.endDate,
+        }
+      })
       const { payFractionsNorm: calculatedPayFractionNorm } = getPayFractionsNorm(calculatedPayFractions, true, true)
       data.startRecDate = endRegDate
       data.resultPayFractions = []
@@ -494,16 +516,18 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           data.resultPayFractions.push(npf)
           count++
         }
-        if (moment(npf.date).isSame(endRegDate)) {
+        if (moment(npf.date).isSame(endRegDate)) {//'2023-12-31' da mettere se non matchano i dati
           data.toPrintPayFraction = npf
           index = count - 1
         }
       }
       data.resultVehicles = resultVehicles
+      data.resultVehiclesToPrint = resultVehiclesToPrint
       data.resultRegFractions = data.regFractions.map((row, i) => {
         return { ...row, toCon: data.regFractions.length - 1 === i ? undefined : data.toPrintPayFraction.date }
       })
-      data.endRecDate = data.resultPayFractions?.[index]?.date ?? cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+      //data.endRecDate = data.resultPayFractions?.[index]?.date ?? cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+      data.endRecDate = data.regFractions?.[regCounter]?.endDate
       data.totTaxable = data.toPrintPayFraction.taxable / 1000
       data.totInstalment = data.toPrintPayFraction.instalment / 1000
     }
@@ -512,59 +536,95 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       data.startRegDate = startRegDate
       data.endRegDate = endRegDate
       data.counter = regCounter
+      data.toSave = toSave
       let totTaxable = 0
       const newVehicles = []
-      for (let vehicle of statePolicy.vehicles) { // non in millesimi qua
-        if (hasRegulation === 'SI') {
-          const isStartDate = vehicle.startDate === data.initDate
-          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-            continue
+      const cloneVehicles = cloneDeep(statePolicy.vehicles)
+      console.log('cloneVehicles:', cloneVehicles)
+      const [firstVehicle] = cloneVehicles
+      const taxRate = getGlobalTaxation(tablePd, statePolicy, firstVehicle)
+      for (let vehicle of cloneVehicles) { // non in millesimi qua
+        /*const isStartDate = vehicle.startDate === data.initDate
+        if ((!vehicle.startDate || !vehicle.finishDate)) {
+          continue
+        }
+        if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
+          if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
           }
-          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-              vehicle.state = 'ADDED_CONFIRMED'
-            }
-            const {
-              payment,
-              days,
-            } = calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate)
-            const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
-            totTaxable += payment
-            newVehicles.push({ ...vehicle, payment, prize, days })
+          const {
+            payment,
+            days,
+          } = hasRegulation === 'SI' ? calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate) : calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
+          const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
+          totTaxable += payment
+          newVehicles.push({ ...vehicle, payment, prize, days })
+        }*/
+        console.log()
+        if (!vehicle.finishDate || moment(vehicle.finishDate).isBefore(startRegDate)) {// se non è stata toccata continua
+          console.log(vehicle.licensePlate, 'excluded because removed before this period')
+          continue
+        }
+        
+        const isInPolicy = Boolean(vehicle.inPolicy)
+        const isAlive = moment(vehicle.finishDate).isAfter(endRegDate)
+        const hasBeenAdded = !isInPolicy && cDate.inRange(startRegDate, endRegDate, vehicle.startDate)
+        console.log(vehicle.licensePlate, isAlive, hasBeenAdded, vehicle.state)
+        
+        if (isAlive) {
+          if (hasBeenAdded) {// è viva ed è stata aggiunta nel periodo: devo pagare da quando è stata aggiunta fino alla fine della polizza
+            vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
+          } else {
+            continue// è viva ma non è stata aggiunta in questo periodo: quindi non faccio niente
           }
         } else {
-          const isStartDate = vehicle.startDate === data.initDate
-          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-            continue
-          }
-          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-              vehicle.state = 'ADDED_CONFIRMED'
+          
+          if (hasBeenAdded) {// è stata esclusa ed era stata aggiunta in questo periodo: quindi pago la diff da quando è entrata a quando è uscita
+            //vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
+          } else {// è stata aggiunta in un periodo precedente, è stata esclusa, quindi storno la differenza solo se le motivazioni sono quelle
+            if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
+              //
+            } else {
+              continue
             }
-            const { payment, days } = calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
-            const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
-            totTaxable += payment
-            newVehicles.push({ ...vehicle, payment, prize, days })
           }
         }
+        console.log('hasRegulation:', hasRegulation)
+        const {
+          payment,
+          days,
+        } = hasRegulation === 'SI' ? calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate) : calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
+        const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
+        totTaxable += payment
+        if (hasRegulation === 'SI') {
+          newVehicles.push({
+            ...vehicle,
+            finishDate: moment(vehicle.finishDate).isBefore(endRegDate) ? vehicle.finishDate : endRegDate,// esclusioni
+            payment, prize, days,
+          })
+        } else {
+          newVehicles.push({ ...vehicle, payment, prize, days })
+        }
+        
       }
       data.vehicles = newVehicles
       data.totTaxable = Number(totTaxable.toFixed(2))
-      data.totInstalment = (totTaxable * ((100 + 13.5) / 100))
+      data.totInstalment = (totTaxable * ((100 + taxRate) / 100))
     }
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
     tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
     let fileName = `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`
     if (type === 'regulation') {
-      fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${data.endRegDate}.pdf`
+      fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${regCounter}.pdf`
     }
     if (type === 'receipt') {
       fileName = `quietanza_${getPolicyCode(statePolicy, header, isNew)}-${data.startRecDate}.pdf`
     }
-    data.toSave = toSave
+    data.toSave = cFunctions.isProd() ? data.toSave : false
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
       fileName,
@@ -581,7 +641,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   //region CONSOLIDATION
   const consolidatePolicy = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter) => async () => {
     
-    //await handlePrint('regulation', startRegDate, endRegDate, hasRegulation, regCounter)()
+    await handlePrint('regulation', startRegDate, endRegDate, hasRegulation, regCounter)()
     const {
       resultPayFractions,
       resultVehicles,
@@ -593,7 +653,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       vehicles: resultVehicles,
       type: 'setConsolidate',
     })
-    //document.getElementById('headerButton').click()
+    // document.getElementById('headerButton').click()
   }, [dispatch, handlePrint])
   //endregion
   
@@ -637,13 +697,57 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     data.endDate = getPolicyEndDate(data.initDate, data.midDate)
     data.noPrize = Boolean(noPrize)
     const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
+    data.toSave = false// solo demo
     //tab === 'all' && dispatch({ type: 'refresh' })
     client.writeData({ data: { loading: true } })
     const { ok, message } = await manageFile(
       `prints/print_${type}`,
-      `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${getPolicyCode(statePolicy, header, isNew)}-${counter || targetLicensePlate}.pdf`,
+      `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${getPolicyCode(statePolicy, header, isNew)}-${targetLicensePlate}-${counter}.pdf`,
       'application/pdf',
       data,
+      { toDownload: forceDownloadPdf }
+    )
+    client.writeData({ data: { loading: false } })
+    !ok && enqueueSnackbar(message, { variant: 'error' })
+  }, [calculatePolicy, client, enqueueSnackbar, isNew, me, statePolicy])
+  //endregion
+  
+  //region HANDLE APPLICATION ZIP
+  const handleApplicationZip = useCallback(async type => {
+    const header = formRefHeader?.current?.values || statePolicy
+    const { values: pds } = formRefPDS.current || {}
+    const tablePd = formRefPDS.current
+    const noPrize = type === 'senza_premi'
+    let typeLabel = 'application'
+    const { values: holders } = formRefHolders.current || {}
+    let counter = 1
+    const output = statePolicy.vehicles.reduce((prev, curr) => {
+      if (!curr.inPolicy) {return prev}
+      if (!curr.leasingCompany && type === 'di_vincolo') {return prev}
+      const data = calculatePolicy(header, pds, holders, curr.licensePlate, curr.state, counter++, typeLabel)
+      const dataProducer = data?.producer
+      if (dataProducer) {
+        if (dataProducer.father) {
+          data.producer = data.producer.father
+        } else {
+          data.producer = data.producer.username
+        }
+      }
+      data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions)// typeLabel === 'esclusione'
+      data.endDate = getPolicyEndDate(data.initDate, data.midDate)
+      data.noPrize = Boolean(noPrize)
+      data.toSave = false
+      prev.push(data)
+      return prev
+    }, [])
+    
+    const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
+    client.writeData({ data: { loading: true } })
+    const { ok, message } = await manageFile(
+      `prints/application_zip_${type}`,
+      `applicazioni_${type}_${getPolicyCode(statePolicy, header, isNew)}.zip`,
+      'application/zip',
+      output,
       { toDownload: forceDownloadPdf }
     )
     client.writeData({ data: { loading: false } })
@@ -664,6 +768,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.value = numeric.printDecimal(clone.value).replace('.', '')
       clone.weight = clone.weight ? numeric.printDecimal(clone.weight).replace('.', '') : ''
       clone.licensePlate = clone.licensePlate.startsWith('XXXXXX') ? '' : clone.licensePlate
+      clone.startDate = clone.startDate ? cDate.mom(clone.startDate, null, 'YYYY-MM-DD') : null
       clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
@@ -695,6 +800,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const { values: holders } = formRefHolders.current || {}
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
     const vehicles = statePolicy.vehicles.reduce((prev, curr) => {
+      const taxRate = getGlobalTaxation(tablePd, statePolicy, curr)
       const clone = { ...curr }
       const prize = calculatePrizeTable(tablePd, statePolicy, curr)
       const payment = calculatePaymentTable(tablePd, statePolicy, curr)
@@ -707,15 +813,17 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const vehicleCode = `${cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)}`
       const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
       clone.licensePlate = clone.licensePlate.startsWith('XXXXXX') ? '' : clone.licensePlate
+      clone.startDate = clone.startDate ? cDate.mom(clone.startDate, null, 'YYYY-MM-DD') : null
+      clone.finishDate = clone.finishDate ? cDate.mom(clone.finishDate, null, 'YYYY-MM-DD') : null
       clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
       clone.realSigner = realSigner
       clone.prize = prize
-      clone.prizeT = (prize / ((100 + 13.5) / 100))
+      clone.prizeT = (prize / ((100 + taxRate) / 100))
       clone.payment = calculatePaymentTable(tablePd, statePolicy, curr)
-      clone.paymentT = (payment / ((100 + 13.5) / 100))
+      clone.paymentT = (payment / ((100 + taxRate) / 100))
       prev.push(clone)
       return prev
     }, [])
@@ -733,6 +841,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: holders, resetForm: resetFormHolders } = formRefHolders.current || {}
       const { values: prodSelected = {}, resetForm: resetFormProducers } = formRefProd.current || {}
       const { values: subSelected = {}, resetForm: resetFormSub } = formRefSub.current || {}
+      const { values: compSelected = {}, resetForm: resetFormCompanies } = formRefComp.current || {}
       /* eslint-enable no-unused-vars */
       if (pds?.productDefinitions?.length) {
         await calculateRows(pds?.productDefinitions, setFieldValue)
@@ -799,6 +908,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             }
           }
           //input.subAgent = subSelected?.subAgent?.username ?? input.subAgent?.username
+          input.company = compSelected?.company || input?.company
         }
         result = await newPolicy({
           variables: { input },
@@ -885,6 +995,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               }
             }
             //input.subAgent = 'subAgent' in subSelected ? subSelected.subAgent?.username : input.subAgent?.username
+            input.company = compSelected?.company || input?.company
           }
         } else {
           input.producer = input?.producer?.username
@@ -980,6 +1091,26 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [tab, calculatePolicy, client, policy, isNew, dispatch, statePolicy, gs.offset, me.priority, me.username, newPolicy, editPolicy, history, enqueueSnackbar])
   //endregion
   
+  const checkPolicy = useCallback(async () => {
+    const { values: header } = formRefHeader.current || {}
+    const header_ = formRefHeader?.current?.values || statePolicy
+    const { payFractions } = statePolicy
+    const lastFract = getLastFraction(payFractions)
+    const { values: pds, setFieldValue } = formRefPDS.current || {}
+    const { values: holders } = formRefHolders.current || {}
+    /* eslint-enable no-unused-vars */
+    if (pds?.productDefinitions?.length) {
+      await calculateRows(pds?.productDefinitions, setFieldValue)
+    }
+    //if (tab === 'all') {dispatch({ type: 'refresh' })}
+    const { values: newPds } = formRefPDS.current || {}
+    const tablePd = formRefPDS.current
+    const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
+    if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority < 4) {
+      enqueueSnackbar('L\'ultima rata non è stata pagata!', { variant: 'error' })
+      return 'BLOCKED'
+    }
+  }, [calculateEmittedPolicy, enqueueSnackbar, me.priority, statePolicy])
   //region HANDLE POLICY SAVE
   const handlePolicySave = useCallback(async () => {
     try { //const stateCode = event.currentTarget.name || 'CHANGED'
@@ -1122,7 +1253,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       <Header
         _code={statePolicy.id}
         calledDiff={calledDiff}
+        company={statePolicy.company}
         dispatch={dispatch}
+        formRefComp={formRefComp}
         formRefProd={formRefProd}
         formRefSub={formRefSub}
         handleModeChange={handleModeChange}
@@ -1200,6 +1333,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           {
             (tab === 'all' || tab === 'header') &&
             <PolicyHeader
+              _code={statePolicy.id}
+              checkPolicy={checkPolicy}
               consolidatePolicy={consolidatePolicy}
               dispatch={dispatch}
               generateDates={generateDates}
@@ -1212,10 +1347,12 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               isPolicy={statePolicy?.state?.isPolicy}
               isRecalculateFraction={statePolicy.isRecalculateFraction}
               midDate={statePolicy.midDate}
+              notes={statePolicy.notes}
               number={statePolicy.number}
               paidFractions={statePolicy.paidFractions}
               payFractionsDef={statePolicy.payFractions}
               paymentFract={statePolicy.paymentFract}
+              priority={me.priority}
               regFractions={statePolicy.regFractions}
               regulationFract={statePolicy.regulationFract}
               setPaidFractions={setPaidFractions}
@@ -1237,9 +1374,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           {
             (tab === 'all' || tab === 'vehicles') &&
             <PolicyVehicles
+              checkPolicy={checkPolicy}
               dispatch={dispatch}
               formRefHeader={formRefHeader}
               globalClass={classes}
+              handleApplicationZip={handleApplicationZip}
               handleExport={handleExport}
               handleExportTotal={handleExportTotal}
               handleModeChange={handleVehiclesModeChange}

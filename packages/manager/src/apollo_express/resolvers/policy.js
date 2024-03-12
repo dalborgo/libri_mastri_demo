@@ -2,7 +2,7 @@ import { Gs, Policy, User } from '../models'
 import getStream from 'get-stream'
 import parse from 'csv-parse'
 import {
-  calculateSequenceNumber,
+  calculateSequenceNumber, calculateSequenceNumberMilanese,
   checkRecord,
   columnNameMap,
   createAttachments,
@@ -21,6 +21,17 @@ import moment from 'moment'
 
 const { BUCKET_DEFAULT } = config.get('couchbase')
 const decodeCAS = obj => obj.getCAS(true).toString()
+
+function incrementNumberInString(inputString) {
+  const numberMatch = inputString.match(/LM(\d+)/);
+  if (numberMatch) {
+    const currentNumber = parseInt(numberMatch[1]);
+    const incrementedNumber = currentNumber + 1;
+    return inputString.replace(numberMatch[0], `LM${incrementedNumber}`)
+  } else {
+    return inputString;
+  }
+}
 
 export default {
   Query: {
@@ -120,7 +131,7 @@ export default {
     editPolicy: async (root, { input }, { req }) => {
       const { attachments: { files }, state, meta, vehicles } = input
       const { newEvent, endDate, payObj, ...restInput } = input
-      const { userRole } = req.session || {}
+      const { userRole, userId } = req.session || {}
       const policy = await Policy.findById(restInput._code, { populate: ['producer', 'createdBy', 'subAgent'] })
       const attachments = await createAttachments(files, restInput._code)
       let producer, subAgent, toSend = []
@@ -214,24 +225,30 @@ export default {
         await Policy.getByQuery(updateQuery)
       }
       if (newEvent) {
-        const { ok, message } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer)
+        const { ok, message } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer, userId)
         if (!ok) { log.warn(message) }
       } else {
         if (toSend.length) {
           const {
             ok,
             message,
-          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer)
+          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer, userId)
           if (!ok) { log.warn(message) }
         }
       }
       return savedPolicy
     },
     newPolicy: async (root, { input }, { req }) => {
-      const { userRole } = req.session || {}
+      const { userRole, userId } = req.session || {}
       const { state, attachments: { files } } = input
       const { isPolicy } = state || {}
-      const { number, meta = {}, _code } = await calculateSequenceNumber(input.meta, state, input.number)
+      let data
+      if (input.company === 'ASSICURATRICE MILANESE SPA') {
+        data = await calculateSequenceNumberMilanese(input.meta, state, input.number)
+      } else {
+        data = await calculateSequenceNumber(input.meta, state, input.number)
+      }
+      const { number, meta = {}, _code } = data
       const exist = Boolean(await Policy.findById(_code))
       if (exist) {
         throw new CustomValidationError(`Numero documento "${number}" già presente!`, 'NUMBER_DOCUMENT_ALREADY_PRESENT')
@@ -286,21 +303,26 @@ export default {
         }
         await Policy.getByQuery(updateQuery)
       }
-      const { ok, message } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer)
+      const { ok, message } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer, userId)
       if (!ok) { log.warn(message) }
       return savedPolicy
     },
     updatePolicy: async (root, { id }) => {
       const policy = await Policy.findById(id)
-      const { initDate, midDate, regFractions = [], isRecalculateFraction, meta: { serie }, vehicles } = policy
+      const { initDate, midDate, regFractions = [], isRecalculateFraction, vehicles, number: oldNumber, company } = policy
       const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
-      const year_ = (endDate.split('-'))[0]
-      const code = `RENEWED_${year_}_${serie}`
-      const number = `Bozza (RV. ${year_}/${serie})`
-      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {
-        ...policy,
-        initDate: endDate,
-      }, isRecalculateFraction)
+      const genNumber = {}
+      if (company === 'ASSICURATRICE MILANESE SPA') {
+        const newNumber = incrementNumberInString(oldNumber)
+        genNumber.code = `RENEWED_${newNumber.replace(/\//g, '')}`
+        genNumber.number = `Bozza (RV. ${newNumber})`
+      } else {
+        const year_ = (endDate.split('-'))[0]
+        const newNumber = (oldNumber.split('/'))[1]
+        genNumber.code = `RENEWED_${year_}_${newNumber}`
+        genNumber.number = `Bozza (RV. ${year_}/${newNumber})`
+      }
+      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {...policy, initDate: endDate}, isRecalculateFraction)
       let count = 1, constraintCounter_ = 1
       const newVehicles = vehicles.reduce((prev, curr) => {
         if (['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)) {
@@ -321,12 +343,13 @@ export default {
       }, [])
       const updated = {
         ...policy,
-        _code: code,
+        _code: genNumber.code,
         _createdAt: undefined,
         _updatedAt: undefined,
         initDate: endDate,
         meta: undefined,
-        number,
+        midDate: undefined,
+        number: genNumber.number,
         paidFractions: undefined,
         payFractions: undefined,
         regFractions: regFractions_,
