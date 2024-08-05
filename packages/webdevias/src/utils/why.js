@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 import log from '@adapter/common/src/log'
+
 export default function why (name, props) {
   // Get a mutable ref object where we can store props ...
   // ... for comparison next time this hook runs.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const previousProps = useRef()
-
+  
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (previousProps.current) {
@@ -24,13 +25,13 @@ export default function why (name, props) {
           }
         }
       })
-
+      
       // If changesObj not empty then output to console
       if (Object.keys(changesObj).length) {
         log.debug('[why-did-you-update]', name, changesObj)
       }
     }
-
+    
     // Finally update previousProps with current props for next hook call
     previousProps.current = props
   })

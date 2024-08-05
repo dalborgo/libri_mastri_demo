@@ -14,9 +14,9 @@ const useStyles = makeStyles(theme => ({
 
 const Header = props => {
   const { className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <div
       {...rest}
@@ -35,7 +35,7 @@ const Header = props => {
               to={'/management/users'}
               variant="overline"
             >
-            ↩&nbsp;&nbsp;Lista Utenti
+              ↩&nbsp;&nbsp;Lista Utenti
             </Link>
           </div>
           <Typography

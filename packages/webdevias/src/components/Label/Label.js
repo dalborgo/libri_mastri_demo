@@ -27,9 +27,9 @@ const useStyles = makeStyles(theme => ({
 
 const Label = props => {
   const { className, variant, color, shape, children, style, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   const rootClassName = clsx(
     {
       [classes.root]: true,
@@ -37,9 +37,9 @@ const Label = props => {
     },
     className
   )
-
+  
   const finalStyle = { ...style }
-
+  
   if (variant === 'contained') {
     finalStyle.backgroundColor = color
     finalStyle.color = '#FFF'
@@ -47,7 +47,7 @@ const Label = props => {
     finalStyle.border = `1px solid ${color}`
     finalStyle.color = color
   }
-
+  
   return (
     <Typography
       {...rest}

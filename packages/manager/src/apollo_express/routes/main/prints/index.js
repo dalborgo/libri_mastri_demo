@@ -118,7 +118,7 @@ async function getVLReg (vehicles, vehicleTypes, productDefinitions, signer, cos
 }
 
 // globalGlass per non scrivere gli art per i non glass
-function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', target, noPrize = false) {
+function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypesByKey, empty = ' ', target) {
   const globalGlass = target ? target.hasGlass : null
   const globalTowing = target ? target.hasTowing : null
   
@@ -175,7 +175,7 @@ function getGuaranteeList (groupedPd, vehicleTypesByKey, hideRate, coverageTypes
         if (prod.conditions) {
           currentMAP.overdraft = '\n' + prod.conditions
         }
-        if (!prod.minimum || noPrize) {
+        if (!prod.minimum) {
           delete currentMAP.min
         }
         prev.push(elaborateMap(obj, currentMAP))
@@ -201,6 +201,7 @@ function addRouters (router) {
       cosigners,
       initDate,
       midDate,
+      endDate,
       number: number_,
       meta,
       isRecalculateFraction,
@@ -291,6 +292,7 @@ function addRouters (router) {
       specialArrangements: specialArrangements || '',
       payFract: cFunctions.getFractName(paymentFract),
       initDate: initDate && cDate.mom(initDate, null, 'DD/MM/YYYY'),
+      endDate,
       validityDate: cDate.mom(null, null, 'DD/MM/YYYY', [30, 'd']),
       guaranteeList,
       vL,
@@ -467,7 +469,6 @@ function addRouters (router) {
     const [target] = vehicles
     let newNumber
     if (target.productCode === 'INFORTUNI CONDUCENTE') {newNumber = INFORTUNI_NUMBER}
-    console.log('target:', target)
     const today = target.printDate ? cDate.mom(target.printDate, null, 'DD/MM/YYYY') : cDate.mom(null, null, 'DD/MM/YYYY')
     const fileNamePdf = `inclusione_${noPrize ? 'senza_premi_' : ''}${_code}-${target.licensePlate}-${target.counter || 'XXX'}.pdf`
     {
@@ -539,6 +540,9 @@ function addRouters (router) {
       vType,
       sHour,
       sDate,
+      vat: target.vatIncluded === 'SI',
+      noVat: target.vatIncluded === 'NO',
+      sign: toSave,
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -595,6 +599,7 @@ function addRouters (router) {
       }
     }
   })
+  
   router.post('/prints/application_zip_senza_premi', async function (req, res) {
     const vehicles = req.body
     let counter = 1
@@ -688,49 +693,67 @@ function addRouters (router) {
     }
     await zip.finalize()
   })
-  /*router.post('/prints/application__zip', async function (req, res) {
+  router.post('/prints/application_zip_inclusioni', async function (req, res) {
     const vehicles = req.body
-    let counter = 1
-    const zip = archiver('zip', {})
-    zip.pipe(res)
     const [first] = vehicles
-    const promises = []
+    const zipFileName = `inclusioni_${first._code}.zip`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${first._code}/${zipFileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const zip = archiver('zip', {})
+    const toSavePath = path.resolve(`src/apollo_express/crypt/${first._code}/`)
+    const dirExists = fs.existsSync(toSavePath)
+    !dirExists && await Q.nfcall(fs.mkdir, toSavePath)
+    const output = fs.createWriteStream(path.resolve(toSavePath, zipFileName))
+    zip.pipe(res)
+    zip.pipe(output)
     for (let vehicle of vehicles) {
-      promises.push(axiosLocalhostInstance('prints/print_application', {
-        data: vehicle,
+      const [firstVehicle] = vehicle.vehicles
+      const buffer = await axiosLocalhostInstance('prints/print_inclusion', {
+        data: { ...vehicle },
         method: 'POST',
         responseType: 'arraybuffer',
-      }))
-    }
-    const buffers = await Promise.all(promises)
-    for (let buffer of buffers) {
-      zip.append(buffer.data, { name: `applicazione_${first._code}-${counter++}.pdf` })
+      })
+      zip.append(buffer.data, { name: `inclusione_${first._code}-${firstVehicle.licensePlate}-${firstVehicle.counter}.pdf` })
     }
     await zip.finalize()
   })
-  router.post('/prints/application___zip', async function (req, res) {
+  router.post('/prints/application_zip_vincoli', async function (req, res) {
     const vehicles = req.body
-    let counter = 1
-    const zip = archiver('zip', {})
-    zip.pipe(res)
     const [first] = vehicles
-    const promises = []
+    const zipFileName = `vincoli_${first._code}.zip`
+    {
+      const savedFilePath = path.resolve(`src/apollo_express/crypt/${first._code}/${zipFileName}`)
+      const pathExists = fs.existsSync(savedFilePath)
+      if (pathExists) {
+        const data = await Q.nfcall(fs.readFile, savedFilePath)
+        return res.send(data)
+      }
+    }
+    const zip = archiver('zip', {})
+    const toSavePath = path.resolve(`src/apollo_express/crypt/${first._code}/`)
+    const dirExists = fs.existsSync(toSavePath)
+    !dirExists && await Q.nfcall(fs.mkdir, toSavePath)
+    const output = fs.createWriteStream(path.resolve(toSavePath, zipFileName))
+    zip.pipe(res)
+    zip.pipe(output)
     for (let vehicle of vehicles) {
-      promises.push(axiosLocalhostInstance('prints/print_application', {
-        data: vehicle,
+      const [firstVehicle] = vehicle.vehicles
+      const buffer = await axiosLocalhostInstance('prints/print_constraint', {
+        data: { ...vehicle },
         method: 'POST',
         responseType: 'arraybuffer',
-      }))
+      })
+      zip.append(buffer.data, { name: `vincolo_${first._code}-${firstVehicle.licensePlate}-${firstVehicle.constraintCounter}.pdf` })
     }
-    const buffers = await Q.allSettled(promises)
-    buffers.forEach(result => {
-      const { state, value } = result
-      if (state === 'fulfilled') {
-        zip.append(value.data, { name: `applicazione_${first._code}-${counter++}.pdf` })
-      } else {}
-    })
     await zip.finalize()
-  })*/
+  })
+  
   router.post('/prints/print_application', async function (req, res) {
     const partial = {}, empty = ' '
     const data = req.body
@@ -775,7 +798,7 @@ function addRouters (router) {
       const objCov = groupedPd[mainP]
       const vehicleCode = cFunctions.getVehicleCode(target.vehicleType, target.weight, vehicleTypes)
       const found = find(objCov, { vehicleType: vehicleCode, productCode: target.productCode })
-      const data = getGuaranteeList({ [mainP]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target, noPrize)
+      const data = getGuaranteeList({ [mainP]: [found] }, vehicleTypesByKey, true, groupedCt, ' ', target)
       guaranteeList = data.guaranteeList
       hasKnote = data.hasKnote
       if (objCov) {
@@ -823,6 +846,9 @@ function addRouters (router) {
       vType,
       sHour,
       sDate,
+      vat: target.vatIncluded === 'SI',
+      noVat: target.vatIncluded === 'NO',
+      sign: toSave,
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',
       sSur: get(signer, 'surname'),
       sAddr: get(signer, 'address'),
@@ -930,6 +956,9 @@ function addRouters (router) {
       pLongName: get(producer, 'longName'),
       lic: target.licensePlate,
       reason: target.exclusionType || 'VENDITA/DEMOLIZIONE',
+      vat: target.vatIncluded === 'SI',
+      noVat: target.vatIncluded === 'NO',
+      sign: toSave,
       vType,
       sHour,
       sDate,
@@ -1056,6 +1085,9 @@ function addRouters (router) {
       counter: target.constraintCounter,
       pLongName: get(producer, 'longName'),
       lic: target.licensePlate,
+      vat: target.vatIncluded === 'SI',
+      noVat: target.vatIncluded === 'NO',
+      sign: toSave,
       vType,
       sHour: sHour || '24:00',
       sDate: sDate || (initDate && cDate.mom(initDate, null, 'DD/MM/YYYY')),
@@ -1169,6 +1201,7 @@ function addRouters (router) {
       master: newNumber || MASTER_NUMBER,
       number,
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
+      sign: toSave,
       startRecDate: cDate.mom(startRecDate, null, 'DD/MM/YYYY'),
       endRecDate: cDate.mom(endRecDate, null, 'DD/MM/YYYY'),
       pLongName: get(producer, 'longName'),
@@ -1206,6 +1239,7 @@ function addRouters (router) {
       }
     }
   })
+  
   router.post('/prints/print_regulation', async function (req, res) {
     const partial = {}, empty = ' '
     const data = req.body

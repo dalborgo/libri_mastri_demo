@@ -12,9 +12,9 @@ const useStyles = makeStyles(() => ({
 
 const Error = props => {
   const { route } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <main className={classes.root}>
       <Suspense fallback={<LinearProgress/>}>

@@ -13,6 +13,7 @@ interface Edge {
 interface User {
     _createdAt: String
     _updatedAt: String
+    additional_emails: [String]
     address: String
     addressNumber: String
     city: String
@@ -31,6 +32,7 @@ interface User {
 type ChildUser implements User {
     _createdAt: String
     _updatedAt: String
+    additional_emails: [String]
     address: String
     addressNumber: String
     city: String
@@ -82,6 +84,7 @@ type Holder {
 type MainUser implements User {
     _createdAt: String
     _updatedAt: String
+    additional_emails: [String]
     address: String
     addressNumber: String
     children: [ChildUser]
@@ -321,6 +324,7 @@ input AddRegistryInput {
 }
 
 input AddUserInput {
+    additional_emails: [String]
     address: String
     addressNumber: String
     city: String
@@ -375,6 +379,7 @@ input EditRegistryInput {
 }
 
 input EditUserInput {
+    additional_emails: [String]
     address: String
     addressNumber: String
     city: String

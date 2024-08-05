@@ -58,7 +58,7 @@ const DialogSpecialArrangements = props => {
           }
         />
       </DialogContent>
-      <DialogActions style={{marginRight: 10}}>
+      <DialogActions style={{ marginRight: 10 }}>
         <Button color="primary" onClick={handleClose}>
           {isDisabled ? 'Chiudi' : 'Annulla'}
         </Button>

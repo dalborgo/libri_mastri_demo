@@ -12,7 +12,7 @@ const PolicyVehiclesUpload = props => {
         </CardContent>
       </Card>
     </div>
-
+  
   )
 }
 

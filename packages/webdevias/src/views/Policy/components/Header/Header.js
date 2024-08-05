@@ -23,10 +23,10 @@ import { Link as RouterLink, useParams } from 'react-router-dom'
 import ViewDay from '@material-ui/icons/ViewDay'
 import ViewWeek from '@material-ui/icons/ViewWeek'
 import CompareArrows from '@material-ui/icons/CompareArrows'
-import EditIcon from '@material-ui/icons/BorderColorRounded'
 import clsx from 'clsx'
 import { ME } from 'queries/users'
 import { useApolloClient } from '@apollo/react-hooks'
+import EditIcon from '@material-ui/icons/BorderColorRounded'
 import { getPolicyState } from 'helpers'
 import ProducerView from './ProducerView'
 import SubAgentView from './SubAgentView'
@@ -377,6 +377,7 @@ const Header = props => {
   const [producer, setProducer] = useState(prodDefault)
   const [company, setCompany] = useState(companyDefault || 'TUA ASSICURAZIONI SPA')
   const [subAgent, setSubAgent] = useState(subAgentDefault)
+  const stateChip = getPolicyState(state, meta, top, priority)
   const [open, setOpen] = React.useState(false)
   const handleClickOpen = () => {
     setOpen(true)
@@ -384,7 +385,6 @@ const Header = props => {
   const handleClose = () => {
     setOpen(false)
   }
-  const stateChip = getPolicyState(state, meta, top, priority)
   const { code: stateCode, isPolicy } = state || {}
   const showDiff = !top && meta?.modified === false && stateCode !== 'ACCEPTED' && meta?.version > 0
   const loading = calledDiff && loadingDiff
@@ -420,7 +420,7 @@ const Header = props => {
                       priority === 3 ?
                         <>
                           <Link
-                            color="inherit"
+                            color={'inherit'}
                             href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/MB_POLICY%7C${_code}?bucket=${envConfig.BUCKET}`}
                             target="_blank"
                           >

@@ -1,1 +1,1 @@
-export {default as SnackMyProvider} from './SnackComponents'
+export { default as SnackMyProvider } from './SnackComponents'

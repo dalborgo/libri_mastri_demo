@@ -214,7 +214,7 @@ export async function calculateSequenceNumberMilanese (meta_, state, tag) {
   let { offset = 0, fromDoc, version } = meta_
   let year
   const regex = /\d{4}\/\d{3}\/LM\d{2}\/\d{5}/
-  if(!regex.test(tag)){
+  if (!regex.test(tag)) {
     throw Error('Formato numero non valido!')
   }
   switch (state.code) {
@@ -226,7 +226,7 @@ export async function calculateSequenceNumberMilanese (meta_, state, tag) {
         if (!tag.includes('(CL. ')) { //se clonata non genero il numero
           let regex = /[0-9].+\/(\d+)-?(\d+)?/
           const numberMatch = tag.match(/LM(\d+)/)
-          year = numberMatch? `20${numberMatch[1]}` : cDate.mom(null, null, 'YYYY')
+          year = numberMatch ? `20${numberMatch[1]}` : cDate.mom(null, null, 'YYYY')
           testedTagWithYear = regex.exec(tag)
           testedTag = regex.exec(tag)
         }
@@ -410,7 +410,7 @@ export const checkRecord = (record, line, policy, vehicleTypes, endDate) => {
   return { checkedRecord, errors }
 }
 
-export async function manageMail (state, producer = {}, code, userRole, signer, userId) {
+export async function manageMail (state, producer = {}, code, userRole, signer, userId = '') {
   const { code: stateCode, isPolicy } = state
   let { email: prodEmail } = producer //todo gestire filiale
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
@@ -448,7 +448,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
   }
 }
 
-export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId) {
+export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId = '') {
   let { email: prodEmail } = producer //gestire filiale
   let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN

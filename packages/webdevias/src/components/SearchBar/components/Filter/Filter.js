@@ -90,9 +90,9 @@ const useStyles = makeStyles(theme => ({
 
 const Filter = props => {
   const { open, onClose, onFilter, className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   const initialValues = {
     paymentStatus: '',
     tag: '',
@@ -105,15 +105,15 @@ const Filter = props => {
     customerPhone: '',
     customerAge: ''
   }
-
+  
   const [expandProject, setExpandProject] = useState(true)
   const [expandCustomer, setExpandCustomer] = useState(false)
   const [values, setValues] = useState({ ...initialValues })
-
+  
   const handleClear = () => {
     setValues({ ...initialValues })
   }
-
+  
   const handleFieldChange = (event, field, value) => {
     event.persist && event.persist()
     setValues(values => ({
@@ -121,48 +121,48 @@ const Filter = props => {
       [field]: value
     }))
   }
-
+  
   const handleTagAdd = () => {
     setValues(values => {
       const newValues = { ...values }
-
+      
       if (newValues.tag && !newValues.tags.includes(newValues.tag)) {
         newValues.tags = [...newValues.tags]
         newValues.tags.push(newValues.tag)
       }
-
+      
       newValues.tag = ''
-
+      
       return newValues
     })
   }
-
+  
   const handleTagDelete = tag => {
     setValues(values => {
       const newValues = { ...values }
-
+      
       newValues.tags = newValues.tags.filter(t => t !== tag)
-
+      
       return newValues
     })
   }
-
+  
   const handleToggleProject = () => {
     setExpandProject(expandProject => !expandProject)
   }
-
+  
   const handleToggleCustomer = () => {
     setExpandCustomer(expandCustomer => !expandCustomer)
   }
-
+  
   const handleSubmit = event => {
     event.preventDefault()
     onFilter && onFilter(values)
   }
-
+  
   const paymentStatusOptions = ['Pending', 'Canceled', 'Completed', 'Rejected']
   const customerAgeOption = ['18 - 30', '30 - 45', '50 - 60', '60+']
-
+  
   return (
     <Drawer
       anchor="right"

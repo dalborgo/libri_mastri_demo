@@ -1,14 +1,14 @@
 import { gql } from 'apollo-server-express'
 
 export default gql`
-  
+
   extend type Query {
     differences(id: ID!): [DiffResponse] @auth
     policy(id: ID!): Policy @auth
     policies(origin: String): [Policy] @auth
     policiesResultCursor(after: String, dir: CursorDir, first: Int): ResultCursor @auth
   }
-  
+
   extend type Mutation {
     editPolicy(input: SavePolicyInput!): Policy @auth
     newPolicy(input: SavePolicyInput!): Policy @auth
@@ -17,7 +17,7 @@ export default gql`
     updatePolicy(id: ID!): Policy @auth
     uploadFile(input: PolicyUploadInput!): UploadResponse @auth
   }
-  
+
   type policyEdge implements Edge {
     cursor: String!
     node: Policy
@@ -101,7 +101,7 @@ export default gql`
     number: String
     initDate: String
     midDate: String
-    notes: String
+    notes: String,
     producer: String
     productDefinitions: JSON
     signer: JSON
@@ -149,7 +149,7 @@ export default gql`
     regulationFract: String
     regFractions: JSON
     meta: PolicyMeta
-    notes: String
+    notes: String,
     number: String!
     initDate: String
     midDate: String

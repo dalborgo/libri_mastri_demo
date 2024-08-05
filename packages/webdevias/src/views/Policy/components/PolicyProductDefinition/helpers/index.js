@@ -25,14 +25,14 @@ export function calculateRows (pds, setFieldValue) {
   for (let i = 0; i < pds.length; i++) {
     const { vehicleType, coverageType, rate, overdraft, excess, glassCap } = pds[i]
     setFieldValue(`productDefinitions.${i}.productCode`, createTag(vehicleType, coverageType, rate, overdraft, excess, glassCap, pds, i))
-    if(coverageType === 'CRISTALLI'){
+    if (coverageType === 'CRISTALLI') {
       setFieldValue(`productDefinitions.${i}.minimum`, '0,00')
       setFieldValue(`productDefinitions.${i}.excess`, '0,00')
       setFieldValue(`productDefinitions.${i}.overdraft`, '0,00')
       setFieldValue(`productDefinitions.${i}.towing`, '0,00')
       setFieldValue(`productDefinitions.${i}.rate`, '0,00')
     }
-    if(vehicleType === 'RIMORCHIO'){
+    if (vehicleType === 'RIMORCHIO') {
       setFieldValue(`productDefinitions.${i}.glassCap`, '0,00')
       setFieldValue(`productDefinitions.${i}.glass`, '0,00')
     }

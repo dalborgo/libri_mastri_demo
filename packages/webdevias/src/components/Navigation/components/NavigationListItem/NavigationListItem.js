@@ -88,21 +88,21 @@ const NavigationListItem = props => {
   } = props
   const classes = useStyles()
   const [open, setOpen] = useState(openProp)
-
+  
   const handleToggle = () => {
     setOpen(open => !open)
   }
-
+  
   let paddingLeft = 8
-
+  
   if (depth > 0) {
     paddingLeft = 32 + 8 * depth
   }
-
+  
   const style = {
     paddingLeft,
   }
-
+  
   if (children) {
     return (
       <ListItem

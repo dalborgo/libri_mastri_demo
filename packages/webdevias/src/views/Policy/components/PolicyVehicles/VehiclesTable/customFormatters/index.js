@@ -77,9 +77,10 @@ export const MenuTypeProvider = memo(props => {
     }
     const classes = useStyles()
     const isInclusion = useMemo(() => ['ADDED', 'ADDED_CONFIRMED'].includes(state), [state])
-    if ((state === 'ACTIVE' && !row.inPolicy && !row.constraintCounter) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
+    if ((state === 'ACTIVE' && !row.inPolicy) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
       return null
     } else {
+      const counter = isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || ''
       return (
         <>
           <div style={{ color: '#263238' }}>
@@ -134,7 +135,7 @@ export const MenuTypeProvider = memo(props => {
               </MenuItem>
             }
             {
-              (row.inPolicy) &&
+              (row.inPolicy && props.priority === 3) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
@@ -157,7 +158,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}`}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -168,15 +169,15 @@ export const MenuTypeProvider = memo(props => {
                 <ListItemIcon>
                   <Icon path={mdiFilePdf} size={1}/>
                 </ListItemIcon>
-                Appendice d'{isInclusion ? 'inclusione' : 'esclusione'}
+                Applicazione{isInclusion ? ' inclusione' : ' esclusione'}
               </MenuItem>
             }
             {
-              state !== 'ACTIVE' &&
+              (state !== 'ACTIVE' && props.priority === 3) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${row.counter || ''}|void`}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}|void`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -187,11 +188,11 @@ export const MenuTypeProvider = memo(props => {
                 <ListItemIcon>
                   <Icon path={mdiFilePdf} size={1}/>
                 </ListItemIcon>
-                Appendice d'{isInclusion ? 'inclusione senza premi' : 'esclusione senza premi'}
+                Applicazione{isInclusion ? ' inclusione senza premi' : ' esclusione senza premi'}
               </MenuItem>
             }
             {
-              ((['ADDED', 'ADDED_CONFIRMED'].includes(state) || row.constraintCounter) && row.leasingCompany) &&
+              ((['ADDED', 'ADDED_CONFIRMED'].includes(state) || row.constraintCounter) && row.leasingCompany && !['DELETED', 'DELETED_CONFIRMED'].includes(state)) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
@@ -206,7 +207,7 @@ export const MenuTypeProvider = memo(props => {
                 <ListItemIcon>
                   <Icon path={mdiFilePdf} size={1}/>
                 </ListItemIcon>
-                Appendice di vincolo
+                Applicazione vincolo
               </MenuItem>
             }
             {
@@ -217,8 +218,7 @@ export const MenuTypeProvider = memo(props => {
                 onClick={
                   async () => {
                     const value = await props.checkPolicy()
-                    console.log('value:', value)
-                    if(!value) {
+                    if (!value) {
                       await props.dispatch({
                         licensePlate: row.licensePlate,
                         newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',

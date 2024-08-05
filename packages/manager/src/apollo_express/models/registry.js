@@ -1,6 +1,4 @@
-import {
-  registryOttoman,
-} from '../db'
+import { registryOttoman, } from '../db'
 import { getFunctions } from './helpers'
 import { export_model as exportModel } from 'registry_service'
 

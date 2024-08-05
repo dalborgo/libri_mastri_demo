@@ -1,135 +1,135 @@
 import gql from 'graphql-tag'
 
 export const CHILDREN_FROM_LIST = (gql`
-    fragment childrenFromList on ChildUser {
-      id
-      username
-      role
-      father
-      __typename
-    }`
+          fragment childrenFromList on ChildUser {
+            id
+            username
+            role
+            father
+            __typename
+          }`
 )
 export const RAW_CHILDREN_FROM_LIST = (gql`
-    fragment rawChildrenFromList on ChildUser {
-      id
-      username
-      longName
-      father
-      __typename
-    }`
+          fragment rawChildrenFromList on ChildUser {
+            id
+            username
+            longName
+            father
+            __typename
+          }`
 )
 export const MAIN_USERS_FRAGMENT = (gql`
-    fragment mainUserList on MainUser {
-      id
-      username
-      __typename
-    }`
+          fragment mainUserList on MainUser {
+            id
+            username
+            __typename
+          }`
 )
 export const USERS_PRODUCERS_FRAGMENT = (gql`
-    fragment producerUserList on User {
-      id
-      username
-      ... on ChildUser {
-        father
-      }
-      longName
-      priority
-      __typename
-    }`
+          fragment producerUserList on User {
+            id
+            username
+            ... on ChildUser {
+              father
+            }
+            longName
+            priority
+            __typename
+          }`
 )
 export const USER_COMPLETE_FRAGMENT = (gql`
-    fragment userComplete on User {
-      id
-      _createdAt,
-      _updatedAt,
-      username
-      role
-      email
-      longName
-      address
-      addressNumber
-      city
-      state
-      vat
-      zip
-      ... on ChildUser {
-        father
-      }
-      ... on MainUser {
-        children {
-          ...childrenFromList
-        }
-      }
-      __typename
-    }
-    ${CHILDREN_FROM_LIST}
+          fragment userComplete on User {
+            id
+            _createdAt,
+            _updatedAt,
+            username
+            role
+            email
+            longName
+            address
+            addressNumber
+            city
+            state
+            vat
+            zip
+            ... on ChildUser {
+              father
+            }
+            ... on MainUser {
+              children {
+                ...childrenFromList
+              }
+            }
+            __typename
+          }
+          ${CHILDREN_FROM_LIST}
   `
 )
 export const USER_EDIT_FRAGMENT = (gql`
-    fragment editInput on User {
-      email
-      role
-      username
-      longName
-      address
-      addressNumber
-      city
-      state
-      vat
-      zip
-      ... on ChildUser {
-        father
-      }
-    }`
+          fragment editInput on User {
+            email
+            role
+            username
+            longName
+            address
+            addressNumber
+            city
+            state
+            vat
+            zip
+            ... on ChildUser {
+              father
+            }
+          }`
 )
 export const USER_OPTIONS_EDIT_FRAGMENT = (gql`
-    fragment editOptionsInput on User {
-      username
-      options {
-        neverShowMenu
-        forceDownloadPdf
-      }
-    }`
+          fragment editOptionsInput on User {
+            username
+            options {
+              neverShowMenu
+              forceDownloadPdf
+            }
+          }`
 )
 export const USER_ADD_FRAGMENT = (gql`
-    fragment addInput on User {
-      email
-      password
-      role
-      username
-      longName
-      address
-      addressNumber
-      city
-      state
-      vat
-      zip
-      ... on ChildUser {
-        father
-      }
-    }`
+          fragment addInput on User {
+            email
+            password
+            role
+            username
+            longName
+            address
+            addressNumber
+            city
+            state
+            vat
+            zip
+            ... on ChildUser {
+              father
+            }
+          }`
 )
 export const USER_ACCESS_FRAGMENT = (gql`
-    fragment userAccess on User {
-      id
-      username
-      role
-      vat
-      ... on ChildUser {
-        father
-      }
-      ... on MainUser {
-        children {
-          ...rawChildrenFromList
-        }
-      }
-      options {
-        neverShowMenu
-        forceDownloadPdf
-      }
-      __typename
-    }
-    ${RAW_CHILDREN_FROM_LIST}
+          fragment userAccess on User {
+            id
+            username
+            role
+            vat
+            ... on ChildUser {
+              father
+            }
+            ... on MainUser {
+              children {
+                ...rawChildrenFromList
+              }
+            }
+            options {
+              neverShowMenu
+              forceDownloadPdf
+            }
+            __typename
+          }
+          ${RAW_CHILDREN_FROM_LIST}
   `
 )
 export const SIGNIN = gql`

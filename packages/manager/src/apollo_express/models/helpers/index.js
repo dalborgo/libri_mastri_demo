@@ -11,7 +11,7 @@ export function getFunctions () {
   this.how_many = async (filter = {}, option = {}) => await count(filter, option)
   this.search = async (filter = {}, option = {}) => await find(filter, option)
   this.getAll = async instances => await loadAll(instances)
-
+  
   this.prototype.del = async function () {
     const remove = util.promisify(this.remove.bind(this))
     await remove()

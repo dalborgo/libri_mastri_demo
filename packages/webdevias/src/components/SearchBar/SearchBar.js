@@ -29,19 +29,19 @@ const useStyles = makeStyles(theme => ({
 
 const SearchBar = props => {
   const { onFilter, onSearch, className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   const [openFilter, setOpenFilter] = useState(false)
-
+  
   const handleFilterOpen = () => {
     setOpenFilter(true)
   }
-
+  
   const handleFilterClose = () => {
     setOpenFilter(false)
   }
-
+  
   return (
     <Grid
       {...rest}

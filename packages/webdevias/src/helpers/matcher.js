@@ -1,5 +1,6 @@
 const specialCharsRegex = /[.*+?^${}()|[\]\\]/g
 const whitespacesRegex = /\s+/
+
 function escapeRegexCharacters (str) {
   return str.replace(specialCharsRegex, '\\$&')
 }

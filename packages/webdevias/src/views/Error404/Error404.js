@@ -40,7 +40,7 @@ const Error404 = () => {
   const classes = useStyles()
   const theme = useTheme()
   const mobileDevice = useMediaQuery(theme.breakpoints.down('sm'))
-
+  
   return (
     <Page
       className={classes.root}

@@ -26,7 +26,7 @@ const client = new ApolloClient({
         log.error(`[Network error]: ${networkError}`)
       }
     }),
-
+    
     new createUploadLink({
       uri: `${envConfig.HOST}/graphql`,
       credentials: 'include',
@@ -34,13 +34,15 @@ const client = new ApolloClient({
   ]),
   resolvers,
   typeDefs,
-  cache: new InMemoryCache({ 
+  cache: new InMemoryCache({
     fragmentMatcher,
     dataIdFromObject: object => {
       switch (object.__typename) {
-        case 'ChildUser': 
-        case 'MainUser': return `User:${object.id}`; 
-        default: return defaultDataIdFromObject(object); // fall back to default handling
+        case 'ChildUser':
+        case 'MainUser':
+          return `User:${object.id}`
+        default:
+          return defaultDataIdFromObject(object) // fall back to default handling
       }
     },
   }),

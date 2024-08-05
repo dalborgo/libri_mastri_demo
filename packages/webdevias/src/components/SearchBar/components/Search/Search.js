@@ -31,9 +31,9 @@ const useStyles = makeStyles(theme => ({
 
 const Search = props => {
   const { onSearch, className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <div
       {...rest}

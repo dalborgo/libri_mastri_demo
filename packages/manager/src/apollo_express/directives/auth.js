@@ -7,9 +7,9 @@ class AuthDirective extends SchemaDirectiveVisitor {
     const { resolve = defaultFieldResolver } = field
     field.resolve = function (...args) {
       const [, , context] = args
-
+      
       ensureSignedIn(context.req)
-
+      
       return resolve.apply(this, args)
     }
   }

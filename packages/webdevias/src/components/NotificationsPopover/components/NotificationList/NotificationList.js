@@ -39,9 +39,9 @@ const useStyles = makeStyles(theme => ({
 
 const NotificationList = props => {
   const { notifications, className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   const avatars = {
     order: (
       <Avatar className={classes.avatarBlue}>
@@ -64,7 +64,7 @@ const NotificationList = props => {
       </Avatar>
     )
   }
-
+  
   return (
     <List
       {...rest}

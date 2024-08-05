@@ -16,6 +16,6 @@ router.get('/reserved', reqAuthPost, function (req, res) {
   res.send('reserved')
 })
 
-export default  router
+export default router
 
 

@@ -18,7 +18,7 @@ const interfaceUserFields = `
  options: UserOptions
 `
 
-const usersDefinitionType =`
+const usersDefinitionType = `
 interface User {
   ${interfaceUserFields}
 }
@@ -98,12 +98,12 @@ export default gql`
     AGENT
     SUPER
   }
-  
+
   type UserOptions {
     neverShowMenu: Boolean
     forceDownloadPdf: Boolean
   }
-  
+
   ${usersDefinitionType}
 `
 

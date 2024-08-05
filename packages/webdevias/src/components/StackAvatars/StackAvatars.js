@@ -48,7 +48,7 @@ const StackAvatars = props => {
       </Avatar>
     </Tooltip>
   ))
-
+  
   if (avatars.length > limit) {
     avatarNodes.push(
       <Tooltip
@@ -61,7 +61,7 @@ const StackAvatars = props => {
       </Tooltip>
     )
   }
-
+  
   return (
     <div
       {...rest}

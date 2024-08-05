@@ -79,7 +79,7 @@ const ActionMenu = memo(props => {
             onClick={
               async () => {
                 const value = await props.checkPolicy()
-                if(!value) {
+                if (!value) {
                   handlePrint('regulation', row.startDate, row.endDate, row.hasRegulation, props.regCounter, true)()// ok
                   setRegsChecked({ ...regsChecked, [regCounter]: true })
                   handleClose()
@@ -175,10 +175,17 @@ const RegulationTable = props => {
             </Tooltip>
           }
           {
-            (priority === 3 && isRecalculateFraction === 'SI') &&//(priority === 3 && isRecalculateFraction === 'SI' && toRec) &&
+            (priority === 3 && isRecalculateFraction === 'SI' && regCounter > 1) &&//(priority === 3 && isRecalculateFraction === 'SI' && toRec) &&
             <Tooltip placement="top" title="Quietanza">
               <IconButton
-                onClick={handlePrint('receipt', row.startDate, row.endDate, row.hasRegulation, regCounter)}
+                onClick={
+                  handlePrint(
+                    'receipt', 
+                    rows[regCounter - 2].startDate, 
+                    rows[regCounter - 2].endDate, 
+                    rows[regCounter - 2].hasRegulation, 
+                    regCounter - 1)
+                }
                 style={{ padding: 3 }}
               >
                 <Icon path={mdiFilePdf} size={1}/>
@@ -209,7 +216,7 @@ const RegulationTable = props => {
       )
     }
     return <Cell {...props}/>
-  }, [priority, handlePrint, regsChecked, isRecalculateFraction, checkPolicy, consolidatePolicy])
+  }, [priority, handlePrint, regsChecked, isRecalculateFraction, rows, checkPolicy, consolidatePolicy])
   /* const commandComponent = useCallback(props => {
      const { id } = props
      const CommandButton = commandComponents[id]

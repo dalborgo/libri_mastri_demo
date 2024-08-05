@@ -10,8 +10,8 @@ router.get('/', async function (req, res) {
   res.locals.title = 'LIBRI MATRICOLA APOLLO SERVER'
   res.locals.nodejs = process.version
   res.locals.info = info
-  const {ok, results: couchbaseVersion} = await couchbase.getVersion()
-  if(ok) {
+  const { ok, results: couchbaseVersion } = await couchbase.getVersion()
+  if (ok) {
     res.locals.couchbaseVersion = couchbaseVersion
   }
   res.locals.namespace = NAMESPACE

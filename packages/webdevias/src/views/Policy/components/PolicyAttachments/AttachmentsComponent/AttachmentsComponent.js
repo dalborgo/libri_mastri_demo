@@ -87,7 +87,7 @@ const AttachmentsComponent = props => {
     let message
     for (let file of rejectedFiles) {
       if (file.size > maxSize) {
-        message =`File "${file.name}" (${bytesToSize(file.size)}) supera la dimensione massima di ${bytesToSize(maxSize)}!`
+        message = `File "${file.name}" (${bytesToSize(file.size)}) supera la dimensione massima di ${bytesToSize(maxSize)}!`
       } else {
         message = `File "${file.name}" (${bytesToSize(file.size)}) di tipo "${file.type}" non accettato!`
       }

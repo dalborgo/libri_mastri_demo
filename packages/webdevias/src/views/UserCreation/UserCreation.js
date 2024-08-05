@@ -47,7 +47,7 @@ const UserCreation = ({ enqueueSnackbar }) => {
       },
       update: (cache, { data: { add } }) => {
         let data, dataMainUsers
-
+        
         try { dataMainUsers = cache.readQuery({ query: MAIN_USERS })} catch (err) {
           log.warn('MainUserCache not present!')
         }
@@ -61,7 +61,7 @@ const UserCreation = ({ enqueueSnackbar }) => {
           log.warn('UsersCache not present!')
           return
         }
-
+        
         if (add.father) {
           const found = find(data.users, { id: add.father })
           if (found.children) {

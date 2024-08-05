@@ -47,14 +47,14 @@ const useStyles = makeStyles(theme => ({
 
 const ChatBar = props => {
   const { className, ...rest } = props
-
+  
   const classes = useStyles()
   const [open, setOpen] = useState(false)
   const [data, setData] = useState(null)
-
+  
   useEffect(() => {
     let mounted = true
-
+    
     const fetchData = () => {
       axios.get('/api/chat/activity').then(response => {
         if (mounted) {
@@ -62,30 +62,30 @@ const ChatBar = props => {
         }
       })
     }
-
+    
     fetchData()
-
+    
     return () => {
       mounted = false
     }
   }, [])
-
+  
   const handleOpen = () => {
     setOpen(true)
   }
-
+  
   const handleClose = () => {
     setOpen(false)
   }
-
+  
   if (!data) {
     return null
   }
-
+  
   const onlineConnections = data.connections.filter(
     connection => connection.active
   ).length
-
+  
   return (
     <Fragment>
       <Drawer

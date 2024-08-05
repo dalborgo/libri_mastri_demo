@@ -73,7 +73,7 @@ const UserCard = props => {
   const { user, className, handleDelete, ...rest } = props
   const classesRoleBase = useRoleStyleBase()
   const classes = useStyles()
-
+  
   return (
     <Card
       {...rest}
@@ -167,7 +167,7 @@ const UserCard = props => {
           >
             {user.role}
           </Typography>
-
+        
         </div>
         <div className={classes.actions}>
           <Button

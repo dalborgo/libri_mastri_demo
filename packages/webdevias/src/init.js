@@ -5,14 +5,13 @@ const REACT_APP = isProd ? 'REACT_APP' : 'REACT_APP_DEV'
 const wlh = window.location.hostname
 const ORIGIN = window.location.origin
 const PROTOCOL = window.location.protocol || 'http:'
-const BACKEND_PORT = PROTOCOL === 'http:' ? process.env[`${REACT_APP}_BACKEND_PORT`] : parseInt(process.env[`${REACT_APP}_BACKEND_PORT`],10) + 2000
+const BACKEND_PORT = PROTOCOL === 'http:' ? process.env[`${REACT_APP}_BACKEND_PORT`] : parseInt(process.env[`${REACT_APP}_BACKEND_PORT`], 10) + 2000
 const HOST = `${PROTOCOL}//${wlh}:${BACKEND_PORT}`
 const SERVER = process.env[`${REACT_APP}_COUCHBASE_FOR_LINK`] ? process.env[`${REACT_APP}_COUCHBASE_FOR_LINK`] : wlh
 const BUCKET = process.env[`${REACT_APP}_BUCKET_FOR_LINK`] || 'libri_mastri'
 const POLLING_MILLI = process.env[`${REACT_APP}_POLLING_MILLI`] || 300000
 log.info(`Environment: ${isProd ? 'Production' : 'Development'}`)
 log.info(`Polling interval in seconds: ${parseInt(POLLING_MILLI, 10) / 1000}`)
-
 export const envConfig = {
   BACKEND_PORT,
   IS_PROD: isProd,

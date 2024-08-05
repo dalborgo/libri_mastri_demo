@@ -1,7 +1,8 @@
 import { bucket } from './db'
 import Q from 'q'
 import log from '@adapter/common/src/winston'
-const DataLoader = require('dataloader');
+
+const DataLoader = require('dataloader')
 const couchbase = require('couchbase')
 const nq = couchbase.N1qlQuery
 
@@ -14,9 +15,9 @@ export const childLoader = new DataLoader(async keys => {
   log.verbose('childLoader query ended')
   const childUserMap = {}
   results.forEach(child => {
-    if(childUserMap[child.father]){
+    if (childUserMap[child.father]) {
       childUserMap[child.father].push(child)
-    }else{
+    } else {
       childUserMap[child.father] = [child]
     }
   })

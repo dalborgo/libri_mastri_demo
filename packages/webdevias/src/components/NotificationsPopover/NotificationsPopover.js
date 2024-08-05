@@ -19,9 +19,9 @@ const useStyles = makeStyles(() => ({
 
 const NotificationsPopover = props => {
   const { notifications, anchorEl, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <Popover
       {...rest}

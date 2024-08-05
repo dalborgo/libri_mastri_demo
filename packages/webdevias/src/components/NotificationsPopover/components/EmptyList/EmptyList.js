@@ -21,9 +21,9 @@ const useStyles = makeStyles(theme => ({
 
 const EmptyList = props => {
   const { className, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <div
       {...rest}

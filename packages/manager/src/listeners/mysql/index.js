@@ -26,17 +26,17 @@ const startListener = async (connErrorCallback = console.error) => {
     port: PORT,
     user: DB_USER,
   })
-
+  
   const instance = new MySQLEvents(connection, { startAtEnd: true })
-
+  
   await instance.start()
   instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, connErrorCallback)
   instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, async err => {console.warn(err.message)})
   instance.on(MySQLEvents.EVENTS.TRIGGER_ERROR, console.error)
-
-  const {_socket} = instance.connection
+  
+  const { _socket } = instance.connection
   _socket.setKeepAlive(true, 1000) //second parameter required
-
+  
   return instance
 }
 

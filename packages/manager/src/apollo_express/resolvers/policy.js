@@ -2,7 +2,8 @@ import { Gs, Policy, User } from '../models'
 import getStream from 'get-stream'
 import parse from 'csv-parse'
 import {
-  calculateSequenceNumber, calculateSequenceNumberMilanese,
+  calculateSequenceNumber,
+  calculateSequenceNumberMilanese,
   checkRecord,
   columnNameMap,
   createAttachments,
@@ -22,14 +23,14 @@ import moment from 'moment'
 const { BUCKET_DEFAULT } = config.get('couchbase')
 const decodeCAS = obj => obj.getCAS(true).toString()
 
-function incrementNumberInString(inputString) {
-  const numberMatch = inputString.match(/LM(\d+)/);
+function incrementNumberInString (inputString) {
+  const numberMatch = inputString.match(/LM(\d+)/)
   if (numberMatch) {
-    const currentNumber = parseInt(numberMatch[1]);
-    const incrementedNumber = currentNumber + 1;
+    const currentNumber = parseInt(numberMatch[1])
+    const incrementedNumber = currentNumber + 1
     return inputString.replace(numberMatch[0], `LM${incrementedNumber}`)
   } else {
-    return inputString;
+    return inputString
   }
 }
 
@@ -225,7 +226,10 @@ export default {
         await Policy.getByQuery(updateQuery)
       }
       if (newEvent) {
-        const { ok, message } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer, userId)
+        const {
+          ok,
+          message
+        } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer, userId)
         if (!ok) { log.warn(message) }
       } else {
         if (toSend.length) {
@@ -268,7 +272,7 @@ export default {
           method: 'POST',
           responseType: 'blob',
         })
-        let constraintCounter_ =  1
+        let constraintCounter_ = 1
         input.vehicles = input.vehicles.map((vehicle, index) => {
           return {
             ...vehicle,
@@ -309,7 +313,15 @@ export default {
     },
     updatePolicy: async (root, { id }) => {
       const policy = await Policy.findById(id)
-      const { initDate, midDate, regFractions = [], isRecalculateFraction, vehicles, number: oldNumber, company } = policy
+      const {
+        initDate,
+        midDate,
+        regFractions = [],
+        isRecalculateFraction,
+        vehicles,
+        number: oldNumber,
+        company
+      } = policy
       const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
       const genNumber = {}
       if (company === 'ASSICURATRICE MILANESE SPA') {
@@ -322,7 +334,12 @@ export default {
         genNumber.code = `RENEWED_${year_}_${newNumber}`
         genNumber.number = `Bozza (RV. ${year_}/${newNumber})`
       }
-      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {...policy, initDate: endDate}, isRecalculateFraction)
+      // eslint-disable-next-line no-unused-vars
+      const { midDate: removeMidDate, ...restPolicy } = policy
+      const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {
+        ...restPolicy,
+        initDate: endDate
+      }, isRecalculateFraction)
       let count = 1, constraintCounter_ = 1
       const newVehicles = vehicles.reduce((prev, curr) => {
         if (['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)) {

@@ -4,7 +4,7 @@ import { CSV_ADDED_HEADER_MAP, CSV_HEADER_MAP } from '../../../resolvers/helpers
 import fs from 'fs'
 import Q from 'q'
 import path from 'path'
-import find from 'lodash/find'
+import filter from 'lodash/filter'
 import { Gs, Policy } from '../../../models'
 import moment from 'moment'
 
@@ -78,15 +78,13 @@ function addRouters (router) {
     const policies = await Policy.getByQuery(query)
     const response = []
     for (let policy of policies) {
-      const found = find(policy.regFractions, row => {
+      const regFractions = filter(policy.regFractions, row => {
         return moment(row.endDate).isSameOrAfter(moment(startDate)) && moment(row.endDate).isSameOrBefore(moment(endDate))
       })
-      if (found) {
+      if (regFractions.length) {
         response.push({
           ...policy,
-          regFractions: [
-            found,
-          ],
+          filteredRegFraction: regFractions,
         })
       }
     }

@@ -12,24 +12,24 @@ import { useParams } from 'react-router-dom'
 
 // eslint-disable-next-line react/display-name
 const Body = memo(props => {
- /* if (props.filtered) {
-    props.policy.vehicles = props.policy.vehicles.map(row => {
-      if (row.startDate && row.startDate !== props.policy.initDate) {
-        row.skipped = true
-      }
-      return row
-    })
-  } else {
-    /!*props.policy.vehicles = props.policy.vehicles.map(row => {
-      if(row.skipped){
-        row.skipped = undefined
-      }
-      return row
-    })*!/
-  }*/
+  /* if (props.filtered) {
+     props.policy.vehicles = props.policy.vehicles.map(row => {
+       if (row.startDate && row.startDate !== props.policy.initDate) {
+         row.skipped = true
+       }
+       return row
+     })
+   } else {
+     /!*props.policy.vehicles = props.policy.vehicles.map(row => {
+       if(row.skipped){
+         row.skipped = undefined
+       }
+       return row
+     })*!/
+   }*/
   const isPolicy = props.policy?.state?.isPolicy
   let resultRegFractions = []
-  if(isPolicy) {
+  if (isPolicy) {
     const arr = props.policy?.regFractions ?? []
     resultRegFractions = arr.filter(row => row.toCon)
   }
@@ -161,4 +161,3 @@ const PolicyVehicles = (
 export default compose(
   memo
 )(PolicyVehicles)
-

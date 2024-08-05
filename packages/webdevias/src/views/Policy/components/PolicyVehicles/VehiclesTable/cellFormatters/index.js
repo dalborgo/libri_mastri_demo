@@ -1,7 +1,7 @@
 import { TableFixedColumns, TableHeaderRow, Toolbar, VirtualTable } from '@devexpress/dx-react-grid-material-ui'
 import { useTheme, withStyles } from '@material-ui/styles'
 import React from 'react'
-import { Input, MenuItem, Select, TableCell } from '@material-ui/core'
+import { Input, MenuItem, Select, TableCell, Tooltip } from '@material-ui/core'
 import MuiTableHead from 'theme/overrides/MuiTableHead'
 
 const styles = theme => ({
@@ -97,7 +97,7 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
     isError |= !value
   }
   if (restProps.column.name === 'vehicleType') {
-    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTOCARRO USO NOLEGGIO', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA', 'CICLOMOTORE', 'MACCHINA AGRICOLA', 'TRATTRICE AGRICOLA'].includes(value)
+    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTOCARRO USO NOLEGGIO', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA', 'CICLOMOTORE', 'MACCHINA AGRICOLA', 'TRATTRICE AGRICOLA', 'AUTOCARAVAN', 'QUADRICICLO'].includes(value)
   }
   if (restProps.column.name === 'prize') {
     isError |= !value || value === '0,00'
@@ -119,21 +119,26 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
       }
       {...restProps}
     >
-      <span
-        style={
-          {
-            ...stateStyle,
-            color: isError ? theme.palette.error.contrastText : undefined,
-          }
-        }
+      <Tooltip
+        placement="bottom"
+        title={['productCode', 'coverageType', 'vehicleType'].includes(restProps.column.name) ? value : ''}
       >
-        {
-          ['weight', 'prize'].includes(restProps.column.name) ?
-            children //to inherit the data formatter
-            :
-            value
-        }
-      </span>
+        <span
+          style={
+            {
+              ...stateStyle,
+              color: isError ? theme.palette.error.contrastText : undefined,
+            }
+          }
+        >
+          {
+            ['weight', 'prize'].includes(restProps.column.name) ?
+              children //to inherit the data formatter
+              :
+              value
+          }
+        </span>
+      </Tooltip>
     </VirtualTable.Cell>
   )
 }
@@ -160,7 +165,7 @@ export const Cell = props => {
       stateStyle = {}
   }
   const theme = useTheme()
-  if (['prize', 'licensePlate', 'productCode', 'weight', 'hasTowing', 'hasGlass', 'vehicleType'].includes(column.name)) {
+  if (['prize', 'licensePlate', 'productCode', 'weight', 'coverageType', 'hasTowing', 'hasGlass', 'vehicleType'].includes(column.name)) {
     return <HighlightedCell {...props} stateStyle={stateStyle} theme={theme}/>
   }
   return (

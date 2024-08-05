@@ -1,1 +1,1 @@
-export { default} from './UpperCasingTextField'
+export { default } from './UpperCasingTextField'

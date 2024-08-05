@@ -6,9 +6,9 @@ const unauthorizedResponse = req => {
     ? { ok: false, message: `Credentials ${req.auth.user}:${req.auth.password} rejected!` }
     : { ok: false, message: 'No credentials provided!' }
 }
-export const reqAuthPost = AUTH 
-  ? basicAuth({ users: { [NAMESPACE]: AUTH }, unauthorizedResponse }) 
+export const reqAuthPost = AUTH
+  ? basicAuth({ users: { [NAMESPACE]: AUTH }, unauthorizedResponse })
   : (req, res, next) => next()
-export const reqAuthGet = AUTH 
-  ? basicAuth({ users: { [NAMESPACE]: AUTH }, challenge: true }) 
+export const reqAuthGet = AUTH
+  ? basicAuth({ users: { [NAMESPACE]: AUTH }, challenge: true })
   : (req, res, next) => next()

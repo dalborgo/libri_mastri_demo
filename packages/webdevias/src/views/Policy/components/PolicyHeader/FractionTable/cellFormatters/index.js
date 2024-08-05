@@ -2,9 +2,6 @@ import { makeStyles } from '@material-ui/styles'
 import { Table, TableHeaderRow } from '@devexpress/dx-react-grid-material-ui'
 import React from 'react'
 import { Switch } from '@material-ui/core'
-import moment from 'moment'
-import { ME } from 'queries'
-import { useApolloClient } from '@apollo/react-hooks'
 
 const useStyles = makeStyles(theme => ({
   tableCell: {
@@ -16,14 +13,9 @@ const useStyles = makeStyles(theme => ({
 }))
 
 export const cell = (paidFractions, setPaidFractions) => props => {
-  const { column: { name }, row: { date, daysDiff }, tableRow: { rowId } } = props
-  const client = useApolloClient()
-  const { me: { priority } } = client.readQuery({ query: ME })
+  const { column: { name }, tableRow: { rowId } } = props
   const classes = useStyles()
-  const today = moment()
-  const plusDay = moment(date).add(daysDiff * 2, 'd')// due rate di tempo per settare la pagata
-  const isDisabled = today.isAfter(plusDay) || priority < 3
-  if (name === 'paid' && today.isAfter(date)) {
+  if (name === 'paid' && (paidFractions?.[rowId] || rowId === 0)) {
     return (
       <Table.Cell
         {...props}
@@ -33,10 +25,16 @@ export const cell = (paidFractions, setPaidFractions) => props => {
         <Switch
           checked={paidFractions?.[rowId + 1]}
           color="secondary"
-          disabled={isDisabled}
+          disabled={paidFractions?.[rowId + 2]}
           inputProps={{ 'aria-label': 'secondary checkbox' }}
           name="checkedA"
-          onChange={event => setPaidFractions(rowId + 1, event.target.checked)}
+          onChange={
+            event => {
+              alert(`Vuoi veramente ${event.target.checked ? 'confermare' : 'annullare'} il pagamento della rata?`)
+              setPaidFractions(rowId + 1, event.target.checked)
+            }
+          }
+          size="small"
         />
       </Table.Cell>
     )
@@ -48,6 +46,7 @@ export const cell = (paidFractions, setPaidFractions) => props => {
     />
   )
 }
+
 export const HeaderCell = props => {
   const classes = useStyles()
   return (

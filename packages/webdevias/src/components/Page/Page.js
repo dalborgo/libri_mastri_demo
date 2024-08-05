@@ -10,14 +10,14 @@ const GA_MEASUREMENT_ID = process.env.REACT_APP_GA_MEASUREMENT_ID
 
 const Page = props => {
   const { title, children, ...rest } = props
-
+  
   const router = useRouter()
-
+  
   useEffect(() => {
     if (NODE_ENV !== 'production') {
       return
     }
-
+    
     if (window.gtag) {
       window.gtag('config', GA_MEASUREMENT_ID, {
         page_path: router.location.pathname,
@@ -25,7 +25,7 @@ const Page = props => {
       })
     }
   }, [title, router])
-
+  
   return (
     <div {...rest}>
       <Helmet>

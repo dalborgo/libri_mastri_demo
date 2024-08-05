@@ -34,7 +34,7 @@ const Error503 = ({ message = '' }) => {
   const classes = useStyles()
   const theme = useTheme()
   const mobileDevice = useMediaQuery(theme.breakpoints.down('sm'))
-
+  
   return (
     <Page
       className={classes.root}

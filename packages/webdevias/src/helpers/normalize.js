@@ -252,7 +252,6 @@ export function getPayFractionsNorm (payFractions, inMillis = true, round = fals
 
 export function calculateRegulationPayment (vehicles, tablePd, statePolicy, header, regFractions) {
   const [vehicle] = vehicles
-  console.log('vehicles:', vehicles)
   const taxRate = getGlobalTaxation(tablePd, statePolicy, vehicle)
   //const {isRecalculateFraction} = header
   const priceObj = {
@@ -445,45 +444,24 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
       rangePrice = totalAmount
     } else {
       days360_ = myDays360_2(normStartDate, normFinishDate)
-      if (vehicle.licensePlate === 'ES253AE') {
-        console.log('QUI_=',vehicle.state)
-        console.log('vehicle:', vehicle)
-    
-      }
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
-        if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
-          rangePrice = dayAmount * days360_
-          if (vehicle.licensePlate === 'ES253AE') {
-            console.log('QUI_3')
-    
-          }
+        if (cFunctions.exclusionTypeFactor(vehicle.exclusionType) === 0) {// furto non nello stato di rischio si calcola come se fosse un'inclusione
+          rangePrice = startDate !== policy.initDate ? dayAmount * myDays360_2(normStartDate, endDate) : 0
         } else {
-          const days360ToEnd = myDays360_2(normStartDate, endDate)
-          if (vehicle.licensePlate === 'ES253AE') {
-            console.log('QUI_2')
-    
+          if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
+            rangePrice = dayAmount * days360_
+          } else {
+            const days360ToEnd = myDays360_2(normStartDate, endDate)
+            rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
           }
-          rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
         }
       } else {
         rangePrice = dayAmount * days360_
-        if (vehicle.licensePlate === 'ES253AE') {
-          console.log('QUI_1')
-    
-        }
       }
     }
-   
-    
-    const factor = vehicle.exclusionType ? cFunctions.exclusionTypeFactor(vehicle.exclusionType) : 1
+    const factor = 1
     prize = factor * rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
-    if (vehicle.licensePlate === 'ES253AE') {
-      console.log('vehicle.licencePlate:', vehicle.licensePlate)
-      console.log('vehicle.licencePlate:', prize)
-      console.log('vehicle.licencePlate:', factor)
-      console.log('days360_:', days360_)
-    }
     if (returnExtra) {
       return {
         payment: printTaxable ? taxable : prize,
@@ -509,8 +487,6 @@ function calcDaysBetweenTwoDateRanges (startDate, endDate, dateRanges) {
 
 export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false, regDay) {
   const { values: valuesTPd } = tablePd || {}
-  //console.log('regDay:', regDay)
-  //console.log('payFractions:', policy.payFractions)
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
   if (!productDefinitions.length) {return 0}
@@ -573,9 +549,8 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
       //console.log('' + vehicle.licensePlate, startDate, finishDate)
       //console.log('current_fract', currentFract.startDate, currentFract.endDate)
       const dateRanges = { startDate: currentFract.startDate, EndDate: currentFract.endDate }
-      
+  
       const vehicleDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(startDate, finishDate, dateRanges), 0)
-      
       const fractDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(currentFract.startDate, currentFract.endDate, dateRanges), 0)
       //console.log('vehicleDaysInCurrentFract:', vehicleDaysInCurrentFract)
       /*  let totalPaidAtInitRange
@@ -591,15 +566,17 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
           moment(currentFract.startDate).isBefore(moment(finishDate)) &&
           moment(finishDate).isBefore(moment(currentFract.endDate))) {
         const reversal = (vehicleDaysInCurrentFract - currentFract.days) * dayAmount
-        //console.log('pura_esclusione', reversal)
+        console.log('pura_esclusione', reversal)
         rangePrice = reversal
       } else if (vehicleDaysInCurrentFract === fractDaysInCurrentFract) {
         const fractRate = currentFract.days * dayAmount
-        //console.log('veicolo presente nell intero periodo', fractRate)
+        console.log('veicolo presente nell intero periodo', fractRate)
         rangePrice = fractRate
       } else {
         const fractRate = vehicleDaysInCurrentFract * dayAmount
-        //console.log(`veicolo inserito nel periodo per ${vehicleDaysInCurrentFract}`, fractRate)
+        console.log('dateRanges:', dateRanges)
+        console.log('dayAmount:', dayAmount)
+        console.log(`veicolo inserito nel periodo per ${vehicleDaysInCurrentFract}`, fractRate)
         rangePrice = fractRate
       }
       daysLifeTime = vehicleDaysInCurrentFract
@@ -616,6 +593,7 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
       }*/
     }
     const factor = vehicle.exclusionType ? cFunctions.exclusionTypeFactor(vehicle.exclusionType) : 1
+  
     prize = factor * rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
     if (returnExtra) {

@@ -327,13 +327,13 @@ const Header = props => {
         <Grid item xs={4}>
           <Grid container justify="flex-end">
             <ExportMenu
+              checkPolicy={checkPolicy}
               classes={classes}
               dispatch={dispatch}
               filtered={filtered}
               handleApplicationZip={handleApplicationZip}
               handleExport={handleExport}
               handleExportTotal={handleExportTotal}
-              checkPolicy={checkPolicy}
               isPolicy={isPolicy}
               priority={priority}
               resultRegFractions={resultRegFractions}

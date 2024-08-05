@@ -48,7 +48,13 @@ import find from 'lodash/find'
 import TableDetailToggleCell from 'helpers/tableFormatters/TableDetailToggleCellBase'
 import RowAttachmentsComponent from './RowAttachmentsComponent'
 
-function getVehicleId ({ licensePlate, state, counter }) {
+function getVehicleId ({ licensePlate, state, counter: originalCounter, excludedCounter, includedCounter }) {
+  let counter = ''
+  if (['ADDED', 'ADDED_CONFIRMED'].includes(state)) {
+    counter = includedCounter || originalCounter
+  } else {
+    counter = excludedCounter || originalCounter
+  }
   return licensePlate && state ? `${licensePlate}#${state}#${counter}` : uuid()
 }
 
@@ -120,19 +126,22 @@ const VehiclesTable = props => {
     taxableTotal,
     formRefHeader,
   } = props
+  const rows = filtered ?
+    vehicles.reduce((prev, row) => {
+      if (filtered === true) {
+        if (!row.startDate || row.startDate === props.policy.initDate) {
+          prev.push(row)
+        }
+      } else {
+        if (row[`inPolicy_${filtered}`]) {
+          prev.push(row)
+        }
+      }
+      return prev
+    }, [])
+    :
+    vehicles
   
-  const rows = filtered ? vehicles.reduce((prev, row) => {
-    if(filtered === true) {
-      if (!row.startDate || row.startDate === props.policy.initDate) {
-        prev.push(row)
-      }
-    } else {
-      if(row[`inPolicy_${filtered}`]){
-        prev.push(row)
-      }
-    }
-    return prev
-  }, []) : vehicles
   const { tab } = useParams()
   const isPolicy = policy?.state?.isPolicy
   const updatePrize = useCallback(row => {
@@ -181,7 +190,7 @@ const VehiclesTable = props => {
   const defaultVehicleCode = vehicleTypes[0].id
   const getProdCode = useCallback(row => {
     const list_ = productList[cFunctions.getVehicleCode(row.vehicleType, row.weight, vehicleTypes) || defaultVehicleCode]
-    const list = Array.isArray(list_) ?  list_.sort() : list_
+    const list = Array.isArray(list_) ? list_.sort() : list_
     const product = row.productCode ? list.indexOf(row.productCode) > -1 ? row.productCode : list[0] : list[0]
     return product
   }, [defaultVehicleCode, productList, vehicleTypes])
@@ -208,15 +217,15 @@ const VehiclesTable = props => {
   const columns = useMemo(() => {
     const columns = [
       { name: 'licensePlate', title: 'Targa', getCellValue: extractError },
-      {
-        name: 'productCode',
-        title: 'Codice Prodotto',
-        getCellValue: getProdCode,
-      },
       { name: 'vehicleType', title: 'Tipo Veicolo' },
       {
         name: 'weight',
         title: 'Q.li/Kw/Posti',
+      },
+      {
+        name: 'productCode',
+        title: 'Codice Prodotto',
+        getCellValue: getProdCode,
       },
       { name: 'registrationDate', title: 'Data Imm.' },
       { name: 'brand', title: 'Marca' },
@@ -279,7 +288,7 @@ const VehiclesTable = props => {
     { columnName: 'model', align: 'center' },
     { columnName: 'vatIncluded', align: 'center' },
     { columnName: 'productCode', align: 'center', width: 250 },
-    { columnName: 'coverageType', align: 'center', editingEnabled: false, width: 250},
+    { columnName: 'coverageType', align: 'center', editingEnabled: false, width: 250 },
     { columnName: 'value', align: 'right' },
     { columnName: 'hasGlass', align: 'center' },
     { columnName: 'hasTowing', align: 'center' },

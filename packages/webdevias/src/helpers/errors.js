@@ -14,7 +14,7 @@ const standardThrowError = message => {
  * @param notify notistack
  */
 export const gestError = (throwToBoundaryError = standardThrowError, notify) => error => {
-
+  
   try {
     log.debug('gestError', JSON.stringify(error, null, 2))
     const { graphQLErrors, networkError } = gestErrorObject(error)

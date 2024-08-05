@@ -15,6 +15,7 @@ import { initPolicy } from '../Policy/helpers'
 import numberToLetter from 'number-to-letter'
 import RegulationsForm from './components/RegulationsForm'
 import moment from 'moment'
+import cloneDeep from 'lodash/cloneDeep'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -142,32 +143,50 @@ function createExcel (policies, vehicleTypes, data) {
       continue
     }
     const newPolicy = initPolicy(policy)
+    const defaultTaxes = newPolicy.productDefinitions[0].taxRate
+    if (defaultTaxes === 2.5) {
+      console.log('skipped 2.5 %')
+      continue
+    }
     const data = {
       ...newPolicy,
     }
     const tablePd = { values: { productDefinitions: newPolicy.productDefinitions } }
-    for (let regulation of newPolicy.regFractions) {
+    for (let regulation of newPolicy.filteredRegFraction) {
       let totTaxable = 0
       const startRegDate = regulation.startDate
       const endRegDate = regulation.endDate
       const hasRegulation = regulation.hasRegulation
-      for (let vehicle of policy.vehicles) {
+      for (let vehicle of cloneDeep(policy.vehicles)) {
         vehicle.value = vehicle.value / 1000
         if (hasRegulation === 'SI') {
-          const isStartDate = vehicle.startDate === data.initDate
-          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
+          if (!vehicle.finishDate || moment(vehicle.finishDate).isBefore(startRegDate)) {// se non è stata toccata continua
             continue
           }
-          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
+          const isInPolicy = Boolean(vehicle.inPolicy)
+          const isAlive = moment(vehicle.finishDate).isAfter(endRegDate)
+          const hasBeenAdded = !isInPolicy && cDate.inRange(startRegDate, endRegDate, vehicle.startDate)
+          if (isAlive) {
+            if (hasBeenAdded) {// è viva ed è stata aggiunta nel periodo: devo pagare da quando è stata aggiunta fino alla fine della polizza
               vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
               vehicle.state = 'ADDED_CONFIRMED'
+            } else {
+              continue// è viva ma non è stata aggiunta in questo periodo: quindi non faccio niente
             }
-            const {
-              payment,
-            } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
-            totTaxable += payment
+          } else {
+            if (hasBeenAdded) {// è stata esclusa ed era stata aggiunta in questo periodo: quindi pago la diff da quando è entrata a quando è uscita
+              //vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+              vehicle.state = 'ADDED_CONFIRMED'
+            } else {// è stata aggiunta in un periodo precedente, è stata esclusa, quindi storno la differenza solo se le motivazioni sono quelle
+              if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
+                //
+              } else {
+                continue
+              }
+            }
           }
+          const { payment } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
+          totTaxable += payment
         } else {
           const isStartDate = vehicle.startDate === data.initDate
           if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
@@ -256,7 +275,7 @@ const Regulations = ({ enqueueSnackbar }) => {
       title="Regolazioni"
     >
       <Header/>
-      <Typography>Indicare l'intervallo delle date di scadenza</Typography>
+      <Typography>Parametro di estrazione: data di scadenza</Typography>
       <div>
         <RegulationsForm formRefRegulations={formRefRegulations}/>
       </div>

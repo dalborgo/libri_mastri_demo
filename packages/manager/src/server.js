@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import {log} from '@adapter/common'
+import { log } from '@adapter/common'
 import app from './express'
+
 const http = require('http')
 const config = require('config')
 const { PORT, NAMESPACE } = config.get('express')

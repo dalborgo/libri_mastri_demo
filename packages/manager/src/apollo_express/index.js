@@ -18,7 +18,14 @@ import fs from 'fs'
 
 const createError = require('http-errors')
 const cookieParser = require('cookie-parser')
-const { MAXAGE_MINUTES = 60, ORIGIN, NAMESPACE = 'apollo', BODY_LIMIT = '100kb', PORT, IP } = config.get('apollo_express')
+const {
+  MAXAGE_MINUTES = 60,
+  ORIGIN,
+  NAMESPACE = 'apollo',
+  BODY_LIMIT = '100kb',
+  PORT,
+  IP,
+} = config.get('apollo_express')
 const { BUCKET_DEFAULT, IP_DEFAULT } = config.get('couchbase')
 const path = require('path')
 const cors = require('cors')
@@ -79,6 +86,7 @@ bucket.on('connect', () => {
     resolvers,
     schemaDirectives,
     typeDefs,
+    uploads: { maxFileSize: '500mb', maxFieldSize: 500000000 },
   })
   app.use('/', indexRouter)
   app.use(`/${NAMESPACE}`, appRouter)

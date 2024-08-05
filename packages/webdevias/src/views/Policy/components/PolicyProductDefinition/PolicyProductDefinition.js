@@ -245,7 +245,7 @@ const Body = props => {
                                     >
                                       <Icon path={mdiContentDuplicate} size={0.8}/>
                                     </Fab>
-                                    <FastField
+                                    <Field
                                       as={TF}
                                       className={props.globalClass.field}
                                       disabled={isDisabled}
@@ -283,22 +283,29 @@ const Body = props => {
                                         {''}
                                       </option>
                                       {
-                                        props.vehicleTypes.filter(({ priority: priority_ }) => !priority_ || priority_ === priority).map(vt => (
-                                          <option
-                                            key={vt.id}
-                                            value={vt.id}
-                                          >
-                                            {vt.display}
-                                          </option>
-                                        ))
+                                        props.vehicleTypes.filter(({ priority: priority_ }) => !priority_ || priority_ === priority).reduce((acc, vt) => {
+                                          if (vt.id === 'RIMORCHIO' && values.productDefinitions[index]?.coverageType === 'CRISTALLI') {
+                                            //skip
+                                          } else {
+                                            acc.push(
+                                              <option
+                                                key={vt.id}
+                                                value={vt.id}
+                                              >
+                                                {vt.display}
+                                              </option>
+                                            )
+                                          }
+                                          return acc
+                                        }, [])
                                       }
-                                    </FastField>
+                                    </Field>
                                     <Tooltip
                                       placement="bottom"
                                       title={values.productDefinitions[index]?.coverageType}
                                     >
                                       <span>
-                                        <FastField
+                                        <Field
                                           as={TF}
                                           className={props.globalClass.field}
                                           disabled={isDisabled}
@@ -336,22 +343,26 @@ const Body = props => {
                                             {''}
                                           </option>
                                           {
-                                            props.coverageTypes.map(pt => (
-                                              <option
-                                                key={pt.id}
-                                                value={pt.id}
-                                              >
-                                                {pt.display}
-                                              </option>
-                                            ))
+                                            props.coverageTypes.reduce((acc, pt) => {
+                                              if (pt.id === 'CRISTALLI' && values.productDefinitions[index]?.vehicleType === 'RIMORCHIO') {
+                                                //skip
+                                              } else {
+                                                acc.push(
+                                                  <option key={pt.id} value={pt.id}>
+                                                    {pt.display}
+                                                  </option>
+                                                )
+                                              }
+                                              return acc
+                                            }, [])
                                           }
-                                        </FastField>
+                                        </Field>
                                       </span>
                                     </Tooltip>
-                                    <FastField
+                                    <Field
                                       as={TF}
                                       className={props.globalClass.field}
-                                      disabled={isDisabled}
+                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                       InputProps={
                                         {
                                           className: clsx(props.globalClass.fieldBack),
@@ -377,10 +388,10 @@ const Body = props => {
                                       style={{ width: 90 }}
                                       variant="outlined"
                                     />
-                                    <FastField
+                                    <Field
                                       as={TF}
                                       className={props.globalClass.field}
-                                      disabled={isDisabled}
+                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                       InputProps={
                                         {
                                           className: clsx(props.globalClass.fieldBack),
@@ -405,10 +416,10 @@ const Body = props => {
                                       style={{ width: 80 }}
                                       variant="outlined"
                                     />
-                                    <FastField
+                                    <Field
                                       as={TF}
                                       className={props.globalClass.field}
-                                      disabled={isDisabled}
+                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                       InputProps={
                                         {
                                           className: clsx(props.globalClass.fieldBack),
@@ -482,10 +493,10 @@ const Body = props => {
                                       style={{ width: 80 }}
                                       variant="outlined"
                                     />
-                                    <FastField
+                                    <Field
                                       as={TF}
                                       className={props.globalClass.field}
-                                      disabled={isDisabled}
+                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                       InputProps={
                                         {
                                           className: clsx(props.globalClass.fieldBack),
@@ -537,10 +548,10 @@ const Body = props => {
                                     }
                                     {
                                       priority === 3 &&
-                                      <FastField
+                                      <Field
                                         as={TF}
                                         className={props.globalClass.field}
-                                        disabled={isDisabled}
+                                        disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                         InputProps={
                                           {
                                             className: clsx(props.globalClass.fieldBack),
@@ -560,25 +571,32 @@ const Body = props => {
                                         variant="outlined"
                                       />
                                     }
-                                    <Field
-                                      className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
-                                      component={TextField}
-                                      disabled
-                                      InputProps={
-                                        {
-                                          classes: {
-                                            disabled: props.globalClass.fieldDisabled,
-                                          },
-                                          className: props.globalClass.fieldBack,
-                                        }
-                                      }
-                                      label="Codice Prodotto"
-                                      name={`productDefinitions.${index}.productCode`}
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 190 }}
-                                      variant="outlined"
-                                    />
+                                    <Tooltip
+                                      placement="bottom"
+                                      title={values.productDefinitions[index]?.productCode}
+                                    >
+                                      <span>
+                                        <Field
+                                          className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
+                                          component={TextField}
+                                          disabled
+                                          InputProps={
+                                            {
+                                              classes: {
+                                                disabled: props.globalClass.fieldDisabled,
+                                              },
+                                              className: props.globalClass.fieldBack,
+                                            }
+                                          }
+                                          label="Codice Prodotto"
+                                          name={`productDefinitions.${index}.productCode`}
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 190 }}
+                                          variant="outlined"
+                                        />
+                                      </span>
+                                    </Tooltip>
                                     <IconButton
                                       classes={
                                         {

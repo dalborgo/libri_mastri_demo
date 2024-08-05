@@ -65,9 +65,9 @@ const icons = {
 
 const Alert = forwardRef((props, ref) => {
   const { className, icon, variant, message, onClose, ...rest } = props
-
+  
   const classes = useStyles()
-
+  
   return (
     <Paper
       {...rest}

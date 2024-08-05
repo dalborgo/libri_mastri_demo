@@ -46,7 +46,7 @@ const Dashboard = props => {
     onError: gestError(throwError),
   })
   const handleLogout = async () => {
-
+    
     client.writeData({ data: { loading: true } })
     await signOut({
       update: (cache, { data: { signOut } }) => {
@@ -63,15 +63,15 @@ const Dashboard = props => {
     })
     client.writeData({ data: { loading: false } })
   }
-
+  
   const handleNavBarMobileOpen = () => {
     setOpenNavBarMobile(true)
   }
-
+  
   const handleNavBarMobileClose = () => {
     setOpenNavBarMobile(false)
   }
-
+  
   return (
     <div className={classes.root}>
       <TopBar

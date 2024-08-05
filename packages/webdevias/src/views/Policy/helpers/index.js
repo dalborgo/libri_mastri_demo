@@ -40,7 +40,7 @@ export function reducerPolicy (draft, action) {
         }
       }
       draft.vehicles = draft.vehicles.map(vehicle => {
-        if (['ADDED', 'DELETED'].includes(vehicle.state)) {
+        if (['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
           const newState = vehicle.state === 'ADDED' ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED'
           let counter, constraintCounter
           counter = newState === 'ADDED_CONFIRMED'
@@ -82,7 +82,7 @@ export function reducerPolicy (draft, action) {
         if (draft.vehicles[i].licensePlate === action.licensePlate && draft.vehicles[i].state === action.state) {
           partial.index = i
         }
-        if (draft.vehicles[i].state === 'ADDED_CONFIRMED') {
+        if (draft.vehicles[i].state === 'ADDED_CONFIRMED' || (draft.vehicles[i].state === 'DELETED_CONFIRMED' && draft.vehicles[i].includedCounter)) {
           partial.maxIncluded = Math.max(partial.maxIncluded, draft.vehicles[i].includedCounter || draft.vehicles[i].counter || 0)
         }
         if (draft.vehicles[i].state === 'DELETED_CONFIRMED') {
@@ -135,7 +135,7 @@ export function reducerInsertModal (draft, action) {
 
 export function getLastFraction (payFractions) {
   const today = moment().add(-15, 'd')// 15 giorni di tempo
-  let count = 0
+  let count = 1
   for (let { date, daysDiff } of payFractions) {
     const plusDay = moment(date).add(daysDiff, 'd')
     if (!today.isAfter(plusDay)) {
@@ -192,7 +192,13 @@ export function comparePolicy (new_, old) {
 
 export function initPolicy (policy) {
   const {
-    productDefinitions: pds, signer = null, cosigners = [], vehicles = [], regFractions = [], attachments = [], paidFractions = {},
+    productDefinitions: pds,
+    signer = null,
+    cosigners = [],
+    vehicles = [],
+    regFractions = [],
+    attachments = [],
+    paidFractions = {},
   } = policy
   const newPD = pdsToArray(pds).map(val => (
     {
@@ -219,7 +225,15 @@ export function initPolicy (policy) {
     return prev
   }, [])
   const holders = signer ? [signer, ...cosigners] : cosigners
-  return { ...policy, vehicles: newVehicles, productDefinitions: newPD || {}, holders, regFractions, attachments, paidFractions: paidFractions || {} }
+  return {
+    ...policy,
+    vehicles: newVehicles,
+    productDefinitions: newPD || {},
+    holders,
+    regFractions,
+    attachments,
+    paidFractions: paidFractions || {}
+  }
 }
 
 const bold = { font: { bold: true } }
@@ -298,7 +312,7 @@ export async function createExportTotal (vehicles, fileName) {
     totalPrizeT += vehicle.prizeT
     totalVal += vehicle.value
     let targetLeasing
-    if(vehicle.leasingCompany) {
+    if (vehicle.leasingCompany) {
       const { results } = await axiosGraphqlQuery(query, { id: vehicle.leasingCompany })
       if (results && results.registry_guest) {
         targetLeasing = results.registry_guest
@@ -339,7 +353,10 @@ export async function createExportTotal (vehicles, fileName) {
   ws.addRow({
     val: { formula: `SUM(${letter['val']}${2}:${letter['val']}${totalVehicles + 1})`, result: totalVal || '' },
     prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 1})`, result: totalPrize || '' },
-    prizeT: { formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 1})`, result: totalPrizeT || '' },
+    prizeT: {
+      formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 1})`,
+      result: totalPrizeT || ''
+    },
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(totalVehicles + 2).getCell(colIndex), bold)

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { makeStyles } from '@material-ui/styles'
 import PropTypes from 'prop-types'
 import { Page } from 'components'
@@ -6,7 +6,7 @@ import { Header } from './components'
 import { withSnackbar } from 'notistack'
 import compose from 'lodash/fp/compose'
 import { bdxQuery } from 'utils/axios'
-import { Button, Typography } from '@material-ui/core'
+import { Button, FormControlLabel, FormGroup, Grid, Switch, Typography } from '@material-ui/core'
 import ExcelJS from 'exceljs'
 import saveAs from 'file-saver'
 import { cDate, cFunctions, numeric } from '@adapter/common'
@@ -62,7 +62,7 @@ export function ctol (columns) {
   return output
 }
 
-function createExcel (policies, vehicleTypes, data) {
+function createExcel (policies, vehicleTypes, data, onlyRiskState) {
   const workbook = new ExcelJS.Workbook()
   const ws = workbook.addWorksheet('Dati')
   const columns = [
@@ -70,6 +70,7 @@ function createExcel (policies, vehicleTypes, data) {
     { key: 'sign', width: 35 },
     { key: 'cos', width: 35 },
     { key: 'st', width: 25 },
+    { key: 'zip', width: 20 },
     { key: 'lic', width: 20 },
     { key: 'model', width: 35 },
     { key: 'init', width: 20, style: { numFmt: 'dd/mm/yyyy' } },
@@ -129,7 +130,8 @@ function createExcel (policies, vehicleTypes, data) {
     pol: 'NR Polizza',
     sign: 'Contraente',
     cos: 'Assicurato',
-    st: 'Ubicazione Assicurato',
+    st: 'Ubicazione Contraente',
+    zip: 'Cap Contraente',
     lic: 'Targa',
     model: 'Tipo Veicolo',
     init: 'Decorrenza Copertura',
@@ -164,6 +166,32 @@ function createExcel (policies, vehicleTypes, data) {
       continue
     }
     for (let vehicle of policy.vehicles) {
+      if (!vehicle.inPolicy && onlyRiskState) {continue}
+      if (vehicle.productCode === 'INFORTUNI CONDUCENTE') {continue}
+      if (!['DELETED_CONFIRMED', 'ADDED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
+      const end = getPolicyEndDate(newPolicy.initDate, newPolicy.midDate)
+      let dateTo = vehicle.finishDate ? new Date(vehicle.finishDate) : end
+      const init = newPolicy.initDate && new Date(newPolicy.initDate)
+      const dateFrom = vehicle.startDate ? new Date(vehicle.startDate) : init
+      if (vehicle.state?.startsWith('DELETE')) {
+        if (!moment(dateTo).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
+          //if (onlyRiskState) {
+          vehicle.state = 'ACTIVE'
+          vehicle.startDate = undefined
+          vehicle.finishDate = undefined
+          dateTo = end
+          if (!moment(init).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
+            continue
+          }
+          /*   } else {
+               continue
+             }*/
+        }
+      } else {
+        if (!moment(dateFrom).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
+          continue
+        }
+      }
       const prize = calculatePrizeTable(null, newPolicy, {
         ...vehicle,
         value: numeric.toFloat(vehicle.value / 1000),
@@ -180,26 +208,13 @@ function createExcel (policies, vehicleTypes, data) {
       const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
       const prodKey = cFunctions.camelDeburr(vehicle.productCode + vehicleCode)
       const product = policy.productDefinitions[prodKey] || {}
-      const init = newPolicy.initDate && new Date(newPolicy.initDate)
-      const end = getPolicyEndDate(newPolicy.initDate, newPolicy.midDate)
-      const dateFrom = vehicle.startDate ? new Date(vehicle.startDate) : init
-      const dateTo = vehicle.finishDate ? new Date(vehicle.finishDate) : end
-      if (!['DELETED_CONFIRMED', 'ADDED_CONFIRMED', 'ACTIVE'].includes(vehicle.state)) {continue}
-      if (vehicle.state?.startsWith('DELETE')) {
-        if (!moment(dateTo).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
-          continue
-        }
-      } else {
-        if (!moment(dateFrom).isBetween(data.startDate, moment(data.endDate).add(1, 'd'))) {
-          continue
-        }
-      }
       totalVehicles++
       ws.addRow({
         pol: newPolicy.number,
         sign,
         cos: realSigner ? realSigner.surname + (realSigner.name ? ` ${realSigner.name}` : '') : sign,
-        st: signer.state, //newPolicy?.holders?.[0].state
+        st: signer.state,
+        zip: signer.zip,
         lic: vehicle.licensePlate,
         model: vehicle.vehicleType,
         init,
@@ -239,18 +254,38 @@ function createExcel (policies, vehicleTypes, data) {
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     Object.assign(ws.getRow(rl + 1).getCell(colIndex), bold)
   }
+  const isOnlyRiskState = onlyRiskState ? '_stato_di_rischio' : ''
+  const fileName = `Bdx_dal_${cDate.mom(data.startDate, null, 'DD-MM-YYYY')}_al_${cDate.mom(data.endDate, null, 'DD-MM-YYYY')}${isOnlyRiskState}.xlsx`
   workbook.xlsx.writeBuffer().then(buffer => {
-    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'DataGrid.xlsx')
+    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), fileName)
   })
+}
+
+const SwitchOption = props => {
+  const { state, handleChange } = props
+  return (
+    <FormGroup row>
+      <FormControlLabel
+        control={<Switch checked={state.onlyRiskState} name="onlyRiskState" onChange={handleChange}/>}
+        label="Stampa solo stato di rischio"
+      />
+    </FormGroup>
+  )
 }
 
 const Bsx = ({ enqueueSnackbar }) => {
   const classes = useStyles()
   const formRefBdx = useRef()
+  const [state, setState] = useState({
+    onlyRiskState: false,
+  })
+  const handleChange = (event) => {
+    setState({ ...state, [event.target.name]: event.target.checked })
+  }
   const onClick = useCallback(async () => {
     const { values } = formRefBdx.current || {}
     const data = {
-      startDate: '2021-01-01',//cDate.mom(values.startDate, null, 'YYYY-MM-DD'),
+      startDate: state.onlyRiskState ? cDate.mom(values.startDate, null, 'YYYY-MM-DD') : '2021-01-01',
       endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
     }
     const { ok, message, results } = await bdxQuery(
@@ -262,8 +297,8 @@ const Bsx = ({ enqueueSnackbar }) => {
       endDate: cDate.mom(values.endDate, null, 'YYYY-MM-DD'),
     }
     !ok && enqueueSnackbar(message, { variant: 'error' })
-    createExcel(results.policies, results.vehicleTypes, range)
-  }, [enqueueSnackbar])
+    createExcel(results.policies, results.vehicleTypes, range, state.onlyRiskState)
+  }, [enqueueSnackbar, state.onlyRiskState])
   
   return (
     <Page
@@ -271,10 +306,13 @@ const Bsx = ({ enqueueSnackbar }) => {
       title="Bdx"
     >
       <Header/>
-      <Typography>Indicare l'intervallo delle date di movimentazione</Typography>
-      <div>
-        <BdxForm formRefBdx={formRefBdx}/>
-      </div>
+      <Typography>Parametro di estrazione: data di movimentazione (=stato di rischio-decorrenza
+        inclusione/esclusione)
+      </Typography>
+      <Grid alignItems="center" container spacing={3}>
+        <Grid item><BdxForm formRefBdx={formRefBdx}/></Grid>
+        <Grid item style={{ marginTop: 13 }}><SwitchOption handleChange={handleChange} state={state}/></Grid>
+      </Grid>
       <div className={classes.results}>
         <Button color="primary" disableFocusRipple onClick={onClick} size="small" variant="contained">Genera</Button>
       </div>

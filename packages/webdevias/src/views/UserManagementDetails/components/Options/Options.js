@@ -36,7 +36,7 @@ const General = props => {
         xl={9}
         xs={12}
       >
-        <OptionsForm />
+        <OptionsForm/>
       </Grid>
     </Grid>
   )
