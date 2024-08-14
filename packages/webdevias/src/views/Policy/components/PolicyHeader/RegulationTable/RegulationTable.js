@@ -30,7 +30,7 @@ const ActionMenu = memo(props => {
   }
   const isBefore = moment().isBefore(moment(row.endDate))
   const prevIsEmitted = regCounter === 1 || regsChecked?.[regCounter - 1]
-  const hasConsolidate = props.priority === 3 && props.isRecalculateFraction === 'SI' && props.toCon
+  const hasConsolidate = props.priority === 4 && props.isRecalculateFraction === 'SI' && props.toCon
   const hasRegEmit = !regsChecked?.[regCounter] && !isBefore && prevIsEmitted
   return (
     <div>
@@ -153,7 +153,7 @@ const RegulationTable = props => {
           {...props}
         >
           {
-            (priority === 3) &&
+            (priority === 4) &&
             <Tooltip placement="top" title="Regolazione">
               <IconButton
                 onClick={handlePrint('regulation', row.startDate, row.endDate, row.hasRegulation, regCounter)}
@@ -175,7 +175,7 @@ const RegulationTable = props => {
             </Tooltip>
           }
           {
-            (priority === 3 && isRecalculateFraction === 'SI' && regCounter > 1) &&//(priority === 3 && isRecalculateFraction === 'SI' && toRec) &&
+            (priority === 4 && isRecalculateFraction === 'SI' && regCounter > 1) &&//(priority === 4 && isRecalculateFraction === 'SI' && toRec) &&
             <Tooltip placement="top" title="Quietanza">
               <IconButton
                 onClick={

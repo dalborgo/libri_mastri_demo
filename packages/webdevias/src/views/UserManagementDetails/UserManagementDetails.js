@@ -57,7 +57,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
   const handleEdit = useCallback(async (input, { resetForm }) => {
     const prevFather = user.father
     log.debug('userInside', user)
-    if (input.role !== 'SUB_AGENT') {
+    if (!['SUB_AGENT', 'COLLABORATOR'].includes(input.role)) {
       input.father = null
     }
     let aggregate = Object.assign(user, input)
@@ -134,7 +134,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
     { value: 'options', label: 'Impostazioni' },
     { value: 'password', label: 'Reset Password' },
   ]
-  priority !== 3 && tabs.pop()
+  priority !== 4 && tabs.pop()
   if (!tab) {
     return <Redirect to={`/management/users/${userId}/summary`}/>
   }

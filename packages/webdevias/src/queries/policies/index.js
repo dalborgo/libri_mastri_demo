@@ -1,4 +1,5 @@
 import gql from 'graphql-tag'
+import { CHILDREN_FROM_LIST } from '../users'
 
 export const ATTACHMENTS_FRAGMENT = (gql`
           fragment attachmentsFragment on PolicyAttachments {
@@ -22,6 +23,36 @@ export const HOLDER_FRAGMENT = (gql`
             zip
             __typename
           }`
+)
+export const COLLABORATOR_FRAGMENT = (gql`
+          fragment collaboratorFragment on User {
+            id
+            username
+            ... on ChildUser {
+              father
+            }
+            role
+            email
+            __typename
+          }
+          ${CHILDREN_FROM_LIST}
+  `
+)
+export const SUB_AGENT_FRAGMENT = (gql`
+          fragment subAgentFragment on User {
+            id
+            username
+            ... on ChildUser {
+              father
+              children {
+                ...childrenFromList
+              }
+            }
+            __typename
+          }
+          ${CHILDREN_FROM_LIST}
+  `
+
 )
 export const META_FRAGMENT = (gql`
           fragment metaFragment on PolicyMeta {
@@ -48,18 +79,16 @@ export const PRODUCER_FRAGMENT = (gql`
           fragment producerFragment on User {
             id
             username
-            __typename
-          }`
-)
-export const SUB_AGENT_FRAGMENT = (gql`
-          fragment subAgentFragment on User {
-            id
-            username
-            ... on ChildUser {
-              father
+            ... on MainUser {
+              children {
+                ...childrenFromList
+              }
             }
+            longName
             __typename
-          }`
+          }
+          ${CHILDREN_FROM_LIST}
+  `
 )
 export const CREATED_BY_FRAGMENT = (gql`
           fragment createdByFragment on User {
@@ -99,6 +128,17 @@ export const HOLDER_SAVE_FRAGMENT = (gql`
             city
             state
             zip
+          }`
+)
+export const COLLABORATOR_SAVE_FRAGMENT = (gql`
+          fragment collaboratorSaveFragment on User {
+            id
+            username
+            role
+            ... on ChildUser {
+              father
+            }
+            email
           }`
 )
 export const POLICY_FRAGMENT = (gql`
@@ -142,6 +182,9 @@ export const POLICY_FRAGMENT = (gql`
             subAgent{
               ...subAgentFragment
             }
+            collaborators{
+              ...collaboratorFragment
+            }
             top
             vehicles
             _createdAt
@@ -153,6 +196,7 @@ export const POLICY_FRAGMENT = (gql`
           ${CREATED_BY_FRAGMENT}
           ${PRODUCER_FRAGMENT}
           ${SUB_AGENT_FRAGMENT}
+          ${COLLABORATOR_FRAGMENT}
           ${META_FRAGMENT}
   `
 )
@@ -239,9 +283,13 @@ export const POLICY_SAVE_FRAGMENT = (gql`
             state {
               ...stateSaveFragment
             }
+            collaborators {
+              ...collaboratorSaveFragment
+            }
             subAgent
             vehicles
           }
+          ${COLLABORATOR_SAVE_FRAGMENT}
           ${HOLDER_SAVE_FRAGMENT}
           ${META_SAVE_FRAGMENT}
           ${STATE_SAVE_FRAGMENT}

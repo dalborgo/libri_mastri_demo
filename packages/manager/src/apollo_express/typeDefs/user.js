@@ -31,6 +31,7 @@ type MainUser implements User{
 type ChildUser implements User{
   ${interfaceUserFields}
   father: String
+  children: [ChildUser]
 }
 `
 export default gql`
@@ -39,6 +40,7 @@ export default gql`
     user(id: ID!): User @auth
     users: [User] @auth
     mainUsers(skip: ID): [MainUser] @auth
+    toSelectUsers(skip: ID): [MainUser] @auth
   }
 
   extend type Mutation {
@@ -94,6 +96,7 @@ export default gql`
   """
   enum Roles {
     GUEST
+    COLLABORATOR
     SUB_AGENT
     AGENT
     SUPER

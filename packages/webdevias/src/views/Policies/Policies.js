@@ -57,13 +57,16 @@ const Policies = ({ enqueueSnackbar }) => {
         if (toInclude && filters.docSubAgent && !curr.subAgent?.username?.toLowerCase().includes(filters.docSubAgent.toLowerCase().trim())) {
           toInclude &= false
         }
+       /* if (toInclude && filters.docCollaborator && !curr.collaborator?.username?.toLowerCase().includes(filters.docCollaborator.toLowerCase().trim())) {
+          toInclude &= false
+        }*/
         toInclude && prev.push(curr)
         return prev
       }, [])
     } else {
       return data.policies
     }
-  }, [data, filters.docNumber, filters.docSubAgent, filters.docProducer, filters.docSigner, isFiltered])
+  }, [data, isFiltered, filters.docNumber, filters.docSigner, filters.docProducer, filters.docSubAgent])
   const { me: { priority } } = client.readQuery({ query: ME })
   const [delPolicy] = useMutation(DELETE_POLICY, {
     onError: gestError(throwError, enqueueSnackbar),

@@ -62,7 +62,7 @@ export const columnNameMap = isPolicy => header => header.map(column => {
 const manageBool = val => (['si', 'SI', 'sì'].includes(val)) ? 'SI' : 'NO'
 
 export function getDiffPolicy (new_, old) {
-  const excludedFields = ['id', '__typename', '_type', 'producer', 'subAgent', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
+  const excludedFields = ['id', '__typename', '_type', 'producer', 'subAgent', 'collaborators', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
   const restNew = chain(new_).omit(excludedFields).omitBy(isEmpty).value()
   const restOld = chain(old).omit(excludedFields).omitBy(isEmpty).value()
   const d1 = cFunctions.difference(restNew, restOld)
@@ -410,8 +410,9 @@ export const checkRecord = (record, line, policy, vehicleTypes, endDate) => {
   return { checkedRecord, errors }
 }
 
-export async function manageMail (state, producer = {}, code, userRole, signer, userId = '') {
+export async function manageMail (state, producer = {}, code, userRole, signer, userId = '', collaborators = []) {
   const { code: stateCode, isPolicy } = state
+  const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
   let { email: prodEmail } = producer //todo gestire filiale
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
   let [primaryQuboEmail] = QUBO_EMAILS
@@ -419,7 +420,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
   if (!cFunctions.isProd()) { //per test in sviluppo
     prodEmail = 'dalborgo.m@asten.it'
     primaryQuboEmail = 'test@astenpos.it'
-    primaryOrigin = 'http://109.168.42.51:5031'
+    primaryOrigin = 'http://178.175.201.217:5031'
   } else {
     prodEmail = 'valentina.santorum@qubo-italia.eu'
   }
@@ -448,14 +449,15 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
   }
 }
 
-export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId = '') {
+export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId = '', collaborators = [] ) {
   let { email: prodEmail } = producer //gestire filiale
+  const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
   let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
   if (!cFunctions.isProd()) { //per test in sviluppo
     prodEmail = 'dalborgo.m@asten.it'
-    primaryOrigin = 'http://109.168.42.51:5031'
+    primaryOrigin = 'http://178.175.201.217:5031'
   } else {
     prodEmail = 'valentina.santorum@qubo-italia.eu'
   }

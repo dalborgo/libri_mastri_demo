@@ -8,7 +8,7 @@ function navigationConfig (user, policy, registry, priority, pathname) {
   const isEditPolicy = pathname.startsWith('/policies/editpolicy')
   const policyChildren = [
     {
-      title: `Nuova ${priority === 3 ? 'Offerta' : 'Proposta'}`,
+      title: `Nuova ${priority === 4 ? 'Offerta' : 'Proposta'}`,
       href: '/policies/new/all',
     },
     {
@@ -20,10 +20,10 @@ function navigationConfig (user, policy, registry, priority, pathname) {
       href: '/policies/doclist',
     },
   ]
-  priority !== 3 && policyChildren.pop()
-  priority !== 3 && policyChildren.shift()
+  priority !== 4 && policyChildren.pop()
+  priority !== 4 && policyChildren.shift()
   policy && !isEditPolicy && policyChildren.push({
-    title: `Modifica ${priority === 3 ? 'Offerta' : 'Proposta'}`,
+    title: `Modifica ${priority === 4 ? 'Offerta' : 'Proposta'}`,
     href: `/policies/edit/${policy}/all`,
     shared: true,
   })
@@ -32,11 +32,11 @@ function navigationConfig (user, policy, registry, priority, pathname) {
     href: `/policies/editpolicy/${policy}/all`,
     shared: true,
   })
-  priority === 3 && policyChildren.push({
+  priority === 4 && policyChildren.push({
     title: 'Bdx',
     href: '/policies/bdx',
   })
-  priority === 3 && policyChildren.push({
+  priority === 4 && policyChildren.push({
     title: 'Regolazioni',
     href: '/policies/regulations',
   })
@@ -66,7 +66,7 @@ function navigationConfig (user, policy, registry, priority, pathname) {
       title: 'Gestione Utenti',
       href: '/management',
       icon: PeopleIcon,
-      children: priority === 3 ?
+      children: priority === 4 ?
         [
           {
             title: 'Lista Utenti',
@@ -96,7 +96,7 @@ function navigationConfig (user, policy, registry, priority, pathname) {
       children: companyChildren,
     },
   ]
-  priority < 3 && pages.splice(-2, 2)
+  priority < 4 && pages.splice(-2, 2)
   return [
     {
       title: '',

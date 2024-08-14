@@ -195,10 +195,10 @@ export default {
         //cFunctions.sequencePromises(promises).then() //in parallelo
       }
       const newPolicy = Object.assign(policy, restInput, {
+        attachments,
+        createdBy: policy.createdBy,
         producer,
         subAgent,
-        createdBy: policy.createdBy,
-        attachments,
       })
       if (!producer) {delete newPolicy.producer}
       if (!subAgent) {delete newPolicy.subAgent}
@@ -228,15 +228,15 @@ export default {
       if (newEvent) {
         const {
           ok,
-          message
-        } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer, userId)
+          message,
+        } = await manageMail(state, savedPolicy.producer, restInput._code, userRole, policy.signer, userId, input.collaborators)
         if (!ok) { log.warn(message) }
       } else {
         if (toSend.length) {
           const {
             ok,
             message,
-          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer, userId)
+          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer, userId, input.collaborators)
           if (!ok) { log.warn(message) }
         }
       }
@@ -284,6 +284,7 @@ export default {
       input.attachments = attachments
       input.meta = meta
       input.producer = await User.findById(input.producer)
+      /*input.collaborators = await User.findById(input.collaborator)*/
       input.subAgent = await User.findById(input.subAgent)
       input.createdBy = await User.findById(input.createdBy)
       // eslint-disable-next-line no-unused-vars
@@ -307,7 +308,7 @@ export default {
         }
         await Policy.getByQuery(updateQuery)
       }
-      const { ok, message } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer, userId)
+      const { ok, message } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer, userId, input.collaborators)
       if (!ok) { log.warn(message) }
       return savedPolicy
     },
@@ -320,7 +321,7 @@ export default {
         isRecalculateFraction,
         vehicles,
         number: oldNumber,
-        company
+        company,
       } = policy
       const endDate = cFunctions.calcPolicyEndDate(initDate, midDate)
       const genNumber = {}
@@ -401,13 +402,19 @@ export default {
       })
       const vehicles = await getStream.array(createReadStream().pipe(parseStream))
       const producer = await User.findById(input.policy.producer)
-      let subAgent
+      let subAgent, collaborators
       if (input.policy.subAgent) {
         subAgent = await User.findById(input.policy.subAgent)
       }
+/*
+      if (input.policy.collaborators) {
+        collaborator = await User.findById(input.policy.collaborator)
+      }
+*/
       const createdBy = await User.findById(input.policy.createdBy)
       const policy = new Policy({
         ...input.policy,
+        collaborators,
         createdBy,
         producer,
         subAgent,

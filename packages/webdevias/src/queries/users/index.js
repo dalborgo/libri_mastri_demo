@@ -3,6 +3,7 @@ import gql from 'graphql-tag'
 export const CHILDREN_FROM_LIST = (gql`
           fragment childrenFromList on ChildUser {
             id
+            email
             username
             role
             father
@@ -12,9 +13,18 @@ export const CHILDREN_FROM_LIST = (gql`
 export const RAW_CHILDREN_FROM_LIST = (gql`
           fragment rawChildrenFromList on ChildUser {
             id
+            email
             username
             longName
             father
+            __typename
+          }`
+)
+export const SELECT_USERS_FRAGMENT = (gql`
+          fragment selectUserList on MainUser {
+            id
+            username
+            role
             __typename
           }`
 )
@@ -31,11 +41,21 @@ export const USERS_PRODUCERS_FRAGMENT = (gql`
             username
             ... on ChildUser {
               father
+              children {
+                ...childrenFromList
+              }
+            }
+            ... on MainUser {
+              children {
+                ...childrenFromList
+              }
             }
             longName
             priority
             __typename
-          }`
+          }
+          ${CHILDREN_FROM_LIST}
+  `
 )
 export const USER_COMPLETE_FRAGMENT = (gql`
           fragment userComplete on User {
@@ -54,6 +74,9 @@ export const USER_COMPLETE_FRAGMENT = (gql`
             zip
             ... on ChildUser {
               father
+              children {
+                ...childrenFromList
+              }
             }
             ... on MainUser {
               children {
@@ -167,6 +190,14 @@ export const MAIN_USERS = gql`
     }
   }
   ${MAIN_USERS_FRAGMENT}
+`
+export const TO_SELECT_USERS = gql`
+  query ToSelectUsers($skip: ID){
+    toSelectUsers(skip: $skip) {
+      ...selectUserList
+    }
+  }
+  ${SELECT_USERS_FRAGMENT}
 `
 export const USER = gql`
   query getUser($id: ID!){

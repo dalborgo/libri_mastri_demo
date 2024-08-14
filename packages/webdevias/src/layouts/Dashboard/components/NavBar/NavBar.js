@@ -94,7 +94,7 @@ const NavBar = props => {
           variant="h4"
         >
           {
-            mePage && me.priority === 3 ?
+            mePage && me.priority === 4 ?
               <Link
                 color="textPrimary"
                 component={RouterLink}

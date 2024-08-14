@@ -145,7 +145,7 @@ const Body = memo(props => {
                 </Box>
                 <Box flexGrow={1}/>
                 {
-                  props.priority === 3 &&
+                  props.priority === 4 &&
                   <Card className={classes.cardAdding}>
                     <Typography className={classes.cardTitle} variant={'h6'}>
                       Note
@@ -195,7 +195,7 @@ const Body = memo(props => {
               </Box>
             </form>
             {
-              props.priority === 3 &&
+              props.priority === 4 &&
               <DialogNotes
                 defaultValue={values['notes']}
                 open={notesOpen}

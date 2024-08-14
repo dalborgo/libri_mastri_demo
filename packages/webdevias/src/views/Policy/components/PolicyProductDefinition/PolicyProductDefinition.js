@@ -144,7 +144,7 @@ const Body = props => {
   const [editConditionsIndex, setEditConditionsIndex] = useState(-1)
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
-  const isDisabled = props.isPolicy && priority < 3
+  const isDisabled = props.isPolicy && priority < 4
   const coverageTypesToKey = useMemo(() => keyBy(props.coverageTypes, 'id'), [props.coverageTypes])
   const classes = useStyles()
   const [initialPD] = useState(() => props.productDefinitions.map(prop => {
@@ -516,7 +516,7 @@ const Body = props => {
                                       variant="outlined"
                                     />
                                     {
-                                      priority === 3 &&
+                                      priority === 4 &&
                                       <Field
                                         as={TF}
                                         className={props.globalClass.field}
@@ -547,7 +547,7 @@ const Body = props => {
                                       />
                                     }
                                     {
-                                      priority === 3 &&
+                                      priority === 4 &&
                                       <Field
                                         as={TF}
                                         className={props.globalClass.field}

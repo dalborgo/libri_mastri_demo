@@ -255,7 +255,7 @@ const PolicyListTable = props => {
   const Cell = useMemo(() => withStyles(styles)(props_ => {
     const { column, row: { __typename, state, id: policyId, top, meta, number, initDate, midDate } } = props_
     const { classes, ...rest } = props_
-    const allowDelete = (!top && !meta?.toDoc && !state?.isPolicy && priority === 3) || state?.code === 'DRAFT' || meta?.modified === true
+    const allowDelete = (!top && !meta?.toDoc && !state?.isPolicy && priority === 4) || state?.code === 'DRAFT' || meta?.modified === true
     switch (column.name) {
       case 'state':
         return (
@@ -289,7 +289,7 @@ const PolicyListTable = props => {
               </Button>
             </ThemeProvider>*/}
             {
-              priority === 3 &&
+              priority === 4 &&
               <RowMenu
                 allowDelete={allowDelete}
                 classes={classes}

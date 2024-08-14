@@ -16,7 +16,7 @@ export default {
   Query: {
     mainUsers: async (_, { skip }) => {
       const knex = User.getKnex()
-      knex.whereNot({ role: 'SUB_AGENT' }).orderBy('username')
+      knex.whereNot({ role: 'SUB_AGENT' }).whereNot({ role: 'COLLABORATOR' }).orderBy('username')
       skip && knex.whereNot({ username: skip })
       return User.getByQuery(knex)
     },
@@ -27,6 +27,12 @@ export default {
       } else {
         return USER_GUEST
       }
+    },
+    toSelectUsers: async (_, { skip }) => {
+      const knex = User.getKnex()
+      knex.whereNot({ role: 'SUPER' }).whereNot({ role: 'COLLABORATOR' }).orderBy('username')
+      skip && knex.whereNot({ username: skip })
+      return User.getByQuery(knex)
     },
     user: async (root, { id }, { req }) => {
       const { userRole, userId } = req.session || {}
@@ -47,7 +53,18 @@ export default {
       return User.getByQuery(knex)
     },*/
     children: async (parent, _, ctx) => {
-      //ctx.childLoader.clear(parent.username) 
+      //ctx.childLoader.clear(parent.username)
+      return ctx.childLoader.load(parent.username)
+    },
+  },
+  ChildUser: {
+    /* children: (parent) => {
+      const { username } = parent
+      const knex = User.getKnex()
+      knex.where({father: username})
+      return User.getByQuery(knex)
+    },*/
+    children: async (parent, _, ctx) => {
       return ctx.childLoader.load(parent.username)
     },
   },

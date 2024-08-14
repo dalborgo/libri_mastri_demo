@@ -53,7 +53,7 @@ const FractionTable = props => {
     { columnName: 'taxable', type: 'euro_sum_taxable' },
     { columnName: 'tax', type: 'euro_sum_tax' },
   ])
-  if (priority < 3 || !isPolicy) {
+  if (priority < 4 || !isPolicy) {
     columns.pop()
     tableColumnExtensions.pop()
   }

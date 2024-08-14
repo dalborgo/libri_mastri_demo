@@ -43,7 +43,7 @@ const Header = props => {
                 to={'/policies/new/all'}
                 variant="overline"
               >
-                ↩&nbsp;&nbsp;{priority === 3 ? 'Nuova Offerta' : 'Nuova Proposta'}
+                ↩&nbsp;&nbsp;{priority === 4 ? 'Nuova Offerta' : 'Nuova Proposta'}
               </Link>
             </div>
           }

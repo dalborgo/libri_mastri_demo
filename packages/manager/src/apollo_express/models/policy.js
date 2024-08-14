@@ -7,6 +7,7 @@ const policySchema = lounge.schema({
   _code: { type: String, key: true, generate: false },
   attachments: [{}],
   children: [{}],
+  collaborators: [{}],
   company: String,
   cosigners: [{}],
   createdBy: User,

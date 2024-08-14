@@ -11,6 +11,12 @@ export function getPolicyConditions (userRole, userId) {
                  + 'OR (p.state.code = "REST_QUBO" AND p.meta.modified = false)) '
                  + 'OR (p.state.code NOT IN ["REST_QUBO", "DRAFT"] )) '
                  + 'AND (p.subAgent = "' + userId + '") '
+  } else if (userRole === 'COLLABORATOR') {
+    conditions = 'WHERE '
+                 + '(((p.state.code = "DRAFT" AND (p.createdBy = "' + userId + '")) '
+                 + 'OR (p.state.code = "REST_QUBO" AND p.meta.modified = false)) '
+                 + 'OR (p.state.code NOT IN ["REST_QUBO", "DRAFT"] )) '
+                 + 'AND ANY coll IN p.collaborators SATISFIES coll.id = "' + userId + '" END '
   } else {
     conditions = 'WHERE '
                  + '(((p.state.code = "DRAFT" AND (p.createdBy = "' + userId + '")) '
@@ -35,6 +41,12 @@ export function getPoliciesConditions (userRole, userId, onlyDoc) {
                  + 'OR (p.state.code = "REST_QUBO" AND p.meta.modified = false AND p.top is missing)) '
                  + 'OR (p.state.code NOT IN ["REST_QUBO", "DRAFT"] )) '
                  + 'AND (p.subAgent = "' + userId + '") '
+  } else if (userRole === 'COLLABORATOR') {
+    conditions = 'WHERE ' + firstCondition + ' AND ('
+                 + '((p.state.code = "DRAFT" AND (p.createdBy = "' + userId + '")) '
+                 + 'OR (p.state.code = "REST_QUBO" AND p.meta.modified = false AND p.top is missing)) '
+                 + 'OR (p.state.code NOT IN ["REST_QUBO", "DRAFT"] )) '
+                 + 'AND ANY coll IN p.collaborators SATISFIES coll.id = "' + userId + '" END '
   } else {
     conditions = 'WHERE ' + firstCondition + ' AND ('
                  + '((p.state.code = "DRAFT" AND (p.createdBy = "' + userId + '")) '

@@ -112,7 +112,7 @@ const COMPANIES = [
 
 const CompanyView = props => {
   const { company, formRefComp, priority, setCompany, state } = props
-  const autoComp = (!state || state?.code === 'DRAFT') && priority === 3
+  const autoComp = (!state || state?.code === 'DRAFT') && priority === 4
   const classes = useStyles()
   return (
     <Typography
@@ -120,7 +120,7 @@ const CompanyView = props => {
       variant="overline"
     >
       {
-        !autoComp && priority === 3
+        !autoComp && priority === 4
           ?
           <div className={classes.divLinkShort}>
             Compagnia:&nbsp;

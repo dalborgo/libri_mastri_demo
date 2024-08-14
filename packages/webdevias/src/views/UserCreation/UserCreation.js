@@ -31,7 +31,7 @@ const UserCreation = ({ enqueueSnackbar }) => {
   })
   const handleCreate = useCallback(async (input, { resetForm }) => {
     log.debug('input', input)
-    if (input.role !== 'SUB_AGENT') {
+    if (!['SUB_AGENT', 'COLLABORATOR'].includes(input.role)) {
       input.father = null
     }
     let aggregate = filter(USER_ADD_FRAGMENT, input)

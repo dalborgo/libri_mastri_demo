@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/styles'
 import compose from 'lodash/fp/compose'
 import { getRolesArray, roleName } from 'helpers/normalize'
 import { useQuery } from '@apollo/react-hooks'
-import { MAIN_USERS, ME, USER_EDIT_FRAGMENT } from 'queries/users'
+import { ME, TO_SELECT_USERS, USER_EDIT_FRAGMENT } from 'queries/users'
 import { gestError, useAsyncError } from 'helpers'
 import { Button, Card, CardActions, CardContent, CardHeader, colors, Divider, Grid } from '@material-ui/core'
 import clsx from 'clsx'
@@ -37,14 +37,14 @@ const focus = event => event.target.select()
 const GeneralSettings = props => {
   const { className, handleEdit, ...user } = props
   const throwError = useAsyncError()
-  const { data, loading, called, client } = useQuery(MAIN_USERS, {
+  const { data, loading, called, client } = useQuery(TO_SELECT_USERS, {
     variables: {
       skip: user.id,
     },
     onError: gestError(throwError),
   })
   const { me: { priority } } = client.readQuery({ query: ME })
-  const { mainUsers } = data || {}
+  const { toSelectUsers } = data || {}
   const classes = useStyles()
   const roles = useMemo(() => getRolesArray(['GUEST']), [])
   return (
@@ -201,7 +201,7 @@ const GeneralSettings = props => {
                         >
                           <Field
                             component={TextField}
-                            disabled={priority < 3}
+                            disabled={priority < 4}
                             fullWidth
                             InputLabelProps={
                               {
@@ -232,32 +232,37 @@ const GeneralSettings = props => {
                           xs={12}
                         >
                           {
-                            values.role === 'SUB_AGENT'
+                            ['SUB_AGENT', 'COLLABORATOR'].includes(values.role)
                               ?
                               <Field
                                 component={TextField}
-                                disabled={priority < 3}
+                                disabled={priority < 4}
                                 fullWidth
                                 InputLabelProps={
                                   {
                                     shrink: true,
                                   }
                                 }
-                                label="Intermediario"
+                                label={values.role === 'SUB_AGENT' ? 'Intermediario' : 'Intermediario / Filiale'}
                                 name="father"
                                 select
                                 SelectProps={{ native: true }}
                                 variant="outlined"
                               >
                                 {
-                                  mainUsers.map(mainUser => (
-                                    <option
-                                      key={mainUser.id}
-                                      value={mainUser.id}
-                                    >
-                                      {roleName(mainUser.username)}
-                                    </option>
-                                  ))
+                                  
+                                  toSelectUsers.reduce((prev, curr) => {
+                                    if (values.role === 'SUB_AGENT' && curr.role === 'SUB_AGENT') {return prev}
+                                    prev.push(
+                                      <option
+                                        key={curr.id}
+                                        value={curr.id}
+                                      >
+                                        {roleName(curr.username)}
+                                      </option>
+                                    )
+                                    return prev
+                                  }, [])
                                 }
                               </Field>
                               :

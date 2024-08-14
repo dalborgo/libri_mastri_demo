@@ -12,7 +12,7 @@ export default [
     },
     User: {
       __resolveType (obj) {
-        if (obj.role === 'SUB_AGENT') {
+        if (['SUB_AGENT','COLLABORATOR'].includes(obj.role)) {
           return 'ChildUser'
         }
         return 'MainUser'

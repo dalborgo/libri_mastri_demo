@@ -51,7 +51,7 @@ const ProfileDetails = props => {
           variant="h3"
         >
           {
-            priority === 3 ?
+            priority === 4 ?
               <Link
                 color={'inherit'}
                 href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/REGISTRY%7C${registry.id}?bucket=registry`}

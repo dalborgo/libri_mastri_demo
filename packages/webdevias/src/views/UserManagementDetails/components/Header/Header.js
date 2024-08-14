@@ -31,10 +31,10 @@ const Header = props => {
       <div className={classes.divLink}>
         <Link
           component={RouterLink}
-          to={priority === 3 ? '/management/users' : '/policies/list'}
+          to={priority === 4 ? '/management/users' : '/policies/list'}
           variant="overline"
         >
-          ↩&nbsp;&nbsp;{priority === 3 ? 'Lista Utenti' : 'Lista Polizze'}
+          ↩&nbsp;&nbsp;{priority === 4 ? 'Lista Utenti' : 'Lista Polizze'}
         </Link>
       </div>
       <Typography
@@ -42,7 +42,7 @@ const Header = props => {
         variant="h3"
       >
         {
-          priority === 3 ?
+          priority === 4 ?
             <Link
               color={'inherit'}
               href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/USER%7C${username}?bucket=${envConfig.BUCKET}`}

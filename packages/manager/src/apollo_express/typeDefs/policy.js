@@ -87,6 +87,7 @@ export default gql`
     _createdAt: String
     _cas: String
     attachments: PolicyAttachmentsInput
+    collaborators: JSON
     company: String
     cosigners: JSON
     createdBy: String
@@ -139,6 +140,7 @@ export default gql`
     attachments: [PolicyAttachments]
     top: String
     children: [Policy]
+    collaborators: [User]
     company: String
     cosigners: [Holder]
     createdBy: User

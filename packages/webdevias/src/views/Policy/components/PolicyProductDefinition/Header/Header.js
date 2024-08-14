@@ -37,7 +37,7 @@ const Header = props => {
             tab === 'all' &&
             <Button
               className={classes.whiteButton}
-              disabled={priority < 3}
+              disabled={priority < 4}
               disableFocusRipple
               onClick={
                 async () => {

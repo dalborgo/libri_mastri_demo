@@ -23,9 +23,9 @@ const useStyles = makeStyles(theme => ({
 }))
 
 const FormProducer = props => {
-  const { producers, formRefProd, setProducer, producer } = props
+  const { producers, formRefProd, formRefHolders, setProducer, producer } = props
   const classes = useStyles()
-  const prodList = useMemo(() => producers.filter(producer => producer.priority < 3), [producers])
+  const prodList = useMemo(() => producers.filter(producer => producer.priority < 4 && producer.priority > 1), [producers])
   const prodDefault = useMemo(() => {
     return find(producers, { id: producer?.id })
   }, [producer, producers])
@@ -65,6 +65,10 @@ const FormProducer = props => {
                 onChange={
                   async (_, value) => {
                     await setFieldValue('producer', value)
+                    const { setFieldValue: setHolderValue, values } = formRefHolders.current || {}
+                    if (values?.collaborators?.length) {
+                      await setHolderValue('collaborators', [])
+                    }
                     setProducer(value)
                   }
                 }
@@ -113,10 +117,10 @@ const FormProducer = props => {
 }
 
 const ProducerView = props => {
-  const { producer, formRefProd, priority, setProducer, state, subAgent } = props
+  const { producer, formRefProd, priority, setProducer, state, subAgent, formRefHolders } = props
   const classes = useStyles()
   const throwError = useAsyncError()
-  const autoProd = (!state || state?.code === 'DRAFT') && priority === 3
+  const autoProd = (!state || state?.code === 'DRAFT') && priority === 4
   const { data: producers, loading, called } = useQuery(USERS, {
     onError: gestError(throwError),
     skip: !autoProd,
@@ -127,7 +131,7 @@ const ProducerView = props => {
       variant="overline"
     >
       {
-        !autoProd && priority === 3
+        !autoProd && priority === 4
           ?
           <div className={classes.divLinkShort}>
             Intermediario:&nbsp;
@@ -161,6 +165,7 @@ const ProducerView = props => {
                 if (called && !loading && autoProd) {
                   return (
                     <FormProducer
+                      formRefHolders={formRefHolders}
                       formRefProd={formRefProd}
                       producer={subAgent || producer}
                       producers={filter(USERS_PRODUCERS_FRAGMENT, producers.users)}

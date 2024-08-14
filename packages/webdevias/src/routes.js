@@ -13,6 +13,8 @@ function routerSwitch (role) {
       return routesGuest
     case 'SUB_AGENT':
       return routesSubAgent
+    case 'COLLABORATOR':
+      return routesSubAgent
     case 'AGENT':
       return routesAgent
     case 'SUPER':

@@ -302,7 +302,7 @@ const VehiclesTable = props => {
     { columnName: 'value', type: 'tot_value' },
   ])
   const [defaultHiddenColumnNames] = useState(() => {
-    //return priority === 3 ? [] : ['prize']
+    //return priority === 4 ? [] : ['prize']
     //console.log('manage depending the priority', priority)
     return []
   })

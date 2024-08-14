@@ -135,7 +135,7 @@ export const MenuTypeProvider = memo(props => {
               </MenuItem>
             }
             {
-              (row.inPolicy && props.priority === 3) &&
+              (row.inPolicy && props.priority === 4) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
@@ -173,7 +173,7 @@ export const MenuTypeProvider = memo(props => {
               </MenuItem>
             }
             {
-              (state !== 'ACTIVE' && props.priority === 3) &&
+              (state !== 'ACTIVE' && props.priority === 4) &&
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}

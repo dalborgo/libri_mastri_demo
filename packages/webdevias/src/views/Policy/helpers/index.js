@@ -169,7 +169,7 @@ export function getProductDefinitions (pds) {
 }
 
 export function comparePolicy (new_, old) {
-  const excludedFields = ['id', '__typename', '_type', 'producer', 'company', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
+  const excludedFields = ['id', '__typename', '_type', 'producer', 'collaborators', 'company', '_createdAt', '_updatedAt', 'state', 'meta', 'number', '_code', 'signer', 'attachments', 'createdBy']
   const restNew = chain(new_).omit(excludedFields).omitBy(isEmpty).value()
   const restOld = chain(old).omit(excludedFields).omitBy(isEmpty).value()
   const d1 = cFunctions.difference(restNew, restOld)
@@ -192,13 +192,14 @@ export function comparePolicy (new_, old) {
 
 export function initPolicy (policy) {
   const {
-    productDefinitions: pds,
-    signer = null,
-    cosigners = [],
-    vehicles = [],
-    regFractions = [],
     attachments = [],
+    collaborators = [],
+    cosigners = [],
     paidFractions = {},
+    productDefinitions: pds,
+    regFractions = [],
+    signer = null,
+    vehicles = [],
   } = policy
   const newPD = pdsToArray(pds).map(val => (
     {
@@ -227,12 +228,13 @@ export function initPolicy (policy) {
   const holders = signer ? [signer, ...cosigners] : cosigners
   return {
     ...policy,
+    collaborators,
     vehicles: newVehicles,
     productDefinitions: newPD || {},
     holders,
     regFractions,
     attachments,
-    paidFractions: paidFractions || {}
+    paidFractions: paidFractions || {},
   }
 }
 

@@ -11,7 +11,7 @@ import { REGISTRIES } from 'queries/registries'
 import { gestError, useAsyncError } from 'helpers'
 import CircularIndeterminate from 'components/Progress/CircularIndeterminate'
 import { useParams } from 'react-router'
-import { ME } from 'queries/users'
+import { ME, USERS } from 'queries/users'
 
 function Body (props) {
   return (
@@ -20,6 +20,8 @@ function Body (props) {
         !props.loading && props.called
           ?
           <PolicyHoldersForm
+            collaboratorList={props.collaboratorList}
+            collaborators={props.collaborators}
             dispatch={props.dispatch}
             globalClass={props.globalClass}
             holders={props.holders}
@@ -34,13 +36,13 @@ function Body (props) {
   )
 }
 
-const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy }) => {
+const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy, collaborators, parent }) => {
   const throwError = useAsyncError()
   const { tab } = useParams()
   const client = useApolloClient()
   const { me: { priority, vat } } = client.readQuery({ query: ME })
   const filter = useMemo(() => {
-    if (priority === 3) {
+    if (priority === 4) {
       return undefined
     }
     return JSON.stringify({ producer: vat })
@@ -55,12 +57,18 @@ const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy }) =
     },
     onError: gestError(throwError),
   })
+ /* const { data: producers } = useQuery(USERS, {
+    onError: gestError(throwError),
+  })*/
+  /*console.log('producersCCC:', producers)*/
   const bodyProps = {
     loading,
     called,
     dispatch,
     globalClass,
     holders,
+    collaborators,
+    collaboratorList: parent?.children?.filter(row => row.role === 'COLLABORATOR') || [],
     innerRef,
     isPolicy,
     reg,
@@ -86,7 +94,7 @@ const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy }) =
                 />
               </ListItemIcon>
               <ListItemText
-                primary="Anagrafica Intestatari"
+                primary="Anagrafica Intestatari / Collaboratori"
                 primaryTypographyProps={{ variant: 'h5' }}
               />
             </ListItem>

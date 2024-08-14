@@ -281,6 +281,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const formRefComp = useRef(null)
   const formRefSub = useRef(null)
   const [statePolicy, dispatch] = useImmerReducer(reducerPolicy, policy, initPolicy)
+  const [producer, setProducer] = useState(statePolicy.producer)
+  const [subAgent, setSubAgent] = useState(statePolicy.subAgent)
   const [stateInsertModal, dispatchInsertModal] = useImmerReducer(reducerInsertModal, { index: -1, open: false })
   const [uploadFile] = useMutation(UPLOAD_POLICY_MUTATION)
   const { me } = client.readQuery({ query: ME })
@@ -298,6 +300,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       specialArrangements: (pds?.specialArrangements || pds?.specialArrangements === '') ? pds?.specialArrangements : statePolicy.specialArrangements || '',
       notes: (header?.notes || header?.notes === '') ? header?.notes : statePolicy.notes || '',
       holders: holders?.holders ?? statePolicy.holders,
+      collaborators: holders?.collaborators ?? statePolicy.collaborators,
     }
     if (statePolicy.number) {
       newPolicy.number = statePolicy.number
@@ -391,6 +394,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     }, [])
     //signer passando oggetto vuoto viene pulito nel salvataggio perché è di tipo oggetto in lounge
     let [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
+    let collaborators = holders?.collaborators ?? statePolicy.collaborators
     let producer = statePolicy?.producer
     const createdBy = statePolicy?.createdBy?.username ?? me.username
     const out = {
@@ -399,6 +403,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       _code: statePolicy.id,
       attachments: { files: statePolicy.attachments },
       cosigners,
+      collaborators,
       createdBy,
       producer,
       productDefinitions,
@@ -442,12 +447,14 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       return prev
     }, [])
     let [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
+    let collaborators = holders?.collaborators ?? statePolicy?.collaborators
     //signer passando oggetto vuoto viene pulito nel salvataggio perché è di tipo oggetto in lounge
     const out = {
       ...statePolicy,
       _code: statePolicy.id,
       attachments: { files: statePolicy.attachments },
       cosigners,
+      collaborators,
       createdBy: statePolicy?.createdBy?.username,
       isRecalculateFraction: header?.isRecalculateFraction || statePolicy.isRecalculateFraction,
       notes: (header?.notes || header?.notes === '') ? header?.notes : statePolicy.notes || '',
@@ -997,7 +1004,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           ...input.meta,
         }
         let dataProducer
-        if (me.priority === 3) {
+        if (me.priority === 4) {
           dataProducer = prodSelected?.producer || input?.producer
         } else {
           dataProducer = subSelected?.subAgent || input?.subAgent || prodSelected?.producer || input?.producer
@@ -1007,7 +1014,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           input.subAgent = dataProducer?.username
           //input.subAgent = subSelected?.subAgent?.username ?? input.subAgent?.username
         } else {
-          if (me.priority === 2) {
+          if (me.priority === 3) {
             input.producer = me.username
             input.subAgent = null
           } else {
@@ -1085,7 +1092,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       } else {
         if (stateCode === 'DRAFT') {
           let dataProducer
-          if (me.priority === 3) {
+          if (me.priority === 4) {
             dataProducer = prodSelected?.producer
           } else {
             dataProducer = subSelected?.subAgent || prodSelected?.producer || input?.producer
@@ -1094,7 +1101,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             input.producer = dataProducer?.father
             input.subAgent = dataProducer?.username
           } else {
-            if (me.priority === 2) {
+            if (me.priority === 3) {
               input.producer = me.username
               input.subAgent = null
             } else {
@@ -1218,7 +1225,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: newPds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
       const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
-      if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority === 3) {
+      if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority === 4) {
         enqueueSnackbar('L\'ultima rata non è stata pagata!', { variant: 'error' })
         return 'BLOCKED'
       }
@@ -1246,7 +1253,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const { values: newPds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
       const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
-      if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority === 3) {
+      if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority === 4) {
         return enqueueSnackbar('L\'ultima rata non è stata pagata, salvataggio non effettuato!', { variant: 'error' })
       }
       input.endDate = getPolicyEndDate(input.initDate, input.midDate)
@@ -1277,6 +1284,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
                     console.log('duplicatedPDS:', duplicatedPDS)*/
       const _code = getPolicyCode(statePolicy, header, isNew)
       const [signer = {}, ...cosigners] = holders?.holders ?? statePolicy.holders
+      const collaborators = holders?.collaborators ?? statePolicy.collaborators
       const createdBy = statePolicy?.createdBy?.username ?? me.username
       const producer = statePolicy?.producer?.username
       const subAgent = statePolicy?.subAgent?.username
@@ -1290,6 +1298,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         producer,
         productDefinitions,
         createdBy,
+        collaborators,
         cosigners,
         holders: undefined,
         regFractions: [],
@@ -1383,10 +1392,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         loadingDiff={loadingDiff}
         meta={statePolicy.meta}
         number={statePolicy.number}
-        producer={statePolicy.producer}
+        producer={producer}
         setOpenDiff={setOpenDiff}
+        setProducer={setProducer}
+        setSubAgent={setSubAgent}
         state={statePolicy.state}
-        subAgent={statePolicy.subAgent}
+        subAgent={subAgent}
+        formRefHolders={formRefHolders}
         top={statePolicy.top}
       />
       <PolicyHolderInsertModal
@@ -1432,11 +1444,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           {
             (tab === 'all' || tab === 'holders') &&
             <PolicyHolders
+              collaborators={statePolicy.collaborators}
               dispatch={dispatchInsertModal}
               globalClass={classes}
               holders={statePolicy.holders}
               innerRef={formRefHolders}
               isPolicy={statePolicy?.state?.isPolicy}
+              parent={subAgent || producer}
             />
           }
           {

@@ -170,7 +170,7 @@ const ExportMenu = memo(({
           </MenuItem>
         }
         {
-          (priority === 3 && isPolicy) &&
+          (priority === 4 && isPolicy) &&
           <MenuItem
             onClick={
               async () => {

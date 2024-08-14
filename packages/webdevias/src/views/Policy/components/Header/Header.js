@@ -198,7 +198,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
           return (
             <>
               {
-                priority === 3 ?
+                priority === 4 ?
                   <>
                     <PrintMenu classes={classes} items={policy}/>
                     <HeaderButton classes={classes} name="ACCEPTED" onClick={handleSave} text="Salva"/>
@@ -215,7 +215,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
         return (
           <>
             {
-              priority === 3 ?
+              priority === 4 ?
                 <>
                   {
                     state?.code === 'REST_QUBO' && priority !== 1 &&
@@ -270,7 +270,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
         return (
           <>
             {
-              priority === 3 &&
+              priority === 4 &&
               <PrintMenu classes={classes} items={proposalAndPolicy}/>
             }
             <Button
@@ -294,7 +294,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
               </Button>
             }
             {
-              priority === 3 &&
+              priority === 4 &&
               <>
                 {
                   producer &&
@@ -365,8 +365,11 @@ const Header = props => {
     handlePolicySave,
     handleModeChange,
     dispatch,
-    producer: prodDefault,
-    subAgent: subAgentDefault,
+    setProducer,
+    producer,
+    subAgent,
+    setSubAgent,
+    formRefHolders,
     handlePrint, state, formRefProd, formRefSub, meta, top, loadDiff, calledDiff, loadingDiff, setOpenDiff,
     formRefComp,
   } = props
@@ -374,9 +377,7 @@ const Header = props => {
   const classes = useStyles()
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
-  const [producer, setProducer] = useState(prodDefault)
   const [company, setCompany] = useState(companyDefault || 'TUA ASSICURAZIONI SPA')
-  const [subAgent, setSubAgent] = useState(subAgentDefault)
   const stateChip = getPolicyState(state, meta, top, priority)
   const [open, setOpen] = React.useState(false)
   const handleClickOpen = () => {
@@ -417,7 +418,7 @@ const Header = props => {
                   <>
                     Doc n.&nbsp;
                     {
-                      priority === 3 ?
+                      priority === 4 ?
                         <>
                           <Link
                             color={'inherit'}
@@ -443,7 +444,7 @@ const Header = props => {
                     }
                   </>
                   :
-                  priority === 3 ? 'Nuova Offerta' : 'Nuova Proposta'
+                  priority === 4 ? 'Nuova Offerta' : 'Nuova Proposta'
               } &nbsp;{number ? stateChip : ''}
             </span>
             <ChangeNumberDialog dispatch={dispatch} number={number} onClose={handleClose} open={open}/>
@@ -482,7 +483,7 @@ const Header = props => {
           {
             (() => {
               switch (priority) {
-                case 3:
+                case 4:
                   return (
                     <>
                       <ProducerView
@@ -492,6 +493,7 @@ const Header = props => {
                         setProducer={setProducer}
                         state={state}
                         subAgent={subAgent}
+                        formRefHolders={formRefHolders}
                       />
                       <CompanyView
                         company={company}
@@ -502,7 +504,7 @@ const Header = props => {
                       />
                     </>
                   )
-                case 2:
+                case 3:
                   return (
                     <SubAgentView
                       formRefSub={formRefSub}

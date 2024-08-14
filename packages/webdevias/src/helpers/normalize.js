@@ -54,13 +54,13 @@ export function getPolicyState (state = {}, meta = {}, top, priority) {
   const Rev = top ? <ChipRevision version={version}/> : null
   switch (state?.code) {
     case 'TO_QUBO':
-      if (priority === 3) {
+      if (priority === 4) {
         return <><Chip icon={<Notification fontSize={'small'}/>} label="Nuova Proposta"/>{Rev}</>
       } else {
         return <><Chip icon={<Mail fontSize={'small'}/>} label="Proposta Inviata"/>{Rev}</>
       }
     case 'TO_AGENT':
-      if (priority === 3) {
+      if (priority === 4) {
         return <><Chip icon={<Mail fontSize={'small'}/>} label="Offerta inviata"/>{Rev}</>
       } else {
         return <><Chip icon={<Notification fontSize={'small'}/>} label="Nuova Offerta"/>{Rev}</>
@@ -91,7 +91,7 @@ export function getPolicyState (state = {}, meta = {}, top, priority) {
       if (meta.modified === true) {
         return <Chip icon={<Icon path={mdiTimerSand} size={1}/>} label="In lavorazione"/>
       } else {
-        if (priority === 3) {
+        if (priority === 4) {
           return <><Chip icon={<Notification fontSize={'small'}/>} label="Nuova Proposta"/>{Rev}</>
         } else {
           return <><Chip icon={<Mail fontSize={'small'}/>} label="Proposta inviata"/>{Rev}</>
@@ -101,7 +101,7 @@ export function getPolicyState (state = {}, meta = {}, top, priority) {
       if (meta.modified === true) {
         return <Chip icon={<Icon path={mdiTimerSand} size={1}/>} label="In lavorazione"/>
       } else {
-        if (priority === 3) {
+        if (priority === 4) {
           return <><Chip icon={<Mail fontSize={'small'}/>} label="Offerta inviata"/>{Rev}</>
         } else {
           return <><Chip icon={<Notification fontSize={'small'}/>} label="Nuova Offerta"/>{Rev}</>
@@ -115,16 +115,16 @@ export function getPolicyState (state = {}, meta = {}, top, priority) {
 export function getPolicyPermissions (state = {}, priority) {
   const { code } = state
   let editAccess = false
-  if (priority === 3 && !['TO_AGENT', 'REST_AGENT'].includes(code)) {
+  if (priority === 4 && !['TO_AGENT', 'REST_AGENT'].includes(code)) {
     editAccess = true
   }
-  if (priority < 3 && !['TO_QUBO', 'REST_QUBO', 'ACCEPTED'].includes(code)) {
+  if (priority < 4 && !['TO_QUBO', 'REST_QUBO', 'ACCEPTED'].includes(code)) {
     editAccess = true
   }
   return {
     editAccess,
-    agentView: priority < 3 && code !== 'TO_QUBO',
-    quboView: priority === 3 && code === 'TO_QUBO',
+    agentView: priority < 4 && code !== 'TO_QUBO',
+    quboView: priority === 4 && code === 'TO_QUBO',
   }
 }
 
@@ -617,6 +617,7 @@ export const getRolesArray = (skip = []) => {
 }
 
 const ROLES_ = {
+  COLLABORATOR: 'Collaboratore',
   SUB_AGENT: 'Filiale',
   AGENT: 'Intermediario',
   SUPER: 'Amministratore',
@@ -638,6 +639,7 @@ const COLORS_ = {
   SUPER: colors.orange[600],
   AGENT: colors.blue[600],
   SUB_AGENT: colors.green[600],
+  COLLABORATOR: colors.grey[600],
 }
 const CLASS_ = {
   SUPER: {
@@ -647,6 +649,9 @@ const CLASS_ = {
     backgroundColor: deepOrange[500],
   },
   SUB_AGENT: {
+    backgroundColor: deepOrange[500],
+  },
+  COLLABORATOR: {
     backgroundColor: deepOrange[500],
   },
 }
@@ -667,6 +672,7 @@ export const useRoleColorBase = () => ({
   SUPER: '#FB8C00',
   AGENT: '#1E88E5',
   SUB_AGENT: '#43A047',
+  COLLABORATOR: '#717272',
 })
 
 export const roleName = role => {
