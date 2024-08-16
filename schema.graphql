@@ -35,6 +35,7 @@ type ChildUser implements User {
     additional_emails: [String]
     address: String
     addressNumber: String
+    children: [ChildUser]
     city: String
     email: String
     father: String
