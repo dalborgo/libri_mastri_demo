@@ -1,5 +1,6 @@
 import { reqAuthGet, reqAuthPost } from '../auth'
 import express from 'express'
+import genias from './genias'
 import files from './files'
 import prints from './prints'
 import utils from './utils'
@@ -7,6 +8,7 @@ import utils from './utils'
 const router = express.Router()
 require('express-async-errors')
 
+genias.addRouters(router)
 files.addRouters(router)
 prints.addRouters(router)
 utils.addRouters(router)

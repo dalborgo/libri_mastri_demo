@@ -7,7 +7,15 @@ import path_ from 'path'
 import fs from 'fs'
 import { chain, deburr, find, isEmpty, isPlainObject, snakeCase, uniqBy } from 'lodash'
 import config from 'config'
-import { getConfirmOffer, getConfirmProposal, getNewChanges, getNewOffer, getNewPolicy, getNewProposal } from './mails'
+import {
+  getConfirmOffer,
+  getConfirmProposal,
+  getNewChanges,
+  getNewChangesConfirmed,
+  getNewOffer,
+  getNewPolicy,
+  getNewProposal
+} from './mails'
 import mkdirp from 'mkdirp'
 import { CustomValidationError } from '../../errors'
 import { USED_POLICY_NUMBERS } from './utils'
@@ -422,7 +430,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
     primaryQuboEmail = 'test@astenpos.it'
     primaryOrigin = 'http://178.175.201.217:5031'
   } else {
-    prodEmail = 'valentina.santorum@qubo-italia.eu'
+    prodEmail = ['valentina.santorum@qubo-italia.eu', ...collaboratorsEmails]
   }
   const number = code.replace('_', '/')
   if (stateCode === 'TO_AGENT') {
@@ -449,7 +457,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
   }
 }
 
-export async function manageMailEmitted (state, producer = {}, code, userRole, list = [], signer, userId = '', collaborators = [] ) {
+export async function manageMailEmitted_ (state, producer = {}, code, userRole, list = [], signer, userId = '', collaborators = []) {
   let { email: prodEmail } = producer //gestire filiale
   const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
   let [primaryQuboEmail] = QUBO_EMAILS
@@ -469,7 +477,55 @@ export async function manageMailEmitted (state, producer = {}, code, userRole, l
   }
   //la conferma deve andare ai clienti.
   const html = getNewChanges(number, primaryOrigin, code, formattedList.join('\n'), signer_, userId)
-  return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : QUBO_EMAILS, `Libri Matricola - Modifica stato di rischio - Polizza n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
+  return email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `Libri Matricola - Modifica stato di rischio - Polizza n. ${number} - ${signer_}`, html, null, null, primaryQuboEmail)
+}
+
+const getState = state => {
+  switch (state) {
+    case 'ADDED_CONFIRMED':
+      return 'INCL'
+    case 'DELETED_CONFIRMED':
+      return 'ESCL'
+    default:
+      return ''
+  }
+}
+
+export async function manageMailEmitted (state, savedPolicy, code, userRole, list = [], signer, userId = '', collaborators = []) {
+  let { email: prodEmail } = savedPolicy.producer || {} //gestire filiale
+  const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
+  let [primaryQuboEmail] = QUBO_EMAILS
+  let [primaryOrigin] = ORIGIN
+  const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
+  if (!cFunctions.isProd()) { //per test in sviluppo
+    prodEmail = 'dalborgo.m@asten.it'
+    primaryOrigin = 'http://178.175.201.217:5031'
+  } else {
+    prodEmail = 'valentina.santorum@qubo-italia.eu'
+  }
+  const number = code.replace('_', '/')
+  const partial = { ok: true, message: '' }
+  for (let vehicle of list) {
+    const { licensePlate, state, counter } = vehicle
+    if(!state.includes('CONFIRMED')) {
+      const html = getNewChanges(number, primaryOrigin, code, signer_, userId, vehicle, savedPolicy)
+      const {
+        ok,
+        message,
+      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} CONFERMA DI ${getState(state)} ${licensePlate}`, html, null, null, primaryQuboEmail)
+      partial.ok = ok
+      partial.message = message
+    } else {
+      const html = getNewChangesConfirmed(number, primaryOrigin, code, signer_, userId, vehicle)
+      const {
+        ok,
+        message,
+      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} CONFERMA DI ${getState(state)} ${licensePlate} cod: ${counter}`, html, null, null, primaryQuboEmail)
+      partial.ok = ok
+      partial.message = message
+    }
+  }
+  return partial
 }
 
 

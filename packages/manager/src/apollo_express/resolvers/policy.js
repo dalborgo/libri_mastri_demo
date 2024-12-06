@@ -236,7 +236,7 @@ export default {
           const {
             ok,
             message,
-          } = await manageMailEmitted(state, savedPolicy.producer, restInput._code, userRole, toSend, policy.signer, userId, input.collaborators)
+          } = await manageMailEmitted(state, savedPolicy, restInput._code, userRole, toSend, policy.signer, userId, input.collaborators)
           if (!ok) { log.warn(message) }
         }
       }

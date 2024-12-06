@@ -13,6 +13,7 @@ import { CLONE_POLICY, UPDATE_POLICY } from 'queries/policies'
 import { useConfirm } from 'material-ui-confirm'
 import log from '@adapter/common/src/log'
 import { useHistory, useLocation } from 'react-router-dom'
+import ChangePasswordDialog from './ChangePasswordDialog'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -57,9 +58,9 @@ const Policies = ({ enqueueSnackbar }) => {
         if (toInclude && filters.docSubAgent && !curr.subAgent?.username?.toLowerCase().includes(filters.docSubAgent.toLowerCase().trim())) {
           toInclude &= false
         }
-       /* if (toInclude && filters.docCollaborator && !curr.collaborator?.username?.toLowerCase().includes(filters.docCollaborator.toLowerCase().trim())) {
-          toInclude &= false
-        }*/
+        /* if (toInclude && filters.docCollaborator && !curr.collaborator?.username?.toLowerCase().includes(filters.docCollaborator.toLowerCase().trim())) {
+           toInclude &= false
+         }*/
         toInclude && prev.push(curr)
         return prev
       }, [])
@@ -67,7 +68,7 @@ const Policies = ({ enqueueSnackbar }) => {
       return data.policies
     }
   }, [data, isFiltered, filters.docNumber, filters.docSigner, filters.docProducer, filters.docSubAgent])
-  const { me: { priority } } = client.readQuery({ query: ME })
+  const { me: { priority }, me } = client.readQuery({ query: ME })
   const [delPolicy] = useMutation(DELETE_POLICY, {
     onError: gestError(throwError, enqueueSnackbar),
   })
@@ -164,6 +165,7 @@ const Policies = ({ enqueueSnackbar }) => {
           :
           <CircularIndeterminate/>
       }
+      <ChangePasswordDialog {...me}/>
     </Page>
   )
 }

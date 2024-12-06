@@ -133,6 +133,11 @@ const TopBar = props => {
             />
           </RouterLink>
           <div className={classes.flexGrow}/>
+          <button
+            id="hidden_exit"
+            onClick={handleLogout}
+            style={{ visibility: 'hidden' }}
+          />
           {
             (!lgDown && !neverShowMenu) && (
               <Button

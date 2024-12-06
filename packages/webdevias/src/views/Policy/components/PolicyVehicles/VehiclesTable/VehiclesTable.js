@@ -162,6 +162,14 @@ const VehiclesTable = props => {
     return valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   }, [policy.productDefinitions, tablePd])
   const [exclusionTypeList] = useState(() => cFunctions.getExclusionTypeList())
+  const [vehicleUseList] = useState(() => [
+    'TEST 1',
+    'TEST 2',
+    'TEST 3',
+    'TEST 4',
+    'TEST 5',
+    'TEST 6',
+  ])
   const productList = useMemo(() => {
     const init = vehicleTypes.reduce((prev, curr) => {
       prev[curr.id] = []
@@ -223,6 +231,10 @@ const VehiclesTable = props => {
         title: 'Q.li/Kw/Posti',
       },
       {
+        name: 'vehicleUse',
+        title: 'Uso Veicolo',
+      },
+      {
         name: 'productCode',
         title: 'Codice Prodotto',
         getCellValue: getProdCode,
@@ -233,6 +245,16 @@ const VehiclesTable = props => {
       {
         name: 'coverageType',
         title: 'Tipo Copertura',
+        getCellValue: getPdsData,
+      },
+      {
+        name: 'overdraft',
+        title: 'Scoperto',
+        getCellValue: getPdsData,
+      },
+      {
+        name: 'excess',
+        title: 'Franchigia',
         getCellValue: getPdsData,
       },
       { name: 'value', title: '€ Valore' },
@@ -266,7 +288,7 @@ const VehiclesTable = props => {
     getSearchFilter(['value', 'registrationDate', 'hasTowing', 'hasGlass', 'weight', 'prize', 'payment', 'vatIncluded'])
   )
   
-  const [numberColumns] = useState(['value', 'prize', 'weight', 'payment'])
+  const [numberColumns] = useState(['value', 'prize', 'weight', 'payment', 'overdraft', 'excess'])
   const [booleanColumns] = useState(['hasGlass', 'hasTowing', 'vatIncluded'])
   const [textColumns] = useState(['licensePlate'])
   const [leftColumns] = useState(['state', 'licensePlate', 'startDate', 'startHour', 'finishDate', 'exclusionType', TableEditColumn.COLUMN_TYPE, TableRowDetail.COLUMN_TYPE])
@@ -280,9 +302,12 @@ const VehiclesTable = props => {
     { columnName: 'startDate', align: 'center', width: 120 },
     { columnName: 'startHour', align: 'center', width: 80 },
     { columnName: 'finishDate', align: 'center', width: 120 },
+    { columnName: 'vehicleUse', align: 'center' },
     { columnName: 'exclusionType', align: 'center' },
     { columnName: 'vehicleType', align: 'center' },
     { columnName: 'weight', align: 'right' },
+    { columnName: 'excess', align: 'right' },
+    { columnName: 'overdraft', align: 'right' },
     { columnName: 'registrationDate', align: 'center', width: 120 },
     { columnName: 'brand', align: 'center' },
     { columnName: 'model', align: 'center' },
@@ -360,6 +385,7 @@ const VehiclesTable = props => {
           const startDate = changed[id]['startDate']
           const finishDate = changed[id]['finishDate']
           const exclusionType = changed[id]['exclusionType'] || exclusionTypeList[0]
+          const vehicleUse = changed[id]['vehicleUse'] || vehicleUseList[0]
           let effStartDate = 'startDate' in changed[id] ? startDate : row.startDate
           if (effStartDate?.isValid) {
             effStartDate = effStartDate.isValid() ? effStartDate : row.startDate
@@ -371,6 +397,7 @@ const VehiclesTable = props => {
           if (['ACTIVE', 'DELETED'].includes(row.state)) {
             updateRow = {
               ...row,
+              vehicleUse,
               exclusionType: effFinishDate ? exclusionType : undefined,
               startDate: effFinishDate ? policy.initDate : '',
               finishDate: effFinishDate,
@@ -381,6 +408,7 @@ const VehiclesTable = props => {
           } else if (['ADDED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(row.state)) {
             updateRow = {
               ...row,
+              vehicleUse,
               exclusionType: effFinishDate ? exclusionType : undefined,
               startDate: effStartDate,
               finishDate: effFinishDate,
@@ -433,7 +461,7 @@ const VehiclesTable = props => {
     }
     hasChanged && dispatch({ type: 'setVehicles', vehicles: changedRows })
     //if (added) {scrollToRow(startingAddedId)}
-  }, [defaultVehicleCode, dispatch, enqueueSnackbar, exclusionTypeList, isPolicy, pdsObj, policy, productList, rows, vehicleTypes])
+  }, [defaultVehicleCode, dispatch, enqueueSnackbar, exclusionTypeList, isPolicy, pdsObj, policy, productList, rows, vehicleTypes, vehicleUseList])
   const commandWithScroll = useCallback(props => {
     const { id, onExecute } = props
     let CommandButton = commandComponents[id]
@@ -476,6 +504,9 @@ const VehiclesTable = props => {
     if (column.name === 'exclusionType') {
       return <LookupEditCell {...props} hide={shortEditExclInfo} values={exclusionTypeList}/>
     }
+    if (column.name === 'vehicleUse') {
+      return <LookupEditCell {...props} values={vehicleUseList}/>
+    }
     if (column.name === 'licensePlate' && shortEdit) {
       return <FastBaseCell {...props}/>
     }
@@ -498,7 +529,7 @@ const VehiclesTable = props => {
       return <FastBaseCell {...props} defaultValue={getPolicyEndDate(policy.initDate, policy.midDate)}/>
     }
     return <TableEditRow.Cell {...props}/>
-  }, [exclusionTypeList, isPolicy, policy.initDate, policy.midDate, productListFlat, vehicleList])
+  }, [exclusionTypeList, isPolicy, policy.initDate, policy.midDate, productListFlat, vehicleList, vehicleUseList])
   
   const OptimizedGridDetailContainerBase = useCallback(({ row }) => {
     const { licensePlate, state, attachments } = row

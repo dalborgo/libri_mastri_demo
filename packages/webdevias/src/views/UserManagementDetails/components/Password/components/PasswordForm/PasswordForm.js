@@ -28,7 +28,9 @@ import Visibility from '@material-ui/icons/Visibility'
 import VisibilityOff from '@material-ui/icons/VisibilityOff'
 
 const useStyles = makeStyles(theme => ({
-  root: {},
+  root: {
+    maxWidth: 500,
+  },
   saveButton: {
     color: theme.palette.white,
     backgroundColor: colors.green[600],
@@ -40,12 +42,13 @@ const useStyles = makeStyles(theme => ({
 
 const PasswordSchema = object().shape({
   password: string()
-    .required('Obbligatorio!'),
+    .required('Obbligatorio!')
+    .min(4, 'La password deve contenere almeno 4 caratteri!'),
 })
 
 const focus = event => event.target.select()
 const PasswordForm = props => {
-  const { enqueueSnackbar, username } = props
+  const { enqueueSnackbar, username, me } = props
   const throwError = useAsyncError()
   const classes = useStyles()
   const [updatePassword, { client }] = useMutation(UPDATE_USER_PASSWORD, {
@@ -68,8 +71,10 @@ const PasswordForm = props => {
     if (response?.data?.updatePassword) {
       enqueueSnackbar('Password aggiornata', { variant: 'success' })
       resetForm()
-    } else {
-      enqueueSnackbar('Errore aggiornamento password!')
+    /*  if(username === me?.username) {
+        const button = document.getElementById('hidden_exit')
+        button && button.click()
+      }*/
     }
   }, [client, enqueueSnackbar, updatePassword, username])
   return (
@@ -97,7 +102,6 @@ const PasswordForm = props => {
                   >
                     <Grid
                       item
-                      md={6}
                       xs={12}
                     >
                       <FormControl fullWidth variant="outlined">
@@ -134,16 +138,6 @@ const PasswordForm = props => {
                         }
                       </FormControl>
                     </Grid>
-                    <Grid
-                      item
-                      md={6}
-                      xs={12}
-                    />
-                    <Grid
-                      item
-                      md={3}
-                      xs={12}
-                    />
                   </Grid>
                 </CardContent>
                 <Divider/>

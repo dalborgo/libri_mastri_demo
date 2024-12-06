@@ -77,7 +77,7 @@ export const MenuTypeProvider = memo(props => {
     }
     const classes = useStyles()
     const isInclusion = useMemo(() => ['ADDED', 'ADDED_CONFIRMED'].includes(state), [state])
-    if ((state === 'ACTIVE' && !row.inPolicy) || (props.priority !== 3 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
+    if ((state === 'ACTIVE' && !row.inPolicy) || (props.priority !== 4 && ['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(state))) {
       return null
     } else {
       const counter = isInclusion ? row.includedCounter || row.counter || '' : row.excludedCounter || row.counter || ''

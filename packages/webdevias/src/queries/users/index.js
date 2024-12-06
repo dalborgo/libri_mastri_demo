@@ -21,7 +21,7 @@ export const RAW_CHILDREN_FROM_LIST = (gql`
           }`
 )
 export const SELECT_USERS_FRAGMENT = (gql`
-          fragment selectUserList on MainUser {
+          fragment selectUserList on User {
             id
             username
             role
@@ -62,9 +62,11 @@ export const USER_COMPLETE_FRAGMENT = (gql`
             id
             _createdAt,
             _updatedAt,
+            active
             username
             role
             email
+            lastPasswordChangeDate
             longName
             address
             addressNumber
@@ -90,6 +92,7 @@ export const USER_COMPLETE_FRAGMENT = (gql`
 )
 export const USER_EDIT_FRAGMENT = (gql`
           fragment editInput on User {
+            active
             email
             role
             username
@@ -116,10 +119,12 @@ export const USER_OPTIONS_EDIT_FRAGMENT = (gql`
 )
 export const USER_ADD_FRAGMENT = (gql`
           fragment addInput on User {
+            active
             email
             password
             role
             username
+            lastPasswordChangeDate
             longName
             address
             addressNumber
@@ -137,6 +142,7 @@ export const USER_ACCESS_FRAGMENT = (gql`
             id
             username
             role
+            lastPasswordChangeDate
             vat
             ... on ChildUser {
               father

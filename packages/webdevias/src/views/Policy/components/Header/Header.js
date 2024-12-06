@@ -117,7 +117,7 @@ function PrintMenu (props) {
   const [anchorEl, setAnchorEl] = React.useState(null)
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
-  if (priority !== 3) {// blocco menu per non qubo
+  if (priority !== 4) {// blocco menu per non qubo
     return null
   }
   const handleClick = (event) => {
@@ -244,7 +244,7 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
         return (
           <>
             {
-              priority !== 3 && !meta.toDoc && !top ?
+              priority !== 4 && !meta.toDoc && !top ?
                 <>
                   {
                     meta?.modified === false && priority !== 1 &&
@@ -282,15 +282,15 @@ function getSaveButtons (state = {}, meta = {}, top, priority, producer, number,
               {number ? 'Salva' : 'Salva bozza'}
             </Button>
             {
-              (producer || priority !== 3) && priority !== 1 && //blocco invio sub_agent
+              (producer || priority !== 4) && priority !== 1 && //blocco invio sub_agent
               <Button
                 className={classes.whiteButton}
                 disableFocusRipple
-                name={priority !== 3 ? 'TO_QUBO' : 'TO_AGENT'}
+                name={priority !== 4 ? 'TO_QUBO' : 'TO_AGENT'}
                 onClick={handleSave}
                 variant="outlined"
               >
-                Invia a {priority !== 3 ? 'Qubo' : truncate(producer?.username, { length: 18 })}
+                Invia a {priority !== 4 ? 'Qubo' : truncate(producer?.username, { length: 18 })}
               </Button>
             }
             {

@@ -4,7 +4,7 @@ import { Typography } from '@material-ui/core'
 import { useMutation, useQuery } from '@apollo/react-hooks'
 import { Page, Paginate, SearchBar } from 'components'
 import { Header, UserCardAlt } from './components'
-import { DELETE_USER, MAIN_USERS, USERS } from 'queries'
+import { DELETE_USER, MAIN_USERS, TO_SELECT_USERS, USERS } from 'queries'
 import log from '@adapter/common/src/log'
 import { gestError, useAsyncError } from 'helpers'
 import CircularIndeterminate from 'components/Progress/CircularIndeterminate'
@@ -49,7 +49,7 @@ const Users = ({ enqueueSnackbar }) => {
         },
       },
       update: (cache) => {
-        let newData, dataMainUsers
+        let newData, dataMainUsers, dataSelectUsers
         try { dataMainUsers = cache.readQuery({ query: MAIN_USERS })} catch (err) {
           log.warn('MainUserCache not present!')
         }
@@ -60,6 +60,17 @@ const Users = ({ enqueueSnackbar }) => {
           })
           newDataMainUsers.mainUsers = sortBy(newDataMainUsers.mainUsers, 'id')
           cache.writeQuery({ query: MAIN_USERS, data: newDataMainUsers })
+        }
+        try { dataSelectUsers = cache.readQuery({ query: TO_SELECT_USERS })} catch (err) {
+          log.warn('MainUserSelectCache not present!')
+        }
+        if (dataSelectUsers) {
+          const newDataSelectUsers = { ...dataSelectUsers }
+          remove(newDataSelectUsers.toSelectUsers, function (obj) {
+            return obj.id === user.id
+          })
+          newDataSelectUsers.toSelectUsers = sortBy(newDataSelectUsers.toSelectUsers, 'id')
+          cache.writeQuery({ query: TO_SELECT_USERS, data: newDataSelectUsers })
         }
         try {
           const data = cache.readQuery({ query: USERS })

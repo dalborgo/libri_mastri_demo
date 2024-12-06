@@ -5,11 +5,13 @@ import { getApolloError } from '../errors'
 
 const TYPE = 'USER'
 const userSchema = lounge.schema({
+  active: Boolean,
   address: String,
   addressNumber: String,
   city: String,
   email: String,
   father: String,
+  lastPasswordChangeDate: String,
   longName: String,
   options: {
     neverShowMenu: Boolean,

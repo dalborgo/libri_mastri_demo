@@ -21,7 +21,7 @@ import {
   OutlinedInput,
 } from '@material-ui/core'
 import { FastField, Field, Form, Formik } from 'formik'
-import { MAIN_USERS, USER_ADD_FRAGMENT } from 'queries/users'
+import { TO_SELECT_USERS, USER_ADD_FRAGMENT } from 'queries/users'
 import { object, string } from 'yup'
 import { gestError, getRolesArray, roleName, useAsyncError } from 'helpers'
 import { useQuery } from '@apollo/react-hooks'
@@ -59,7 +59,7 @@ const focus = event => event.target.select()
 const CreationCard = props => {
   const { className, handleCreate } = props
   const throwError = useAsyncError()
-  const { data, loading, called } = useQuery(MAIN_USERS, {
+  const { data, loading, called } = useQuery(TO_SELECT_USERS, {
     onError: gestError(throwError),
   })
   const [visibility, setVisibility] = useState(false)
@@ -68,11 +68,11 @@ const CreationCard = props => {
   }
   log.debug('called', called)
   log.debug('loading', loading)
-  const { mainUsers } = data || {}
+  const { toSelectUsers } = data || {}
   const classes = useStyles()
   const roles = useMemo(() => getRolesArray(['GUEST']), [])
   log.debug('roles', roles)
-  log.debug('mainUsers', mainUsers)
+  log.debug('toSelectUsers', toSelectUsers)
   return (
     <Card
       className={clsx(classes.root, className)}
@@ -86,7 +86,7 @@ const CreationCard = props => {
               initialValues={
                 {
                   ...cGraphQL.formInitialByFragment(USER_ADD_FRAGMENT),
-                  father: mainUsers[0].id,
+                  father: toSelectUsers[0].id,
                   role: 'AGENT',
                 }
               }
@@ -310,7 +310,7 @@ const CreationCard = props => {
                           xs={12}
                         >
                           {
-                            values.role === 'SUB_AGENT'
+                            ['SUB_AGENT', 'COLLABORATOR'].includes(values.role)
                               ?
                               <Field
                                 component={TextField}
@@ -320,21 +320,25 @@ const CreationCard = props => {
                                     shrink: true,
                                   }
                                 }
-                                label="Intermediario"
+                                label={values.role === 'SUB_AGENT' ? 'Intermediario' : 'Intermediario / Filiale'}
                                 name="father"
                                 select
                                 SelectProps={{ native: true }}
                                 variant="outlined"
                               >
                                 {
-                                  mainUsers.map(mainUser => (
-                                    <option
-                                      key={mainUser.id}
-                                      value={mainUser.id}
-                                    >
-                                      {roleName(mainUser.username)}
-                                    </option>
-                                  ))
+                                  toSelectUsers.reduce((prev, curr) => {
+                                    if (values.role === 'SUB_AGENT' && curr.role === 'SUB_AGENT') {return prev}
+                                    prev.push(
+                                      <option
+                                        key={curr.id}
+                                        value={curr.id}
+                                      >
+                                        {roleName(curr.username)}
+                                      </option>
+                                    )
+                                    return prev
+                                  }, [])
                                 }
                               </Field>
                               :

@@ -48,7 +48,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
     history.push(value)
   }
   const { data, calledQ, loadingQ, client } = useQuery(USER, { variables: { id: userId } })
-  const { me: { priority } } = client.readQuery({ query: ME })
+  const { me: { priority }, me } = client.readQuery({ query: ME })
   const [edit, { calledM, loadingM }] = useMutation(EDIT_USER, {
     onError: gestError(throwError, enqueueSnackbar),
   })
@@ -178,7 +178,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
             <div className={classes.content}>
               {tab === 'summary' && <General {...user} handleEdit={handleEdit}/>}
               {tab === 'options' && <Options {...user}/>}
-              {tab === 'password' && <Password {...user}/>}
+              {tab === 'password' && <Password {...user} me={me}/>}
             </div>
           </>
           :

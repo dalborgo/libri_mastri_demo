@@ -23,7 +23,11 @@ function extractFieldsFromFragment (fragment, skip = []) {
 function formInitialByFragment (fragment, obj = {}, skip = []) {
   const fields = extractFieldsFromFragment(fragment, skip)
   return fields.reduce((prev, curr) => {
-    prev[curr] = obj[curr] ? obj[curr].trim() : ''
+    if(typeof obj[curr] === 'string') {
+      prev[curr] = obj[curr] ? obj[curr].trim() : ''
+    } else {
+      prev[curr] = obj[curr]
+    }
     return prev
   }, {})
 }

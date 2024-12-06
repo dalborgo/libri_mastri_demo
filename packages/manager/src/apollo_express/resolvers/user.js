@@ -3,6 +3,7 @@ import { User } from '../models'
 import { CustomUserInputError, CustomValidationError } from '../errors'
 import { cErrors } from '@adapter/common'
 import log from '@adapter/common/src/winston'
+import { compare } from 'bcryptjs'
 
 const USER_GUEST = {
   id: 'guest',
@@ -118,7 +119,11 @@ export default {
     },
     updatePassword: async (root, { password, username }) => {
       const user = await User.findById(username)
-      const updatedUser = Object.assign(user, { password })
+      const samePassword = await compare(password, user.password)
+      if (samePassword) {
+        throw new CustomUserInputError('Password uguale alla precedente!', { password })
+      }
+      const updatedUser = Object.assign(user, { password, lastPasswordChangeDate: (new Date()).toISOString() })
       await updatedUser.save()
       return true
     },

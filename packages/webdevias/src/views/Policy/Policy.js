@@ -65,6 +65,7 @@ import {
 } from './helpers'
 import { manageFile } from 'utils/axios'
 import { calculateRows } from './components/PolicyProductDefinition/helpers'
+import ConfirmDialog from './components/ConfirmDialog'
 //region STYLE
 const useStyles = makeStyles(theme => {
   const style = {
@@ -247,6 +248,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const [uploadErrors, setUploadErrors] = useState([])
   const [openDiff, setOpenDiff] = useState(false)
   const [uploadMode, setUploadMode] = useState('list')
+  const [confirmState, setConfirmState] = useState({ open: false })
   const { tab } = useParams()
   const isNew = matchPath(router.location.pathname, {
     path: '/policies/new/:tab',
@@ -630,7 +632,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             days,
           } = hasRegulation === 'SI' ? calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate) : calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
           const prize = calculatePrizeTable(tablePd, statePolicy, vehicle, true)
-          totTaxable += payment
+          totTaxable = Math.round((totTaxable + payment) * 1000000) / 1000000
           if (hasRegulation === 'SI') {
             newVehicles.push({
               ...vehicle,
@@ -953,6 +955,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const handleSave = useCallback(async event => {
     try {
       const stateCode = event.currentTarget.name || 'DRAFT'
+      console.log('stateCodeS:', stateCode)
       /* eslint-disable no-unused-vars */
       const { values: header, resetForm: resetFormHeader } = formRefHeader.current || {}
       const { values: pds, resetForm: resetFormPDS, setFieldValue } = formRefPDS.current || {}
@@ -1209,6 +1212,19 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [tab, calculatePolicy, client, policy, isNew, dispatch, statePolicy, gs.offset, me.priority, me.username, newPolicy, editPolicy, history, enqueueSnackbar])
   //endregion
   
+  // region HANDLE PRE-SAVE
+  const handlePreSave = useCallback(async event => {
+    const stateCode = event.currentTarget.name || 'DRAFT'
+    if (stateCode === 'TO_POLICY') {
+      const { values: currentValues } = formRefHolders.current || {}
+      const dummyEvent = { currentTarget: { name: stateCode } }
+      setConfirmState({ ...confirmState, open: true, save: async () => await handleSave(dummyEvent), currentValues })
+    } else {
+      await handleSave(event)
+    }
+  }, [confirmState, handleSave])
+  //endregion
+  
   const checkPolicy = useCallback(async () => {
     try {
       const { values: header } = formRefHeader.current || {}
@@ -1382,12 +1398,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         company={statePolicy.company}
         dispatch={dispatch}
         formRefComp={formRefComp}
+        formRefHolders={formRefHolders}
         formRefProd={formRefProd}
         formRefSub={formRefSub}
         handleModeChange={handleModeChange}
         handlePolicySave={handlePolicySave}
         handlePrint={handlePrint}
-        handleSave={handleSave}
+        handleSave={handlePreSave}
         loadDiff={loadDiff}
         loadingDiff={loadingDiff}
         meta={statePolicy.meta}
@@ -1398,7 +1415,6 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         setSubAgent={setSubAgent}
         state={statePolicy.state}
         subAgent={subAgent}
-        formRefHolders={formRefHolders}
         top={statePolicy.top}
       />
       <PolicyHolderInsertModal
@@ -1523,6 +1539,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
             />
           }
         </div>
+        <ConfirmDialog setState={setConfirmState} state={confirmState}/>
       </div>
     </div>
   )

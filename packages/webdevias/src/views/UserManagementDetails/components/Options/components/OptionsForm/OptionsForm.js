@@ -13,7 +13,9 @@ import { filter } from 'graphql-anywhere'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 
 const useStyles = makeStyles(theme => ({
-  root: {},
+  root: {
+    maxWidth: 500,
+  },
   saveButton: {
     color: theme.palette.white,
     backgroundColor: colors.green[600],
@@ -84,7 +86,6 @@ const OptionsForm = props => {
                   >
                     <Grid
                       item
-                      md={6}
                       xs={12}
                     >
                       <FormControlLabel
@@ -97,16 +98,6 @@ const OptionsForm = props => {
                         label="Scarica i file senza cercare di mostrarli nel browser"
                       />
                     </Grid>
-                    <Grid
-                      item
-                      md={6}
-                      xs={12}
-                    />
-                    <Grid
-                      item
-                      md={3}
-                      xs={12}
-                    />
                   </Grid>
                 </CardContent>
                 <Divider/>

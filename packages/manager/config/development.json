@@ -8,5 +8,15 @@
   "couchbase": {
     "IP_DEFAULT": "10.0.2.32",
     "BUCKET_DEFAULT": "libri_mastri_dev"
+  },
+  "genias": {
+    "IP_DEFAULT": "194.32.175.163",
+    "PORT": "4001",
+    "CREDENTIALS": {
+      "username": "ImportWebApiQ",
+      "password": "nEw1mpr@tMyap!24",
+      "societa": 1,
+      "destinazione": "QuboTest"
+    }
   }
 }

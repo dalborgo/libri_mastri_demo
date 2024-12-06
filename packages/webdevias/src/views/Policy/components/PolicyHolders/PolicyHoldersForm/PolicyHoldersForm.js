@@ -17,6 +17,7 @@ import parse from 'autosuggest-highlight/parse'
 import { match } from 'helpers'
 import { ME } from 'queries'
 import { useApolloClient } from '@apollo/react-hooks'
+import differenceBy from 'lodash/differenceBy'
 
 const newLocale = 'it'
 require(`moment/locale/${newLocale}`)
@@ -130,366 +131,367 @@ const PolicyHoldersForm = props => {
       onSubmit={() => {}}
     >
       {
-        ({ values, setFieldValue }) => (
-          <div className={classes.contentSection}>
-            <form autoComplete="off">
-              <Grid container justify="space-between">
-                <Grid item>
-                  <FieldArray
-                    name="holders"
-                    render={
-                      arrayHelpers => (
-                        <div className={globalClass.divCard}>
-                          <Grid container direction="column">
-                            <Tooltip
-                              placement="top"
-                              title={values?.holders?.length ? 'Aggiungi assicurato' : 'Aggiungi Intestatario'}
-                            >
-                              <span>
-                                <Fab
-                                  className={classes.iconPlus}
-                                  color={'primary'}
-                                  disabled={isDisabled}
-                                  onClick={
-                                    () => {
-                                      arrayHelpers.push(initValue)
-                                    }
-                                  }
-                                  size="small"
-                                >
-                                  <Add/>
-                                </Fab>
-                              </span>
-                            </Tooltip>
-                            {
-                              (!!values.holders.length && !isPolicy) &&
-                              <Tooltip placement="bottom" title="Aggiungi in testa e diventa Intestatario">
+        ({ values, setFieldValue }) => {
+          const collaboratorList_ = differenceBy(collaboratorList, values.collaborators, 'id')
+          return (
+            <div className={classes.contentSection}>
+              <form autoComplete="off">
+                <Grid container justify="space-between">
+                  <Grid item>
+                    <FieldArray
+                      name="holders"
+                      render={
+                        arrayHelpers => (
+                          <div className={globalClass.divCard}>
+                            <Grid container direction="column">
+                              <Tooltip
+                                placement="top"
+                                title={values?.holders?.length ? 'Aggiungi assicurato' : 'Aggiungi Intestatario'}
+                              >
                                 <span>
                                   <Fab
                                     className={classes.iconPlus}
                                     color={'primary'}
-                                    disabled={isPolicy}
+                                    disabled={isDisabled}
                                     onClick={
                                       () => {
-                                        arrayHelpers.unshift(initValue)
+                                        arrayHelpers.push(initValue)
                                       }
                                     }
                                     size="small"
                                   >
-                                    <Icon path={mdiShieldPlusOutline} size={1}/>
+                                    <Add/>
                                   </Fab>
                                 </span>
                               </Tooltip>
-                            }
-                          </Grid>
-                          <div>
-                            {
-                              values.holders.map((ps, index) => (
-                                <div className={globalClass.rowDiv} key={index}>
-                                  <Card
-                                    className={globalClass.cardRow}
-                                    style={{ backgroundColor: index !== 0 ? '#F9F9F9' : null }}
-                                  >
-                                    <CardContent className={globalClass.cardRowContent}>
-                                      <Fab
-                                        classes={
-                                          {
-                                            disabled: classes.iconMinus,
-                                          }
+                              {
+                                (!!values.holders.length && !isPolicy) &&
+                                <Tooltip placement="bottom" title="Aggiungi in testa e diventa Intestatario">
+                                  <span>
+                                    <Fab
+                                      className={classes.iconPlus}
+                                      color={'primary'}
+                                      disabled={isPolicy}
+                                      onClick={
+                                        () => {
+                                          arrayHelpers.unshift(initValue)
                                         }
-                                        color="primary"
-                                        disabled
-                                        size="small"
-                                        style={{ marginTop: 5 }}
-                                        tabIndex={-1}
-                                      >
-                                        <Icon
-                                          path={index === 0 ? mdiShieldAccountOutline : mdiAccountMultipleOutline}
-                                          size={1}
-                                        />
-                                      </Fab>
-                                      <Fab
-                                        className={classes.iconMinus}
-                                        color="primary"
-                                        disabled={isPolicy && (isPolicy && index < holdersLength)}
-                                        onClick={
-                                          () => arrayHelpers.remove(index)
-                                        }
-                                        size="small"
-                                        tabIndex={-1}
-                                      >
-                                        <Remove/>
-                                      </Fab>
-                                      <FastField
-                                        classes={
-                                          {
-                                            listbox: classes.listBox,
-                                          }
-                                        }
-                                        className={clsx(globalClass.field, globalClass.fieldMid)}
-                                        component={Autocomplete}
-                                        disabled={isDisabled || (isPolicy && index < holdersLength)}
-                                        getOptionLabel={(option) => `${option.surname}${option.name ? ` ${option.name}` : ''} ${option.id ? `(${option.id})` : ''}`.trim()}
-                                        getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
-                                        name={`holders.${index}.combo`}
-                                        noOptionsText="Nessuna opzione"
-                                        onChange={
-                                          (_, value) => {
-                                            const listIds = cGraphQL.extractFieldsFromFragment(HOLDER_SAVE_FRAGMENT)
-                                            setFieldValue(`holders.${index}.combo`, value)
-                                            for (let key of listIds) {
-                                              setFieldValue(`holders.${index}.${key}`, value?.[key] ?? '')
-                                            }
-                                          }
-                                        }
-                                        options={registries}
-                                        renderOption={
-                                          (option, { inputValue }) => {
-                                            const surname = option.surname
-                                            const name = option.name ? ` ${option.name}` : ''
-                                            const display = `${surname}${name}`
-                                            const partsId = parse(option.id, match(option.id, inputValue))
-                                            const partsName = parse(display, match(display, inputValue))
-                                            return (
-                                              <Grid alignItems="center" container>
-                                                <Grid
-                                                  item
-                                                  xs={12}
-                                                >
-                                                  {
-                                                    partsName.map((part, index) => (
-                                                      <span
-                                                        key={index}
-                                                        style={{ fontWeight: part.highlight ? 700 : 400 }}
-                                                      >
-                                                        {part.text}
-                                                      </span>
-                                                    ))
-                                                  }
-                                                </Grid>
-                                                <Grid item xs={12}>
-                                                  {
-                                                    partsId.map((part, index) => (
-                                                      <span
-                                                        key={index}
-                                                        style={
-                                                          {
-                                                            fontSize: '12px',
-                                                            color: part.highlight ? theme.palette.grey[700] : theme.palette.text.secondary,
-                                                            fontWeight: part.highlight ? 700 : 400,
-                                                          }
-                                                        }
-                                                      >
-                                                        {part.text}
-                                                      </span>
-                                                    ))
-                                                  }
-                                                </Grid>
-                                              </Grid>
-                                            )
-                                          }
-                                        }
-                                        size={'small'}
-                                        style={{ display: 'inline-block', width: 300 }}
-                                        textFieldProps={
-                                          {
-                                            label: 'Denominazione',
-                                            style: { marginTop: -5, paddingRight: 0 },
-                                            variant: 'outlined',
-                                            className: globalClass.fieldBack,
-                                          }
-                                        }
-                                      />
-                                      <IconButton
-                                        className={classes.plusButton}
-                                        color={values.holders[index]?.id ? 'primary' : 'default'}
-                                        disabled={isDisabled || (isPolicy && index < holdersLength)}
-                                        disableFocusRipple
-                                        onClick={() => dispatch({ type: 'setOpen', index })}
-                                      >
-                                        <Icon path={mdiPencilCircle} size={1}/>
-                                      </IconButton>
-                                      <FastField
-                                        className={clsx(globalClass.field, globalClass.fieldMid)}
-                                        component={MuiTextField}
-                                        disabled={isDisabled || (isPolicy && index < holdersLength)}
-                                        InputProps={{ className: globalClass.fieldBack, readOnly: true }}
-                                        label="P.I./C.F."
-                                        name={`holders.${index}.id`}
-                                        size="small"
-                                        style={{ width: 170 }}
-                                        variant="outlined"
-                                      />
-                                      {
-                                        cGraphQL.extractFieldsFromFragment(HOLDER_SAVE_FRAGMENT, ['id']).map(
-                                          field =>
-                                            (
-                                              <FastField
-                                                component={MuiTextField}
-                                                key={field}
-                                                name={`holders.${index}.${field}`}
-                                                style={{ display: 'none' }}
-                                              />
-                                            )
-                                        )
                                       }
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              ))
-                            }
-                          </div>
-                        </div>
-                      )
-                    }
-                  />
-                </Grid>
-                <Grid item>
-                  <FieldArray
-                    name="collaborators"
-                    render={
-                      arrayHelpers => (
-                        <div className={globalClass.divCard} style={{marginRight: 32}}>
-                          <div>
-                            {
-                              values.collaborators.map((ps, index) => (
-                                <div className={globalClass.rowDiv} key={index}>
-                                  <Card
-                                    className={globalClass.cardRow}
-                                    style={{ backgroundColor: index !== 0 ? '#F9F9F9' : null }}
-                                  >
-                                    <CardContent className={globalClass.cardRowContent}>
-                                      <Field
-                                        classes={
-                                          {
-                                            listbox: classes.listBox,
-                                          }
-                                        }
-                                        className={clsx(globalClass.field, globalClass.fieldMid)}
-                                        component={Autocomplete}
-                                        disabled={isDisabled || (isPolicy && index < collaboratorsLength)}
-                                        getOptionLabel={(option) => `${option.username || ''} ${option.email ? `(${option.email})` : ''}`.trim()}
-                                        getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
-                                        
-
-                                        name={`collaborators.${index}.combo`}
-                                        noOptionsText="Nessuna opzione"
-                                        onChange={
-                                          (_, value) => {
-                                            const listIds = cGraphQL.extractFieldsFromFragment(COLLABORATOR_SAVE_FRAGMENT)
-                                            setFieldValue(`collaborators.${index}.combo`, value)
-                                            for (let key of listIds) {
-                                              setFieldValue(`collaborators.${index}.${key}`, value?.[key] ?? '')
+                                      size="small"
+                                    >
+                                      <Icon path={mdiShieldPlusOutline} size={1}/>
+                                    </Fab>
+                                  </span>
+                                </Tooltip>
+                              }
+                            </Grid>
+                            <div>
+                              {
+                                values.holders.map((ps, index) => (
+                                  <div className={globalClass.rowDiv} key={index}>
+                                    <Card
+                                      className={globalClass.cardRow}
+                                      style={{ backgroundColor: index !== 0 ? '#F9F9F9' : null }}
+                                    >
+                                      <CardContent className={globalClass.cardRowContent}>
+                                        <Fab
+                                          classes={
+                                            {
+                                              disabled: classes.iconMinus,
                                             }
                                           }
-                                        }
-                                        options={collaboratorList}
-                                        renderOption={
-                                          (option, { inputValue }) => {
-                                            const username = option.username
-                                            const display = `${username}`
-                                            const partsId = parse(option.email, match(option.email, inputValue))
-                                            const partsName = parse(display, match(display, inputValue))
-                                            return (
-                                              <Grid alignItems="center" container>
-                                                <Grid
-                                                  item
-                                                  xs={12}
-                                                >
-                                                  {
-                                                    partsName.map((part, index) => (
-                                                      <span
-                                                        key={index}
-                                                        style={{ fontWeight: part.highlight ? 700 : 400 }}
-                                                      >
-                                                        {part.text}
-                                                      </span>
-                                                    ))
-                                                  }
-                                                </Grid>
-                                                <Grid item xs={12}>
-                                                  {
-                                                    partsId.map((part, index) => (
-                                                      <span
-                                                        key={index}
-                                                        style={
-                                                          {
-                                                            fontSize: '12px',
-                                                            color: part.highlight ? theme.palette.grey[700] : theme.palette.text.secondary,
-                                                            fontWeight: part.highlight ? 700 : 400,
+                                          color="primary"
+                                          disabled
+                                          size="small"
+                                          style={{ marginTop: 5 }}
+                                          tabIndex={-1}
+                                        >
+                                          <Icon
+                                            path={index === 0 ? mdiShieldAccountOutline : mdiAccountMultipleOutline}
+                                            size={1}
+                                          />
+                                        </Fab>
+                                        <Fab
+                                          className={classes.iconMinus}
+                                          color="primary"
+                                          disabled={isPolicy && (isPolicy && index < holdersLength)}
+                                          onClick={
+                                            () => arrayHelpers.remove(index)
+                                          }
+                                          size="small"
+                                          tabIndex={-1}
+                                        >
+                                          <Remove/>
+                                        </Fab>
+                                        <FastField
+                                          classes={
+                                            {
+                                              listbox: classes.listBox,
+                                            }
+                                          }
+                                          className={clsx(globalClass.field, globalClass.fieldMid)}
+                                          component={Autocomplete}
+                                          disabled={isDisabled || (isPolicy && index < holdersLength)}
+                                          getOptionLabel={(option) => `${option.surname}${option.name ? ` ${option.name}` : ''} ${option.id ? `(${option.id})` : ''}`.trim()}
+                                          getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
+                                          name={`holders.${index}.combo`}
+                                          noOptionsText="Nessuna opzione"
+                                          onChange={
+                                            (_, value) => {
+                                              const listIds = cGraphQL.extractFieldsFromFragment(HOLDER_SAVE_FRAGMENT)
+                                              setFieldValue(`holders.${index}.combo`, value)
+                                              for (let key of listIds) {
+                                                setFieldValue(`holders.${index}.${key}`, value?.[key] ?? '')
+                                              }
+                                            }
+                                          }
+                                          options={registries}
+                                          renderOption={
+                                            (option, { inputValue }) => {
+                                              const surname = option.surname
+                                              const name = option.name ? ` ${option.name}` : ''
+                                              const display = `${surname}${name}`
+                                              const partsId = parse(option.id, match(option.id, inputValue))
+                                              const partsName = parse(display, match(display, inputValue))
+                                              return (
+                                                <Grid alignItems="center" container>
+                                                  <Grid
+                                                    item
+                                                    xs={12}
+                                                  >
+                                                    {
+                                                      partsName.map((part, index) => (
+                                                        <span
+                                                          key={index}
+                                                          style={{ fontWeight: part.highlight ? 700 : 400 }}
+                                                        >
+                                                          {part.text}
+                                                        </span>
+                                                      ))
+                                                    }
+                                                  </Grid>
+                                                  <Grid item xs={12}>
+                                                    {
+                                                      partsId.map((part, index) => (
+                                                        <span
+                                                          key={index}
+                                                          style={
+                                                            {
+                                                              fontSize: '12px',
+                                                              color: part.highlight ? theme.palette.grey[700] : theme.palette.text.secondary,
+                                                              fontWeight: part.highlight ? 700 : 400,
+                                                            }
                                                           }
-                                                        }
-                                                      >
-                                                        {part.text}
-                                                      </span>
-                                                    ))
-                                                  }
+                                                        >
+                                                          {part.text}
+                                                        </span>
+                                                      ))
+                                                    }
+                                                  </Grid>
                                                 </Grid>
-                                              </Grid>
-                                            )
+                                              )
+                                            }
                                           }
-                                        }
-                                        size={'small'}
-                                        style={{ display: 'inline-block', width: 240 }}
-                                        textFieldProps={
-                                          {
-                                            label: 'Collaboratore',
-                                            style: { marginTop: -5 },
-                                            variant: 'outlined',
-                                            className: globalClass.fieldBack,
+                                          size={'small'}
+                                          style={{ display: 'inline-block', width: 300 }}
+                                          textFieldProps={
+                                            {
+                                              label: 'Denominazione',
+                                              style: { marginTop: -5, paddingRight: 0 },
+                                              variant: 'outlined',
+                                              className: globalClass.fieldBack,
+                                            }
                                           }
+                                        />
+                                        <IconButton
+                                          className={classes.plusButton}
+                                          color={values.holders[index]?.id ? 'primary' : 'default'}
+                                          disabled={isDisabled || (isPolicy && index < holdersLength)}
+                                          disableFocusRipple
+                                          onClick={() => dispatch({ type: 'setOpen', index })}
+                                        >
+                                          <Icon path={mdiPencilCircle} size={1}/>
+                                        </IconButton>
+                                        <FastField
+                                          className={clsx(globalClass.field, globalClass.fieldMid)}
+                                          component={MuiTextField}
+                                          disabled={isDisabled || (isPolicy && index < holdersLength)}
+                                          InputProps={{ className: globalClass.fieldBack, readOnly: true }}
+                                          label="P.I./C.F."
+                                          name={`holders.${index}.id`}
+                                          size="small"
+                                          style={{ width: 170 }}
+                                          variant="outlined"
+                                        />
+                                        {
+                                          cGraphQL.extractFieldsFromFragment(HOLDER_SAVE_FRAGMENT, ['id']).map(
+                                            field =>
+                                              (
+                                                <FastField
+                                                  component={MuiTextField}
+                                                  key={field}
+                                                  name={`holders.${index}.${field}`}
+                                                  style={{ display: 'none' }}
+                                                />
+                                              )
+                                          )
                                         }
-                                      />
-                                      <Fab
-                                        className={classes.iconMinusRight}
-                                        color="primary"
-                                        disabled={isPolicy && (isPolicy && index < collaboratorsLength)}
-                                        onClick={
-                                          () => arrayHelpers.remove(index)
-                                        }
-                                        size="small"
-                                        style={{ marginTop: 5 }}
-                                        tabIndex={-1}
-                                      >
-                                        <Remove/>
-                                      </Fab>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              ))
-                            }
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ))
+                              }
+                            </div>
                           </div>
-                          <Grid container direction="column">
-                            <Tooltip
-                              placement="top"
-                              title={'Aggiungi collaboratore'}
-                            >
-                              <span>
-                                <Fab
-                                  className={classes.iconPlusRight}
-                                  color={'primary'}
-                                  disabled={isDisabled}
-                                  onClick={
-                                    () => {
-                                      arrayHelpers.push(initValueCollaborator)
+                        )
+                      }
+                    />
+                  </Grid>
+                  <Grid item>
+                    <FieldArray
+                      name="collaborators"
+                      render={
+                        arrayHelpers => (
+                          <div className={globalClass.divCard} style={{ marginRight: 32 }}>
+                            <div>
+                              {
+                                values.collaborators.map((ps, index) => (
+                                  <div className={globalClass.rowDiv} key={index}>
+                                    <Card
+                                      className={globalClass.cardRow}
+                                      style={{ backgroundColor: index !== 0 ? '#F9F9F9' : null }}
+                                    >
+                                      <CardContent className={globalClass.cardRowContent}>
+                                        <Field
+                                          classes={
+                                            {
+                                              listbox: classes.listBox,
+                                            }
+                                          }
+                                          className={clsx(globalClass.field, globalClass.fieldMid)}
+                                          component={Autocomplete}
+                                          disabled={isDisabled || (isPolicy && index < collaboratorsLength)}
+                                          getOptionLabel={(option) => `${option.username || ''} ${option.email ? `(${option.email})` : ''}`.trim()}
+                                          getOptionSelected={(option, value) => option.id === value.id && option.__typename === value.__typename}
+                                          name={`collaborators.${index}.combo`}
+                                          noOptionsText="Nessuna opzione"
+                                          onChange={
+                                            (_, value) => {
+                                              const listIds = cGraphQL.extractFieldsFromFragment(COLLABORATOR_SAVE_FRAGMENT)
+                                              setFieldValue(`collaborators.${index}.combo`, value)
+                                              for (let key of listIds) {
+                                                setFieldValue(`collaborators.${index}.${key}`, value?.[key] ?? '')
+                                              }
+                                            }
+                                          }
+                                          options={collaboratorList_}
+                                          renderOption={
+                                            (option, { inputValue }) => {
+                                              const username = option.username
+                                              const display = `${username}`
+                                              const partsId = parse(option.email, match(option.email, inputValue))
+                                              const partsName = parse(display, match(display, inputValue))
+                                              return (
+                                                <Grid alignItems="center" container>
+                                                  <Grid
+                                                    item
+                                                    xs={12}
+                                                  >
+                                                    {
+                                                      partsName.map((part, index) => (
+                                                        <span
+                                                          key={index}
+                                                          style={{ fontWeight: part.highlight ? 700 : 400 }}
+                                                        >
+                                                          {part.text}
+                                                        </span>
+                                                      ))
+                                                    }
+                                                  </Grid>
+                                                  <Grid item xs={12}>
+                                                    {
+                                                      partsId.map((part, index) => (
+                                                        <span
+                                                          key={index}
+                                                          style={
+                                                            {
+                                                              fontSize: '12px',
+                                                              color: part.highlight ? theme.palette.grey[700] : theme.palette.text.secondary,
+                                                              fontWeight: part.highlight ? 700 : 400,
+                                                            }
+                                                          }
+                                                        >
+                                                          {part.text}
+                                                        </span>
+                                                      ))
+                                                    }
+                                                  </Grid>
+                                                </Grid>
+                                              )
+                                            }
+                                          }
+                                          size={'small'}
+                                          style={{ display: 'inline-block', width: 240 }}
+                                          textFieldProps={
+                                            {
+                                              label: 'Collaboratore',
+                                              style: { marginTop: -5 },
+                                              variant: 'outlined',
+                                              className: globalClass.fieldBack,
+                                            }
+                                          }
+                                        />
+                                        <Fab
+                                          className={classes.iconMinusRight}
+                                          color="primary"
+                                          disabled={isPolicy && (isPolicy && index < collaboratorsLength)}
+                                          onClick={
+                                            () => arrayHelpers.remove(index)
+                                          }
+                                          size="small"
+                                          style={{ marginTop: 5 }}
+                                          tabIndex={-1}
+                                        >
+                                          <Remove/>
+                                        </Fab>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ))
+                              }
+                            </div>
+                            <Grid container direction="column">
+                              <Tooltip
+                                placement="top"
+                                title={'Aggiungi collaboratore'}
+                              >
+                                <span>
+                                  <Fab
+                                    className={classes.iconPlusRight}
+                                    color={'primary'}
+                                    disabled={isDisabled || !collaboratorList_.length}
+                                    onClick={
+                                      () => {
+                                        arrayHelpers.push(initValueCollaborator)
+                                      }
                                     }
-                                  }
-                                  size="small"
-                                >
-                                  <Add/>
-                                </Fab>
-                              </span>
-                            </Tooltip>
-                          </Grid>
-                        </div>
-                      )
-                    }
-                  />
+                                    size="small"
+                                  >
+                                    <Add/>
+                                  </Fab>
+                                </span>
+                              </Tooltip>
+                            </Grid>
+                          </div>
+                        )
+                      }
+                    />
+                  </Grid>
                 </Grid>
-              </Grid>
-            </form>
-          </div>
-        )
+              </form>
+            </div>
+          )
+        }
       }
     </Formik>
   )

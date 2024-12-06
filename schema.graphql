@@ -13,6 +13,7 @@ interface Edge {
 interface User {
     _createdAt: String
     _updatedAt: String
+    active: Boolean
     additional_emails: [String]
     address: String
     addressNumber: String
@@ -32,6 +33,7 @@ interface User {
 type ChildUser implements User {
     _createdAt: String
     _updatedAt: String
+    active: Boolean
     additional_emails: [String]
     address: String
     addressNumber: String
@@ -85,6 +87,7 @@ type Holder {
 type MainUser implements User {
     _createdAt: String
     _updatedAt: String
+    active: Boolean
     additional_emails: [String]
     address: String
     addressNumber: String
@@ -325,6 +328,7 @@ input AddRegistryInput {
 }
 
 input AddUserInput {
+    active: Boolean
     additional_emails: [String]
     address: String
     addressNumber: String
@@ -380,6 +384,7 @@ input EditRegistryInput {
 }
 
 input EditUserInput {
+    active: Boolean
     additional_emails: [String]
     address: String
     addressNumber: String

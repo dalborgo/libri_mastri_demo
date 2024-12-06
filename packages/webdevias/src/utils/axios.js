@@ -107,4 +107,20 @@ export async function regulationsQuery (endpoint, data, options = {}) {
   }
 }
 
+export async function getGenias(endpoint, data, options = {}) {
+  try {
+    const {
+      method = 'POST',
+    } = options
+    const response = await instance(endpoint, {
+      data,
+      method,
+    })
+    return response.data
+  } catch (err) {
+    log.error(err.message)
+    return { ok: false, message: err.message, err }
+  }
+}
+
 export default instance

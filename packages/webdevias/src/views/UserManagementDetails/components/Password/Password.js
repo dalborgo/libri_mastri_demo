@@ -12,7 +12,7 @@ const useStyles = makeStyles(() => ({
 }))
 
 const General = props => {
-  const { className, handleEdit, ...user } = props
+  const { className, handleEdit, me, ...user } = props
   const classes = useStyles()
   return (
     <Grid
@@ -36,7 +36,7 @@ const General = props => {
         xl={9}
         xs={12}
       >
-        <PasswordForm username={user.username}/>
+        <PasswordForm me={me} username={user.username}/>
       </Grid>
     </Grid>
   )

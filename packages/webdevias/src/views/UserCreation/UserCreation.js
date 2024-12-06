@@ -5,7 +5,15 @@ import { Page } from 'components'
 import { Header, UserCreationCard } from './components'
 import log from '@adapter/common/src/log'
 import { filter } from 'graphql-anywhere'
-import { ADD_USER, CHILDREN_FROM_LIST, MAIN_USERS, MAIN_USERS_FRAGMENT, USER_ADD_FRAGMENT, USERS } from 'queries/users'
+import {
+  ADD_USER,
+  CHILDREN_FROM_LIST,
+  MAIN_USERS,
+  MAIN_USERS_FRAGMENT, SELECT_USERS_FRAGMENT,
+  TO_SELECT_USERS,
+  USER_ADD_FRAGMENT,
+  USERS
+} from 'queries/users'
 import { useMutation } from '@apollo/react-hooks'
 import { gestError, useAsyncError } from 'helpers'
 import { withSnackbar } from 'notistack'
@@ -46,8 +54,7 @@ const UserCreation = ({ enqueueSnackbar }) => {
         },
       },
       update: (cache, { data: { add } }) => {
-        let data, dataMainUsers
-        
+        let data, dataMainUsers, dataSelectUsers
         try { dataMainUsers = cache.readQuery({ query: MAIN_USERS })} catch (err) {
           log.warn('MainUserCache not present!')
         }
@@ -56,6 +63,15 @@ const UserCreation = ({ enqueueSnackbar }) => {
           newDataMainUsers.mainUsers.unshift(filter(MAIN_USERS_FRAGMENT, add))
           newDataMainUsers.mainUsers = sortBy(newDataMainUsers.mainUsers, 'id')
           cache.writeQuery({ query: MAIN_USERS, data: newDataMainUsers })
+        }
+        try { dataSelectUsers = cache.readQuery({ query: TO_SELECT_USERS })} catch (err) {
+          log.warn('MainUserSelectCache not present!')
+        }
+        if (dataSelectUsers) {
+          const newDataSelectUsers = { ...dataSelectUsers }
+          newDataSelectUsers.toSelectUsers.unshift(filter(SELECT_USERS_FRAGMENT, add))
+          newDataSelectUsers.toSelectUsers = sortBy(newDataSelectUsers.toSelectUsers, 'id')
+          cache.writeQuery({ query: TO_SELECT_USERS, data: newDataSelectUsers })
         }
         try { data = cache.readQuery({ query: USERS })} catch (err) {
           log.warn('UsersCache not present!')

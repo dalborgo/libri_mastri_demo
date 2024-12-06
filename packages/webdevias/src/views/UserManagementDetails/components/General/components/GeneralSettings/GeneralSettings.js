@@ -10,12 +10,15 @@ import clsx from 'clsx'
 import { CircularIndeterminate } from 'components/Progress'
 import { object, string } from 'yup'
 import { FastField, Field, Form, Formik } from 'formik'
-import { TextField } from 'formik-material-ui'
+import { Switch, TextField } from 'formik-material-ui'
 import { cGraphQL } from '@adapter/common'
 import UpperCasingTextField from 'views/Registry/components/InsertForm/UpperCasingTextField'
+import FormControlLabel from '@material-ui/core/FormControlLabel'
 
 const EditSchema = object().shape({
   email: string()
+    .email('Email non valida!'),
+  passwordEmail: string()
     .email('Email non valida!'),
   vat: string()
     .required('Obbligatorio!'),
@@ -24,7 +27,13 @@ const EditSchema = object().shape({
 })
 
 const useStyles = makeStyles(theme => ({
-  root: {},
+  root: {
+    '& .MuiCardHeader-root': {
+      alignItems: 'normal',
+      paddingBottom: 2,
+      paddingRight: 14,
+    },
+  },
   saveButton: {
     color: theme.palette.white,
     backgroundColor: colors.green[600],
@@ -34,6 +43,15 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 const focus = event => event.target.select()
+const ActiveSwitchComponent = ({ visible }) => {
+  return (
+    <FormControlLabel
+      control={<Field component={Switch} name="active" type="checkbox"/>}
+      label="Attivo"
+      style={{ visibility: visible ? 'visible' : 'hidden' }}
+    />
+  )
+}
 const GeneralSettings = props => {
   const { className, handleEdit, ...user } = props
   const throwError = useAsyncError()
@@ -63,7 +81,10 @@ const GeneralSettings = props => {
         {
           ({ values, isSubmitting, isValid, dirty }) => (
             <Form autoComplete="off">
-              <CardHeader title="Profilo"/>
+              <CardHeader
+                action={<ActiveSwitchComponent visible={values['role'] === 'COLLABORATOR'}/>}
+                title="Profilo"
+              />
               <Divider/>
               {
                 called && !loading ?
@@ -75,7 +96,7 @@ const GeneralSettings = props => {
                       >
                         <Grid
                           item
-                          md={4}
+                          md={3}
                           xs={12}
                         >
                           <FastField
@@ -90,7 +111,7 @@ const GeneralSettings = props => {
                         </Grid>
                         <Grid
                           item
-                          md={4}
+                          md={3}
                           xs={12}
                         >
                           <Field
@@ -105,13 +126,13 @@ const GeneralSettings = props => {
                         </Grid>
                         <Grid
                           item
-                          md={4}
+                          md={3}
                           xs={12}
                         >
                           <FastField
                             component={TextField}
                             fullWidth
-                            label="Email"
+                            label="Email per documentazione"
                             name="email"
                             onFocus={focus}
                             variant="outlined"
@@ -125,75 +146,94 @@ const GeneralSettings = props => {
                           <FastField
                             component={TextField}
                             fullWidth
-                            label="Indirizzo"
-                            name="address"
+                            label="Email per invio password"
+                            name="passwordEmail"
                             onFocus={focus}
                             variant="outlined"
                           />
                         </Grid>
-                        <Grid
-                          item
-                          md={2}
-                          xs={6}
-                        >
-                          <FastField
-                            component={TextField}
-                            fullWidth
-                            label="Numero"
-                            name="addressNumber"
-                            onFocus={focus}
-                            variant="outlined"
-                          />
-                        </Grid>
-                        <Grid
-                          item
-                          md={2}
-                          xs={6}
-                        >
-                          <FastField
-                            component={TextField}
-                            fullWidth
-                            InputProps={
-                              {
-                                inputProps: {
-                                  textAlign: 'left',
-                                },
-                              }
-                            }
-                            label="Cap"
-                            name="zip"
-                            onFocus={focus}
-                            variant="outlined"
-                          />
-                        </Grid>
-                        <Grid
-                          item
-                          md={3}
-                          xs={6}
-                        >
-                          <FastField
-                            component={TextField}
-                            fullWidth
-                            label="Città"
-                            name="city"
-                            onFocus={focus}
-                            variant="outlined"
-                          />
-                        </Grid>
-                        <Grid
-                          item
-                          md={2}
-                          xs={6}
-                        >
-                          <FastField
-                            component={UpperCasingTextField}
-                            fullWidth
-                            label="Provincia"
-                            name="state"
-                            onFocus={focus}
-                            variant="outlined"
-                          />
-                        </Grid>
+                        {
+                          values['role'] !== 'COLLABORATOR' &&
+                          <>
+                            <Grid
+                              item
+                              md={3}
+                              xs={12}
+                            >
+                              <FastField
+                                component={TextField}
+                                fullWidth
+                                label="Indirizzo"
+                                name="address"
+                                onFocus={focus}
+                                variant="outlined"
+                              />
+                            </Grid>
+                            <Grid
+                              item
+                              md={2}
+                              xs={6}
+                            >
+                              <FastField
+                                component={TextField}
+                                fullWidth
+                                label="Numero"
+                                name="addressNumber"
+                                onFocus={focus}
+                                variant="outlined"
+                              />
+                            </Grid>
+                            <Grid
+                              item
+                              md={2}
+                              xs={6}
+                            >
+                              <FastField
+                                component={TextField}
+                                fullWidth
+                                InputProps={
+                                  {
+                                    inputProps: {
+                                      textAlign: 'left',
+                                    },
+                                  }
+                                }
+                                label="Cap"
+                                name="zip"
+                                onFocus={focus}
+                                variant="outlined"
+                              />
+                            </Grid>
+                            <Grid
+                              item
+                              md={3}
+                              xs={6}
+                            >
+                              <FastField
+                                component={TextField}
+                                fullWidth
+                                label="Città"
+                                name="city"
+                                onFocus={focus}
+                                variant="outlined"
+                              />
+                            </Grid>
+                            <Grid
+                              item
+                              md={2}
+                              xs={6}
+                            >
+                              <FastField
+                                component={UpperCasingTextField}
+                                fullWidth
+                                label="Provincia"
+                                name="state"
+                                onFocus={focus}
+                                variant="outlined"
+                              />
+                            </Grid>
+                          </>
+                        }
                         <Grid
                           item
                           md={6}

@@ -4,10 +4,12 @@ const interfaceUserFields = `
  id: ID!
  _createdAt: String,
  _updatedAt: String,
+ active: Boolean,
  email: String
  password: String!
  username: String!
  role: Roles!
+ lastPasswordChangeDate: String
  longName: String
  address: String
  addressNumber: String
@@ -56,6 +58,7 @@ export default gql`
   }
 
   input AddUserInput {
+    active: Boolean,
     email: String
     role: Roles!
     password: String!
@@ -71,6 +74,7 @@ export default gql`
   }
 
   input EditUserInput {
+    active: Boolean,
     email: String
     role: Roles!
     username: String!
