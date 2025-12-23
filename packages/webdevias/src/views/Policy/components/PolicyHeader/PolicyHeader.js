@@ -98,6 +98,7 @@ const Body = memo(props => {
           midDate: props.midDate ? cDate.mom(props.midDate, 'YYYY-MM-DD', 'YYYY-MM-DD') : null,
           paymentFract: props.paymentFract || 'UNIQUE',
           regulationFract: props.regulationFract || 'UNIQUE',
+          renewMode: props.renewMode || '0',
         }
       }
       innerRef={props.innerRef}
@@ -115,6 +116,7 @@ const Body = memo(props => {
                     globalClass={props.globalClass}
                     isNew={props.isNew}
                     isPolicy={props.isPolicy}
+                    priority={props.priority}
                   />
                   <HeaderFractionTable
                     dispatch={props.dispatch}
@@ -132,6 +134,7 @@ const Body = memo(props => {
                     generateRegDates={props.generateRegDates}
                     globalClass={props.globalClass}
                     isPolicy={props.isPolicy}
+                    priority={props.priority}
                   />
                   <RegulationTable
                     checkPolicy={props.checkPolicy}
@@ -234,6 +237,7 @@ const PolicyHeader = props => {
     priority,
     regFractions,
     regulationFract,
+    renewMode,
     setPaidFractions,
   } = props
   const [expandHeader, setExpandHeader] = useState(true)
@@ -271,6 +275,7 @@ const PolicyHeader = props => {
     priority,
     regFractions,
     regulationFract,
+    renewMode,
     setPaidFractions,
   }
   if (tab === 'all') {

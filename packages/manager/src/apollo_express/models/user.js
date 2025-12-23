@@ -18,6 +18,11 @@ const userSchema = lounge.schema({
     forceDownloadPdf: Boolean,
   },
   password: String,
+  provvigioni: {
+    attive: Number,
+    passive: Number,
+    codice: Number,
+  },
   role: String,
   state: String,
   username: { type: String, key: true, generate: false },

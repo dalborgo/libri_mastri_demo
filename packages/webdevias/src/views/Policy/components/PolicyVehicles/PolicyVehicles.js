@@ -43,6 +43,7 @@ const Body = memo(props => {
         handleExport={props.handleExport}
         handleExportTotal={props.handleExportTotal}
         handleModeChange={props.handleModeChange}
+        handleSendGenias={props.handleSendGenias}
         isPolicy={props.policy?.state?.isPolicy}
         mode={props.mode}
         priority={props.priority}
@@ -58,6 +59,7 @@ const Body = memo(props => {
             checkPolicy={props.checkPolicy}
             dispatch={props.dispatch}
             filtered={props.filtered}
+            handleSendGenias={props.handleSendGenias}
             forceUpdate={props.forceUpdate}
             formRefHeader={props.formRefHeader}
             handlePrint={props.handlePrint}
@@ -78,6 +80,7 @@ const Body = memo(props => {
 const PolicyVehicles = (
   {
     globalClass,
+    handleSendGenias,
     dispatch,
     forceUpdate,
     handleApplicationZip,
@@ -103,6 +106,7 @@ const PolicyVehicles = (
   const bodyProps = {
     changing: setChanging,
     dispatch,
+    handleSendGenias,
     forceUpdate,
     formRefHeader,
     handleExport,

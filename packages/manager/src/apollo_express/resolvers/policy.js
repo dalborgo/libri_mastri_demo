@@ -100,13 +100,18 @@ export default {
         _code: `${cDate.mom(null, null, 'YYYYMMDDHHmmssSSS')}_${name}`,
         _createdAt: undefined,
         _updatedAt: undefined,
+        createdBy: 'qubo',
         meta: undefined,
+        numPolizzaCompagnia: undefined,
         number,
         paidFractions: undefined,
         payFractions: undefined,
+        inPolicy: undefined,
+        allianzCounter: undefined,
         state: {
           code: 'DRAFT',
         },
+        statusCode: undefined,
       }
       const newPolicy = new Policy(cloned)
       return newPolicy.save()
@@ -276,7 +281,8 @@ export default {
         input.vehicles = input.vehicles.map((vehicle, index) => {
           return {
             ...vehicle,
-            inPolicy: ++index,
+            allianzCounter: ++index,
+            inPolicy: index,
             constraintCounter: vehicle.leasingCompany ? constraintCounter_++ : undefined,
           }
         })
@@ -308,7 +314,10 @@ export default {
         }
         await Policy.getByQuery(updateQuery)
       }
-      const { ok, message } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer, userId, input.collaborators)
+      const {
+        ok,
+        message,
+      } = await manageMail(state, savedPolicy.producer, _code, userRole, policy.signer, userId, input.collaborators)
       if (!ok) { log.warn(message) }
       return savedPolicy
     },
@@ -339,17 +348,18 @@ export default {
       const { midDate: removeMidDate, ...restPolicy } = policy
       const regFractions_ = cFunctions.calculateRegulationDates(regFractions, {
         ...restPolicy,
-        initDate: endDate
+        initDate: endDate,
       }, isRecalculateFraction)
-      let count = 1, constraintCounter_ = 1
+      let constraintCounter_ = 1
       const newVehicles = vehicles.reduce((prev, curr) => {
         if (['ADDED_CONFIRMED', 'ACTIVE'].includes(curr.state)) {
           const newCurr = {
             ...curr,
+            //allianzCounter: ++count,
             constraintCounter: curr.leasingCompany ? constraintCounter_++ : undefined,
             counter: undefined,
             finishDate: undefined,
-            inPolicy: count++,
+            //inPolicy: count,
             startDate: undefined,
             startHour: undefined,
             state: 'ACTIVE',
@@ -364,6 +374,7 @@ export default {
         _code: genNumber.code,
         _createdAt: undefined,
         _updatedAt: undefined,
+        company: company === 'TUA ASSICURAZIONI SPA' ? undefined : company,
         initDate: endDate,
         meta: undefined,
         midDate: undefined,
@@ -401,16 +412,38 @@ export default {
         trim: true,
       })
       const vehicles = await getStream.array(createReadStream().pipe(parseStream))
+      const seen = {}
+      const duplicates = new Set()
+  
+      for (const vehicle of vehicles) {
+        if (seen[vehicle.licensePlate]) {
+          duplicates.add(vehicle.licensePlate)
+        } else {
+          seen[vehicle.licensePlate] = true
+        }
+      }
+  
+      let counter = 1
+      for (const vehicle of vehicles) {
+        if (duplicates.has(vehicle.licensePlate)) {
+          errors.push({
+            reason: `Targa ("${vehicle.licensePlate}") già presente nel file csv`,
+            line: counter,
+            column: 'targa',
+          })
+        }
+        counter++
+      }
       const producer = await User.findById(input.policy.producer)
       let subAgent, collaborators
       if (input.policy.subAgent) {
         subAgent = await User.findById(input.policy.subAgent)
       }
-/*
-      if (input.policy.collaborators) {
-        collaborator = await User.findById(input.policy.collaborator)
-      }
-*/
+      /*
+            if (input.policy.collaborators) {
+              collaborator = await User.findById(input.policy.collaborator)
+            }
+      */
       const createdBy = await User.findById(input.policy.createdBy)
       const policy = new Policy({
         ...input.policy,

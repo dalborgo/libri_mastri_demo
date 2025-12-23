@@ -1,5 +1,5 @@
 import { numeric } from '@adapter/common'
-
+import uniq from 'lodash/uniq'
 function createTag (vehicleType, coverageType, rate, overdraft, excess, glassCap, pds, index) {
   if (!(vehicleType && coverageType)) {return ''}
   if (index === 0) {return coverageType}
@@ -19,6 +19,31 @@ function createTag (vehicleType, coverageType, rate, overdraft, excess, glassCap
     }
   }
   return coverageType
+}
+
+export function checkChangeRows (origPds) {
+  const newPds = []
+  for (let i = 0; i < origPds.length; i++) {
+    const { vehicleType, coverageType, rate, overdraft, excess, glassCap } = origPds[i]
+    newPds.push(createTag(vehicleType, coverageType, rate, overdraft, excess, glassCap, origPds, i))
+  }
+  const origCodes = origPds.map(row => row.productCode)
+  const countOccurrences = (arr, value) => arr.filter(v => v === value).length
+  
+  const missingItems = []
+  
+  for (let item of uniq(origCodes)) {
+    const countInArr1 = countOccurrences(origCodes, item)
+    const countInArr2 = countOccurrences(newPds, item)
+    const diff = countInArr1 - countInArr2
+    if (diff > 0) {
+      // Aggiungi l’elemento tante volte quanto manca
+      for (let i = 0; i < diff; i++) {
+        missingItems.push(item)
+      }
+    }
+  }
+  return missingItems
 }
 
 export function calculateRows (pds, setFieldValue) {

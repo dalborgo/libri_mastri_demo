@@ -120,7 +120,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}`}
+                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}|${row.allianzCounter || ''}`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -139,7 +139,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}|void`}
+                name={`application|${row.licensePlate}|${row.state}|${row.inPolicy || ''}|${row.allianzCounter || ''}|void`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -158,7 +158,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}`}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}|${row.allianzCounter || ''}`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -177,7 +177,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}|void`}
+                name={`${isInclusion ? 'inclusion|' : 'exclusion|'}${row.licensePlate}|${row.state}|${counter}|${row.allianzCounter || ''}|void`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -196,7 +196,7 @@ export const MenuTypeProvider = memo(props => {
               <MenuItem
                 className={classes.menuItem}
                 component={'button'}
-                name={`constraint|${row.licensePlate}|${row.state}|${row.constraintCounter || ''}`}
+                name={`constraint|${row.licensePlate}|${row.state}|${row.constraintCounter || ''}|${row.allianzCounter || ''}`}
                 onClick={
                   event => {
                     props.handlePrint(event)
@@ -218,15 +218,23 @@ export const MenuTypeProvider = memo(props => {
                 onClick={
                   async () => {
                     const value = await props.checkPolicy()
-                    if (!value) {
-                      await props.dispatch({
-                        licensePlate: row.licensePlate,
-                        newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
-                        state: row.state,
-                        type: 'setVehicleStateByIndex',
-                      })
-                      document.getElementById('headerButton').click()
+                    if (value) {return}
+                    const oldVehicleState = {
+                      licensePlate: row.licensePlate,
+                      newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
+                      state: row.state,
+                      type: 'setVehicleStateByIndex',
                     }
+                    await props.handleSendGenias(row.licensePlate, row.state, oldVehicleState)
+                    /* if (!value && results['vehicleSent'].length) {
+                       await props.dispatch({
+                         licensePlate: row.licensePlate,
+                         newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
+                         state: row.state,
+                         type: 'setVehicleStateByIndex',
+                       })
+                       document.getElementById('headerButton').click()
+                     }*/
                   }
                 }
               >
@@ -258,8 +266,15 @@ export const BooleanTypeProvider = props => (
 )
 
 //<editor-fold desc="EDITOR BUTTONS">
-const EditButton = ({ onExecute }) => (
-  <IconButton color="primary" onClick={onExecute} style={{ padding: 8 }} tabIndex="-1" title="Modifica">
+const EditButton = ({ onExecute, disabled }) => (
+  <IconButton
+    color="primary"
+    disabled={disabled}
+    onClick={onExecute}
+    style={{ padding: 8 }}
+    tabIndex="-1"
+    title="Modifica"
+  >
     <Icon path={mdiPencilOutline} size={1}/>
   </IconButton>
 )
@@ -270,9 +285,16 @@ const IncludeEditButton = ({ onExecute }) => (
   </IconButton>
 )
 
-const AddButton = ({ onExecute }) => (
+const AddButton = ({ onExecute, disabled }) => (
   <div style={{ textAlign: 'center' }}>
-    <IconButton color="primary" onClick={onExecute} style={{ padding: 8 }} tabIndex="-1" title="Aggiungi">
+    <IconButton
+      color="primary"
+      disabled={disabled}
+      onClick={onExecute}
+      style={{ padding: 8 }}
+      tabIndex="-1"
+      title="Aggiungi"
+    >
       <Icon path={mdiPlus} size={1.2}/>
     </IconButton>
   </div>

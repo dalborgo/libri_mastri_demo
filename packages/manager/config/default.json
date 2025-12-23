@@ -42,6 +42,16 @@
     "MAXAGE_MINUTES": 60,
     "PORT": 5014
   },
+  "genias": {
+    "IP_DEFAULT": "93.64.125.3",
+    "PORT": "4001",
+    "CREDENTIALS": {
+      "username": "ImportWebApiQ",
+      "password": "nEw1mpr@tMyap!24",
+      "societa": 1,
+      "destinazione": "QuboTest"
+    }
+  },
   "couchbase": {
     "IP_DEFAULT": "127.0.0.1",
     "BUCKET_DEFAULT": "libri_mastri_dev",

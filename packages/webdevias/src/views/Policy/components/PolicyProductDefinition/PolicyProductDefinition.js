@@ -35,7 +35,7 @@ import { useParams } from 'react-router'
 import DialogSpecialArrangements from './DialogSpecialArrangements'
 import keyBy from 'lodash/keyBy'
 import DialogEditConditions from './DialogEditConditions'
-import { calculateRows } from './helpers'
+import { calculateRows, checkChangeRows } from './helpers'
 import { ME } from 'queries/users'
 import { useApolloClient } from '@apollo/react-hooks'
 import sortBy from 'lodash/sortBy'
@@ -137,6 +137,7 @@ const defaultPD = {
   towing: 0,
   conditions: '',
   statements: '',
+  statementsTowing: '',
 }
 const focus = event => event.target.select()
 const Body = props => {
@@ -144,7 +145,8 @@ const Body = props => {
   const [editConditionsIndex, setEditConditionsIndex] = useState(-1)
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
-  const isDisabled = props.isPolicy && priority < 4
+  const isDisabled = props.isPolicy
+  const isNotAdmin = priority < 4
   const coverageTypesToKey = useMemo(() => keyBy(props.coverageTypes, 'id'), [props.coverageTypes])
   const classes = useStyles()
   const [initialPD] = useState(() => props.productDefinitions.map(prop => {
@@ -168,548 +170,578 @@ const Body = props => {
       validationSchema={schema}
     >
       {
-        ({ values, setFieldValue, handleChange }) => (
-          <div className={classes.contentSection}>
-            {
-              props.tab === 'all' ?
-                <Header dispatch={props.dispatch} priority={priority} setFieldValue={setFieldValue} values={values}/>
-                :
-                <div style={{ paddingTop: 20 }}/>
-            }
-            <form autoComplete="off">
-              <FieldArray
-                name="productDefinitions"
-                render={
-                  arrayHelpers => (
-                    <>
-                      <Fab
-                        className={classes.iconPlus}
-                        color={'primary'}
-                        disabled={isDisabled}
-                        onClick={
-                          () => {
-                            const taxRate = values.productDefinitions?.[0]?.taxRate ?? 13.5
-                            arrayHelpers.push({ ...defaultPD, taxRate })
+        ({ values, setFieldValue, handleChange }) => {
+          const isConditionNew = values.productDefinitions?.[editConditionsIndex]?.isNew
+          return (
+            <div className={classes.contentSection}>
+              {
+                props.tab === 'all' ?
+                  <Header dispatch={props.dispatch} priority={priority} setFieldValue={setFieldValue} values={values}/>
+                  :
+                  <div style={{ paddingTop: 20 }}/>
+              }
+              <form autoComplete="off">
+                <FieldArray
+                  name="productDefinitions"
+                  render={
+                    arrayHelpers => (
+                      <>
+                        <Fab
+                          className={classes.iconPlus}
+                          color={'primary'}
+                          disabled={isDisabled && isNotAdmin}
+                          onClick={
+                            () => {
+                              const taxRate = values.productDefinitions?.[0]?.taxRate ?? 13.5
+                              arrayHelpers.push({ ...defaultPD, taxRate, isNew: true })
+                            }
                           }
-                        }
-                        size="small"
-                      >
-                        <Add fontSize="small"/>
-                      </Fab>
-                      <div className={props.globalClass.divCard}>
-                        <div id="pdsForm">
-                          {
-                            values.productDefinitions.map((ps, index) => (
-                              <div className={props.globalClass.rowDiv} key={index}>
-                                <Card className={props.globalClass.cardRow}>
-                                  <CardContent
-                                    className={props.globalClass.cardRowContent}
-                                    style={
-                                      {
-                                        backgroundColor: values.productDefinitions[index].productCode === '' ? '#E1E5E7' : '#FFFFFF',
-                                      }
-                                    }
-                                  >
-                                    <Fab
-                                      className={classes.iconMinus}
-                                      color="primary"
-                                      disabled={isDisabled}
-                                      onClick={
-                                        () => arrayHelpers.remove(index)
-                                      }
-                                      size="small"
-                                      tabIndex={-1}
-                                    >
-                                      <Remove fontSize="small"/>
-                                    </Fab>
-                                    <Fab
-                                      className={classes.iconMinus}
-                                      color="primary"
-                                      disabled={isDisabled}
-                                      onClick={
-                                        () => {
-                                          //const { values: pds } = props.innerRef.current || {}
-                                          const newLine = {
-                                            ...defaultPD,
-                                            ...values.productDefinitions[index],
+                          size="small"
+                        >
+                          <Add fontSize="small"/>
+                        </Fab>
+                        <div className={props.globalClass.divCard}>
+                          <div id="pdsForm">
+                            {
+                              values.productDefinitions.map((ps, index) => {
+                                const selectedVehicleType = props.vehicleTypes.find(
+                                  vt => vt.id === values.productDefinitions[index]?.vehicleType
+                                )
+                                const isNew = values.productDefinitions[index].isNew
+                                return (
+                                  <div className={props.globalClass.rowDiv} key={index}>
+                                    <Card className={props.globalClass.cardRow}>
+                                      <CardContent
+                                        className={props.globalClass.cardRowContent}
+                                        style={
+                                          {
+                                            backgroundColor: values.productDefinitions[index].productCode === '' ? '#E1E5E7' : '#FFFFFF',
                                           }
-                                          //const newPds = [...pds.productDefinitions, newLine]
-                                          return arrayHelpers.insert(index + 1, {
-                                            ...newLine,
-                                            productCode: '', //calculateRowsInLine(newPds, index + 1),
-                                          })
                                         }
-                                      }
-                                      size="small"
-                                      tabIndex={-1}
-                                    >
-                                      <Icon path={mdiContentDuplicate} size={0.8}/>
-                                    </Fab>
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled}
-                                      InputLabelProps={
-                                        {
-                                          shrink: true,
-                                        }
-                                      }
-                                      InputProps={
-                                        {
-                                          classes: {
-                                            disabled: props.globalClass.fieldDisabled,
-                                          },
-                                          className: props.globalClass.fieldBack,
-                                        }
-                                      }
-                                      label="Tipo Veicolo"
-                                      name={`productDefinitions.${index}.vehicleType`}
-                                      onChange={
-                                        async event => {
-                                          await handleChange(event)
-                                          const { values: pds } = props.innerRef.current || {}
-                                          calculateRows(pds.productDefinitions, setFieldValue)
-                                        }
-                                      }
-                                      select
-                                      SelectProps={{ native: true }}
-                                      size="small"
-                                      style={{ width: 150 }}
-                                      variant="outlined"
-                                    >
-                                      <option
-                                        value={''}
                                       >
-                                        {''}
-                                      </option>
-                                      {
-                                        props.vehicleTypes.filter(({ priority: priority_ }) => !priority_ || priority_ === priority).reduce((acc, vt) => {
-                                          if (vt.id === 'RIMORCHIO' && values.productDefinitions[index]?.coverageType === 'CRISTALLI') {
-                                            //skip
-                                          } else {
-                                            acc.push(
-                                              <option
-                                                key={vt.id}
-                                                value={vt.id}
-                                              >
-                                                {vt.display}
-                                              </option>
-                                            )
+                                        <Fab
+                                          className={classes.iconMinus}
+                                          color="primary"
+                                          disabled={!values.productDefinitions[index].isNew && isDisabled}
+                                          onClick={
+                                            () => arrayHelpers.remove(index)
                                           }
-                                          return acc
-                                        }, [])
-                                      }
-                                    </Field>
-                                    <Tooltip
-                                      placement="bottom"
-                                      title={values.productDefinitions[index]?.coverageType}
-                                    >
-                                      <span>
+                                          size="small"
+                                          tabIndex={-1}
+                                        >
+                                          <Remove fontSize="small"/>
+                                        </Fab>
+                                        <Fab
+                                          className={classes.iconMinus}
+                                          color="primary"
+                                          disabled={!isNew && isDisabled && isNotAdmin}
+                                          onClick={
+                                            () => {
+                                              //const { values: pds } = props.innerRef.current || {}
+                                              const newLine = {
+                                                ...defaultPD,
+                                                ...values.productDefinitions[index],
+                                              }
+                                              //const newPds = [...pds.productDefinitions, newLine]
+                                              return arrayHelpers.insert(index + 1, {
+                                                ...newLine,
+                                                productCode: '', //calculateRowsInLine(newPds, index + 1),
+                                                isNew: true,
+                                              })
+                                            }
+                                          }
+                                          size="small"
+                                          tabIndex={-1}
+                                        >
+                                          <Icon path={mdiContentDuplicate} size={0.8}/>
+                                        </Fab>
+                                        <Tooltip
+                                          placement="bottom"
+                                          title={selectedVehicleType?.display || ''}
+                                        >
+                                          <span>
+                                            <Field
+                                              as={TF}
+                                              className={props.globalClass.field}
+                                              disabled={!isNew && isDisabled}
+                                              InputLabelProps={
+                                                {
+                                                  shrink: true,
+                                                }
+                                              }
+                                              InputProps={
+                                                {
+                                                  classes: {
+                                                    disabled: props.globalClass.fieldDisabled,
+                                                  },
+                                                  className: props.globalClass.fieldBack,
+                                                }
+                                              }
+                                              label="Tipo Veicolo"
+                                              name={`productDefinitions.${index}.vehicleType`}
+                                              onChange={
+                                                async event => {
+                                                  await handleChange(event)
+                                                  const { values: pds } = props.innerRef.current || {}
+                                                  calculateRows(pds.productDefinitions, setFieldValue)
+                                                }
+                                              }
+                                              select
+                                              SelectProps={{ native: true }}
+                                              size="small"
+                                              style={{ width: 150 }}
+                                              variant="outlined"
+                                            >
+                                              <option
+                                                value={''}
+                                              >
+                                                {''}
+                                              </option>
+                                              {
+                                                props.vehicleTypes.filter(({ priority: priority_ }) => !priority_ || priority_ === priority).reduce((acc, vt) => {
+                                                  if (vt.id === 'RIMORCHIO' && values.productDefinitions[index]?.coverageType === 'CRISTALLI') {
+                                                    //skip
+                                                  } else {
+                                                    acc.push(
+                                                      <option
+                                                        key={vt.id}
+                                                        value={vt.id}
+                                                      >
+                                                        {vt.display}
+                                                      </option>
+                                                    )
+                                                  }
+                                                  return acc
+                                                }, [])
+                                              }
+                                            </Field>
+                                          </span>
+                                        </Tooltip>
+                                        <Tooltip
+                                          placement="bottom"
+                                          title={values.productDefinitions[index]?.coverageType}
+                                        >
+                                          <span>
+                                            <Field
+                                              as={TF}
+                                              className={props.globalClass.field}
+                                              disabled={!isNew && isDisabled}
+                                              InputLabelProps={
+                                                {
+                                                  shrink: true,
+                                                }
+                                              }
+                                              InputProps={
+                                                {
+                                                  classes: {
+                                                    disabled: props.globalClass.fieldDisabled,
+                                                  },
+                                                  className: props.globalClass.fieldBack,
+                                                }
+                                              }
+                                              label="Tipo Copertura"
+                                              name={`productDefinitions.${index}.coverageType`}
+                                              onChange={
+                                                async event => {
+                                                  await handleChange(event)
+                                                  const { values: pds } = props.innerRef.current || {}
+                                                  calculateRows(pds.productDefinitions, setFieldValue)
+                                                }
+                                              }
+                                              select
+                                              SelectProps={{ native: true }}
+                                              size="small"
+                                              style={{ width: 250 }}
+                                              variant="outlined"
+                                            >
+                                              <option
+                                                value={''}
+                                              >
+                                                {''}
+                                              </option>
+                                              {
+                                                props.coverageTypes.reduce((acc, pt) => {
+                                                  if (pt.id === 'CRISTALLI' && values.productDefinitions[index]?.vehicleType === 'RIMORCHIO') {
+                                                    //skip
+                                                  } else {
+                                                    acc.push(
+                                                      <option key={pt.id} value={pt.id}>
+                                                        {pt.display}
+                                                      </option>
+                                                    )
+                                                  }
+                                                  return acc
+                                                }, [])
+                                              }
+                                            </Field>
+                                          </span>
+                                        </Tooltip>
                                         <Field
                                           as={TF}
                                           className={props.globalClass.field}
-                                          disabled={isDisabled}
-                                          InputLabelProps={
-                                            {
-                                              shrink: true,
-                                            }
-                                          }
+                                          disabled={(!isNew && isDisabled) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
                                           InputProps={
                                             {
-                                              classes: {
-                                                disabled: props.globalClass.fieldDisabled,
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                                decimalScale: 3,
+                                                max: 100,
                                               },
-                                              className: props.globalClass.fieldBack,
+                                              startAdornment: <InputAdornment position="start">%</InputAdornment>,
                                             }
                                           }
-                                          label="Tipo Copertura"
-                                          name={`productDefinitions.${index}.coverageType`}
-                                          onChange={
-                                            async event => {
-                                              await handleChange(event)
+                                          label="Tasso Lordo"
+                                          name={`productDefinitions.${index}.rate`}
+                                          onBlur={
+                                            () => {
                                               const { values: pds } = props.innerRef.current || {}
                                               calculateRows(pds.productDefinitions, setFieldValue)
                                             }
                                           }
-                                          select
-                                          SelectProps={{ native: true }}
-                                          size="small"
-                                          style={{ width: 250 }}
-                                          variant="outlined"
-                                        >
-                                          <option
-                                            value={''}
-                                          >
-                                            {''}
-                                          </option>
-                                          {
-                                            props.coverageTypes.reduce((acc, pt) => {
-                                              if (pt.id === 'CRISTALLI' && values.productDefinitions[index]?.vehicleType === 'RIMORCHIO') {
-                                                //skip
-                                              } else {
-                                                acc.push(
-                                                  <option key={pt.id} value={pt.id}>
-                                                    {pt.display}
-                                                  </option>
-                                                )
-                                              }
-                                              return acc
-                                            }, [])
-                                          }
-                                        </Field>
-                                      </span>
-                                    </Tooltip>
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                            decimalScale: 3,
-                                            max: 100,
-                                          },
-                                          startAdornment: <InputAdornment position="start">%</InputAdornment>,
-                                        }
-                                      }
-                                      label="Tasso Lordo"
-                                      name={`productDefinitions.${index}.rate`}
-                                      onBlur={
-                                        () => {
-                                          const { values: pds } = props.innerRef.current || {}
-                                          calculateRows(pds.productDefinitions, setFieldValue)
-                                        }
-                                      }
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 90 }}
-                                      variant="outlined"
-                                    />
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                            max: 100,
-                                          },
-                                          startAdornment: <InputAdornment position="start">%</InputAdornment>,
-                                        }
-                                      }
-                                      label="Scoperto"
-                                      name={`productDefinitions.${index}.overdraft`}
-                                      onBlur={
-                                        () => {
-                                          const { values: pds } = props.innerRef.current || {}
-                                          calculateRows(pds.productDefinitions, setFieldValue)
-                                        }
-                                      }
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 80 }}
-                                      variant="outlined"
-                                    />
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                            decimalScale: 2,
-                                          },
-                                          startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                                        }
-                                      }
-                                      label="Franchigia"
-                                      name={`productDefinitions.${index}.excess`}
-                                      onBlur={
-                                        () => {
-                                          const { values: pds } = props.innerRef.current || {}
-                                          calculateRows(pds.productDefinitions, setFieldValue)
-                                        }
-                                      }
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 80 }}
-                                      variant="outlined"
-                                    />
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.vehicleType === 'RIMORCHIO'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                          },
-                                          startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                                        }
-                                      }
-                                      label="Mass. Cristalli"
-                                      name={`productDefinitions.${index}.glassCap`}
-                                      onBlur={
-                                        () => {
-                                          const { values: pds } = props.innerRef.current || {}
-                                          calculateRows(pds.productDefinitions, setFieldValue)
-                                        }
-                                      }
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 100 }}
-                                      variant="outlined"
-                                    />
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.vehicleType === 'RIMORCHIO'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                            decimalScale: 2,
-                                          },
-                                          startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                                        }
-                                      }
-                                      label="Cristalli"
-                                      name={`productDefinitions.${index}.glass`}
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 80 }}
-                                      variant="outlined"
-                                    />
-                                    <Field
-                                      as={TF}
-                                      className={props.globalClass.field}
-                                      disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                      InputProps={
-                                        {
-                                          className: clsx(props.globalClass.fieldBack),
-                                          inputComponent: NumberFormatComp,
-                                          inputProps: {
-                                            thousandSeparator: '.',
-                                            decimalScale: 2,
-                                          },
-                                          startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                                        }
-                                      }
-                                      label="Traino"
-                                      name={`productDefinitions.${index}.towing`}
-                                      onFocus={focus}
-                                      size="small"
-                                      style={{ width: 80 }}
-                                      variant="outlined"
-                                    />
-                                    {
-                                      priority === 4 &&
-                                      <Field
-                                        as={TF}
-                                        className={props.globalClass.field}
-                                        disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                        InputProps={
-                                          {
-                                            className: clsx(props.globalClass.fieldBack),
-                                            inputComponent: NumberFormatComp,
-                                            inputProps: {
-                                              thousandSeparator: '.',
-                                              decimalScale: 2,
-                                            },
-                                            startAdornment: <InputAdornment position="start">€</InputAdornment>,
-                                          }
-                                        }
-                                        label="Min. Premio L."
-                                        name={`productDefinitions.${index}.minimum`}
-                                        onBlur={
-                                          () => {
-                                            const { values: pds } = props.innerRef.current || {}
-                                            calculateRows(pds.productDefinitions, setFieldValue)
-                                          }
-                                        }
-                                        onFocus={focus}
-                                        size="small"
-                                        style={{ width: 100 }}
-                                        variant="outlined"
-                                      />
-                                    }
-                                    {
-                                      priority === 4 &&
-                                      <Field
-                                        as={TF}
-                                        className={props.globalClass.field}
-                                        disabled={isDisabled || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
-                                        InputProps={
-                                          {
-                                            className: clsx(props.globalClass.fieldBack),
-                                            inputComponent: NumberFormatComp,
-                                            inputProps: {
-                                              thousandSeparator: '.',
-                                              decimalScale: 2,
-                                            },
-                                            startAdornment: <InputAdornment position="start">%</InputAdornment>,
-                                          }
-                                        }
-                                        label="Tasse"
-                                        name={`productDefinitions.${index}.taxRate`}
-                                        onFocus={focus}
-                                        size="small"
-                                        style={{ width: 80 }}
-                                        variant="outlined"
-                                      />
-                                    }
-                                    <Tooltip
-                                      placement="bottom"
-                                      title={values.productDefinitions[index]?.productCode}
-                                    >
-                                      <span>
-                                        <Field
-                                          className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
-                                          component={TextField}
-                                          disabled
-                                          InputProps={
-                                            {
-                                              classes: {
-                                                disabled: props.globalClass.fieldDisabled,
-                                              },
-                                              className: props.globalClass.fieldBack,
-                                            }
-                                          }
-                                          label="Codice Prodotto"
-                                          name={`productDefinitions.${index}.productCode`}
                                           onFocus={focus}
                                           size="small"
-                                          style={{ width: 190 }}
+                                          style={{ width: 90 }}
                                           variant="outlined"
                                         />
-                                      </span>
-                                    </Tooltip>
-                                    <IconButton
-                                      classes={
+                                        <Field
+                                          as={TF}
+                                          className={props.globalClass.field}
+                                          disabled={(!isNew && isDisabled) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
+                                          InputProps={
+                                            {
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                                max: 100,
+                                              },
+                                              startAdornment: <InputAdornment position="start">%</InputAdornment>,
+                                            }
+                                          }
+                                          label="Scoperto"
+                                          name={`productDefinitions.${index}.overdraft`}
+                                          onBlur={
+                                            () => {
+                                              const { values: pds } = props.innerRef.current || {}
+                                              calculateRows(pds.productDefinitions, setFieldValue)
+                                            }
+                                          }
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 80 }}
+                                          variant="outlined"
+                                        />
+                                        <Field
+                                          as={TF}
+                                          className={props.globalClass.field}
+                                          disabled={(!isNew && isDisabled) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
+                                          InputProps={
+                                            {
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                                decimalScale: 2,
+                                              },
+                                              startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                                            }
+                                          }
+                                          label="Franchigia"
+                                          name={`productDefinitions.${index}.excess`}
+                                          onBlur={
+                                            () => {
+                                              const { values: pds } = props.innerRef.current || {}
+                                              calculateRows(pds.productDefinitions, setFieldValue)
+                                            }
+                                          }
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 80 }}
+                                          variant="outlined"
+                                        />
+                                        <Field
+                                          as={TF}
+                                          className={props.globalClass.field}
+                                          disabled={(!isNew && isDisabled && isNotAdmin) || values.productDefinitions[index]?.vehicleType === 'RIMORCHIO'}
+                                          InputProps={
+                                            {
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                              },
+                                              startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                                            }
+                                          }
+                                          label="Mass. Cristalli"
+                                          name={`productDefinitions.${index}.glassCap`}
+                                          onBlur={
+                                            () => {
+                                              const { values: pds } = props.innerRef.current || {}
+                                              if (props.isPolicy) {
+                                                const missingItems = checkChangeRows(initialPD)
+                                                if (missingItems.length) {
+                                                  alert(`Attenzione stai facendo sparire il pacchetto: ${missingItems.join(', ')}`)
+                                                  props.setProductDisappeared(missingItems)
+                                                }
+                                              } else {
+                                                calculateRows(pds.productDefinitions, setFieldValue)
+                                              }
+                                            }
+                                          }
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 100 }}
+                                          variant="outlined"
+                                        />
+                                        <Field
+                                          as={TF}
+                                          className={props.globalClass.field}
+                                          disabled={(!isNew && isDisabled && isNotAdmin) || values.productDefinitions[index]?.vehicleType === 'RIMORCHIO'}
+                                          InputProps={
+                                            {
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                                decimalScale: 2,
+                                              },
+                                              startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                                            }
+                                          }
+                                          label="Cristalli"
+                                          name={`productDefinitions.${index}.glass`}
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 80 }}
+                                          variant="outlined"
+                                        />
+                                        <Field
+                                          as={TF}
+                                          className={props.globalClass.field}
+                                          disabled={(!isNew && isDisabled && isNotAdmin) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
+                                          InputProps={
+                                            {
+                                              className: clsx(props.globalClass.fieldBack),
+                                              inputComponent: NumberFormatComp,
+                                              inputProps: {
+                                                thousandSeparator: '.',
+                                                decimalScale: 2,
+                                              },
+                                              startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                                            }
+                                          }
+                                          label="Traino"
+                                          name={`productDefinitions.${index}.towing`}
+                                          onFocus={focus}
+                                          size="small"
+                                          style={{ width: 80 }}
+                                          variant="outlined"
+                                        />
                                         {
-                                          colorPrimary: classes.iconPencil,
-                                        }
-                                      }
-                                      className={classes.iconButton}
-                                      color={(values.productDefinitions[index]?.conditions || values.productDefinitions[index]?.statements) ? 'primary' : 'default'}
-                                      disabled={isDisabled && !values.productDefinitions[index]?.conditions && !values.productDefinitions[index]?.statements}
-                                      onClick={() => setEditConditionsIndex(index)}
-                                      style={
-                                        {
-                                          marginTop: 10,
-                                        }
-                                      }
-                                    >
-                                      {
-                                        isDisabled ?
-                                          <Icon path={mdiEyeCircle} size={1}/>
-                                          :
-                                          <Icon
-                                            path={mdiPencilCircle}
-                                            size={1}
+                                          priority === 4 &&
+                                          <Field
+                                            as={TF}
+                                            className={props.globalClass.field}
+                                            disabled={(!isNew && isDisabled) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
+                                            InputProps={
+                                              {
+                                                className: clsx(props.globalClass.fieldBack),
+                                                inputComponent: NumberFormatComp,
+                                                inputProps: {
+                                                  thousandSeparator: '.',
+                                                  decimalScale: 2,
+                                                },
+                                                startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                                              }
+                                            }
+                                            label="Min. Premio L."
+                                            name={`productDefinitions.${index}.minimum`}
+                                            onBlur={
+                                              () => {
+                                                const { values: pds } = props.innerRef.current || {}
+                                                calculateRows(pds.productDefinitions, setFieldValue)
+                                              }
+                                            }
+                                            onFocus={focus}
+                                            size="small"
+                                            style={{ width: 100 }}
+                                            variant="outlined"
                                           />
-                                      }
-                                    </IconButton>
-                                    <FastField
-                                      component={TextField}
-                                      name={`productDefinitions.${index}.conditions`}
-                                      style={{ display: 'none' }}
-                                    />
-                                    <FastField
-                                      component={TextField}
-                                      name={`productDefinitions.${index}.statements`}
-                                      style={{ display: 'none' }}
-                                    />
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            ))
-                          }
+                                        }
+                                        {
+                                          priority === 4 &&
+                                          <Field
+                                            as={TF}
+                                            className={props.globalClass.field}
+                                            disabled={(!isNew && isDisabled) || values.productDefinitions[index]?.coverageType === 'CRISTALLI'}
+                                            InputProps={
+                                              {
+                                                className: clsx(props.globalClass.fieldBack),
+                                                inputComponent: NumberFormatComp,
+                                                inputProps: {
+                                                  thousandSeparator: '.',
+                                                  decimalScale: 2,
+                                                },
+                                                startAdornment: <InputAdornment position="start">%</InputAdornment>,
+                                              }
+                                            }
+                                            label="Tasse"
+                                            name={`productDefinitions.${index}.taxRate`}
+                                            onFocus={focus}
+                                            size="small"
+                                            style={{ width: 80 }}
+                                            variant="outlined"
+                                          />
+                                        }
+                                        <Tooltip
+                                          placement="bottom"
+                                          title={values.productDefinitions[index]?.productCode}
+                                        >
+                                          <span>
+                                            <Field
+                                              className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
+                                              component={TextField}
+                                              disabled
+                                              InputProps={
+                                                {
+                                                  classes: {
+                                                    disabled: props.globalClass.fieldDisabled,
+                                                  },
+                                                  className: props.globalClass.fieldBack,
+                                                }
+                                              }
+                                              label="Codice Prodotto"
+                                              name={`productDefinitions.${index}.productCode`}
+                                              onFocus={focus}
+                                              size="small"
+                                              style={{ width: 190 }}
+                                              variant="outlined"
+                                            />
+                                          </span>
+                                        </Tooltip>
+                                        <IconButton
+                                          classes={
+                                            {
+                                              colorPrimary: classes.iconPencil,
+                                            }
+                                          }
+                                          className={classes.iconButton}
+                                          color={(values.productDefinitions[index]?.conditions || values.productDefinitions[index]?.statements) ? 'primary' : 'default'}
+                                          disabled={(!isNew && isDisabled) && !values.productDefinitions[index]?.conditions && !values.productDefinitions[index]?.statements}
+                                          onClick={() => setEditConditionsIndex(index)}
+                                          style={
+                                            {
+                                              marginTop: 10,
+                                            }
+                                          }
+                                        >
+                                          {
+                                            (!isNew && isDisabled) ?
+                                              <Icon path={mdiEyeCircle} size={1}/>
+                                              :
+                                              <Icon
+                                                path={mdiPencilCircle}
+                                                size={1}
+                                              />
+                                          }
+                                        </IconButton>
+                                        <FastField
+                                          component={TextField}
+                                          name={`productDefinitions.${index}.conditions`}
+                                          style={{ display: 'none' }}
+                                        />
+                                        <FastField
+                                          component={TextField}
+                                          name={`productDefinitions.${index}.statements`}
+                                          style={{ display: 'none' }}
+                                        />
+                                        <FastField
+                                          component={TextField}
+                                          name={`productDefinitions.${index}.statementsTowing`}
+                                          style={{ display: 'none' }}
+                                        />
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )
+                              })
+                            }
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )
-                }
-              />
-              <div/>
-              <Card className={classes.cardAdding}>
-                <Typography className={classes.cardTitle} variant={'h6'}>
-                  Dati Aggiuntivi
-                </Typography>
-                <CardContent className={classes.cardContentAdding}>
-                  <FastField
-                    className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
-                    component={TextField}
-                    disabled={isDisabled}
-                    InputProps={
-                      {
-                        classes: {
-                          disabled: props.globalClass.fieldDisabled,
-                        },
-                        className: props.globalClass.fieldBack,
+                      </>
+                    )
+                  }
+                />
+                <div/>
+                <Card className={classes.cardAdding}>
+                  <Typography className={classes.cardTitle} variant={'h6'}>
+                    Dati Aggiuntivi
+                  </Typography>
+                  <CardContent className={classes.cardContentAdding}>
+                    <FastField
+                      className={clsx(props.globalClass.field, props.globalClass.fieldMid)}
+                      component={TextField}
+                      disabled={isDisabled}
+                      InputProps={
+                        {
+                          classes: {
+                            disabled: props.globalClass.fieldDisabled,
+                          },
+                          className: props.globalClass.fieldBack,
+                        }
                       }
-                    }
-                    label="Accordi Speciali"
-                    multiline
-                    name="specialArrangements"
-                    rowsMax={5}
-                    style={{ width: 500 }}
-                    variant="outlined"
-                  />
-                  <div>
-                    <IconButton
-                      className={classes.iconButton}
-                      color={values.specialArrangements ? 'primary' : 'default'}
-                      onClick={() => setSpecialArrangementsOpen(true)}
-                    >
-                      {isDisabled ? <Icon path={mdiEyeCircle} size={1}/> : <Icon path={mdiPencilCircle} size={1}/>}
-                    </IconButton>
-                    <br/>
-                    {
-                      !isDisabled &&
+                      label="Accordi Speciali"
+                      multiline
+                      name="specialArrangements"
+                      rowsMax={5}
+                      style={{ width: 500 }}
+                      variant="outlined"
+                    />
+                    <div>
                       <IconButton
                         className={classes.iconButton}
                         color={values.specialArrangements ? 'primary' : 'default'}
-                        disabled={isDisabled}
-                        onClick={() => setFieldValue('specialArrangements', '')}
+                        onClick={() => setSpecialArrangementsOpen(true)}
                       >
-                        <Icon path={mdiDeleteCircle} size={1}/>
+                        {isDisabled ? <Icon path={mdiEyeCircle} size={1}/> : <Icon path={mdiPencilCircle} size={1}/>}
                       </IconButton>
-                    }
-                  </div>
-                </CardContent>
-              </Card>
-            </form>
-            <DialogSpecialArrangements
-              defaultValue={values['specialArrangements']}
-              isDisabled={isDisabled}
-              open={specialArrangementsOpen}
-              setFieldValue={setFieldValue}
-              setOpen={setSpecialArrangementsOpen}
-            />
-            <DialogEditConditions
-              coverageTypesToKey={coverageTypesToKey}
-              defaultValue={values.productDefinitions}
-              index={editConditionsIndex}
-              isDisabled={isDisabled}
-              setFieldValue={setFieldValue}
-              setIndex={setEditConditionsIndex}
-            />
-          </div>
-        )
+                      <br/>
+                      {
+                        !isDisabled &&
+                        <IconButton
+                          className={classes.iconButton}
+                          color={values.specialArrangements ? 'primary' : 'default'}
+                          disabled={isDisabled}
+                          onClick={() => setFieldValue('specialArrangements', '')}
+                        >
+                          <Icon path={mdiDeleteCircle} size={1}/>
+                        </IconButton>
+                      }
+                    </div>
+                  </CardContent>
+                </Card>
+              </form>
+              <DialogSpecialArrangements
+                defaultValue={values['specialArrangements']}
+                isDisabled={isDisabled}
+                open={specialArrangementsOpen}
+                setFieldValue={setFieldValue}
+                setOpen={setSpecialArrangementsOpen}
+              />
+              <DialogEditConditions
+                coverageTypesToKey={coverageTypesToKey}
+                defaultValue={values.productDefinitions}
+                index={editConditionsIndex}
+                isDisabled={!isConditionNew && isDisabled}
+                setFieldValue={setFieldValue}
+                setIndex={setEditConditionsIndex}
+              />
+            </div>
+          )
+        }
       }
     </Formik>
   )
@@ -717,6 +749,7 @@ const Body = props => {
 
 const PolicyProductDefinition = props => {
   const {
+    setProductDisappeared,
     productDefinitions = [],
     vehicleTypes,
     innerRef,
@@ -733,6 +766,7 @@ const PolicyProductDefinition = props => {
   }
   const bodyProps = {
     coverageTypes: sortBy(coverageTypes, 'index'),
+    setProductDisappeared,
     globalClass,
     dispatch,
     innerRef,

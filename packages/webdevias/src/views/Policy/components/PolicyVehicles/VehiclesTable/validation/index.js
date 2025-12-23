@@ -45,6 +45,12 @@ export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar, policy) 
       enqueueSnackbar('Data non compresa nel periodo di polizza!', { variant: 'error' })
     }
   }
+  if (policy.initDate && (row.startDate || row.finishDate)) {
+    if (moment(row.finishDate).isBefore(moment(policy.initDate)) || moment(row.startDate).isAfter(moment(endDate))) {
+      abortError = true
+      enqueueSnackbar('Data non compresa nel periodo di polizza!', { variant: 'error' })
+    }
+  }
   if (row.leasingExpiry && !cFunctions.isString(row.leasingExpiry) && !row.leasingExpiry.isValid()) {
     const malformed = row.leasingExpiry._i
     row.leasingExpiry = null
@@ -54,6 +60,12 @@ export function controlRow (row, rows, rowKey, pdsObj, enqueueSnackbar, policy) 
     const malformed = row.registrationDate._i
     row.registrationDate = null
     enqueueSnackbar(`Data immatricolazione "${malformed}" non valida!`, { variant: 'error' })
+  }
+  if (row.registrationDate) {
+    if (moment(row.registrationDate).isAfter(moment())) {
+      abortError = true
+      enqueueSnackbar('Data immatricolazione errata!', { variant: 'error' })
+    }
   }
   if (!row.weight && row.vehicleType === 'AUTOCARRO') {
     enqueueSnackbar('Q.li/Kw/Posti obbligatorio', { variant: 'error' })

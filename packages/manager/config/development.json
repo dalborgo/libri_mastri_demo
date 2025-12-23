@@ -10,7 +10,7 @@
     "BUCKET_DEFAULT": "libri_mastri_dev"
   },
   "genias": {
-    "IP_DEFAULT": "194.32.175.163",
+    "IP_DEFAULT": "93.64.125.3",
     "PORT": "4001",
     "CREDENTIALS": {
       "username": "ImportWebApiQ",

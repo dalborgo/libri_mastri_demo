@@ -1,8 +1,24 @@
 import { TableFixedColumns, TableHeaderRow, Toolbar, VirtualTable } from '@devexpress/dx-react-grid-material-ui'
 import { useTheme, withStyles } from '@material-ui/styles'
-import React from 'react'
-import { Input, MenuItem, Select, TableCell, Tooltip } from '@material-ui/core'
+import React, { useState } from 'react'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Input,
+  MenuItem,
+  Select,
+  TableCell,
+  TextField,
+  Tooltip,
+} from '@material-ui/core'
 import MuiTableHead from 'theme/overrides/MuiTableHead'
+import Icon from '@mdi/react'
+import { mdiPencilCircle } from '@mdi/js'
+import VEHICLE_LIST from '../vehicleUseList.json'
 
 const styles = theme => ({
   lookupEditCell: {
@@ -18,7 +34,7 @@ const styles = theme => ({
 })
 
 const LookupEditCellBase = ({
-  values, value, onValueChange, classes, hide, className, style, theme,
+  values, value, onValueChange, classes, hide, className, style, theme, name = '', extra,
 }) => (
   <TableCell
     className={className}
@@ -40,7 +56,15 @@ const LookupEditCellBase = ({
                 className: classes.selectMenu,
               }
             }
-            onChange={event => onValueChange(event.target.value)}
+            onChange={
+              event => {
+                if (name === 'vehicleType') {
+                  const list = VEHICLE_LIST.filter(value => value['Descrizione'] === event.target.value)
+                  extra([...new Set(list.map(value => value['Uso']))])
+                }
+                onValueChange(event.target.value)
+              }
+            }
             value={value || values[0]}
           >
             {
@@ -70,6 +94,49 @@ const LookupEditCellBase = ({
   </TableCell>
 )
 export const LookupEditCell = withStyles(styles, { withTheme: true })(LookupEditCellBase)
+const DialogEditCellBase = ({ value, onValueChange, className, style }) => {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState(value || '')
+  const handleClose = () => {
+    setOpen(false)
+  }
+  
+  const handleSave = () => {
+    onValueChange(text)
+    setOpen(false)
+  }
+  
+  return (
+    <TableCell className={className} style={{ ...style, textAlign: 'right' }}>
+      <IconButton
+        onClick={() => setOpen(true)}
+        style={{ color: value ? 'red' : undefined }}
+      >
+        <Icon path={mdiPencilCircle} size={1}/>
+      </IconButton>
+      <Dialog fullWidth onClose={handleClose} open={open}>
+        <DialogTitle>Condizioni personalizzate</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            onChange={event => setText(event.target.value)}
+            onFocus={event => event.target.select()}
+            rows={4}
+            value={text}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Annulla</Button>
+          <Button color="primary" onClick={handleSave}>OK</Button>
+        </DialogActions>
+      </Dialog>
+    </TableCell>
+  )
+}
+
+export const DialogEditCell = withStyles(styles, { withTheme: true })(DialogEditCellBase)
 
 const BaseCell = ({
   value,
@@ -97,7 +164,26 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
     isError |= !value
   }
   if (restProps.column.name === 'vehicleType') {
-    isError |= !['AUTOCARRO', 'AUTO', 'PULLMAN', 'AUTOARTICOLATO', 'RIMORCHIO', 'MOTOCICLO', 'MACCHINA OPERATRICE', 'VEICOLO SPECIALE', 'AUTOCARRO USO NOLEGGIO', 'AUTO USO NOLEGGIO', 'AUTO USO SCUOLA GUIDA', 'CICLOMOTORE', 'MACCHINA AGRICOLA', 'TRATTRICE AGRICOLA', 'AUTOCARAVAN', 'QUADRICICLO'].includes(value)
+    isError |= ![
+      'AUTOCARRO',
+      'AUTO',
+      'PULLMAN',
+      'AUTOARTICOLATO',
+      'RIMORCHIO',
+      'MOTOCICLO',
+      'MACCHINA OPERATRICE',
+      'VEICOLO SPECIALE',
+      'AUTOCARRO USO NOLEGGIO',
+      'AUTO USO NOLEGGIO',
+      'AUTO USO SCUOLA GUIDA',
+      'CICLOMOTORE',
+      'MACCHINA AGRICOLA',
+      'TRATTRICE AGRICOLA',
+      'AUTOCARAVAN',
+      'QUADRICICLO',
+      'QUADRICICLO TRASPORTO COSE',
+      'QUADRICICLO TRASPORTO PERSONE',
+    ].includes(value)
   }
   if (restProps.column.name === 'prize') {
     isError |= !value || value === '0,00'
@@ -144,7 +230,7 @@ const HighlightedCell = ({ style, children, value, theme, stateStyle, ...restPro
 }
 
 export const Cell = props => {
-  const { column, row } = props
+  const { column, row, value } = props
   const { style, ...restProps } = props
   let stateStyle
   switch (row.state) {
@@ -167,6 +253,31 @@ export const Cell = props => {
   const theme = useTheme()
   if (['prize', 'licensePlate', 'productCode', 'weight', 'coverageType', 'hasTowing', 'hasGlass', 'vehicleType'].includes(column.name)) {
     return <HighlightedCell {...props} stateStyle={stateStyle} theme={theme}/>
+  }
+  if ('custom' === column.name) {
+    return (
+      <VirtualTable.Cell
+        style={
+          {
+            ...style,
+            ...stateStyle,
+          }
+        }
+        {...restProps}
+      >
+        <Tooltip disableHoverListener={!value} placement="top" title={value || ''}>
+          <span style={{ cursor: value ? 'help' : undefined }}>
+            <IconButton
+              disabled
+              onClick={() => null}
+              style={{ color: value ? '#E17E7E' : undefined }}
+            >
+              <Icon path={mdiPencilCircle} size={1}/>
+            </IconButton>
+          </span>
+        </Tooltip>
+      </VirtualTable.Cell>
+    )
   }
   return (
     <VirtualTable.Cell

@@ -27,7 +27,7 @@ const useStyles = makeStyles(theme => ({
 }))
 
 const HeaderRegulationTable = props => {
-  const { formik: { handleChange, values }, generateRegDates, globalClass, isPolicy } = props
+  const { formik: { handleChange, values }, generateRegDates, globalClass, isPolicy, priority } = props
   const classes = useStyles()
   const disabledRecFract = (values.regulationFract !== values.paymentFract) || (['ANNUAL', 'UNIQUE'].includes(values.regulationFract))
   return (
@@ -49,47 +49,52 @@ const HeaderRegulationTable = props => {
           </Typography>
         </Grid>
         <Grid item>
-          <Field
-            as={TF}
-            disabled={disabledRecFract}
-            InputLabelProps={
-              {
-                shrink: true,
-              }
-            }
-            InputProps={
-              {
-                classes: {
-                  disabled: globalClass.fieldDisabled,
-                },
-                className: globalClass.fieldBack,
-              }
-            }
-            label="Ricalcola Rate"
-            name="isRecalculateFraction"
-            onChange={
-              async event => {
-                await handleChange(event)
-                generateRegDates()
-              }
-            }
-            select
-            SelectProps={{ native: true }}
-            size="small"
-            style={{ width: 100 }}
-            variant="outlined"
-          >
-            <option
-              value="NO"
-            >
-              NO
-            </option>
-            <option
-              value="SI"
-            >
-              SI
-            </option>
-          </Field>&nbsp;&nbsp;&nbsp;
+          {
+            priority === 4 &&
+            <>
+              <Field
+                as={TF}
+                disabled={disabledRecFract}
+                InputLabelProps={
+                  {
+                    shrink: true,
+                  }
+                }
+                InputProps={
+                  {
+                    classes: {
+                      disabled: globalClass.fieldDisabled,
+                    },
+                    className: globalClass.fieldBack,
+                  }
+                }
+                label="Ricalcola Rate"
+                name="isRecalculateFraction"
+                onChange={
+                  async event => {
+                    await handleChange(event)
+                    generateRegDates()
+                  }
+                }
+                select
+                SelectProps={{ native: true }}
+                size="small"
+                style={{ width: 100 }}
+                variant="outlined"
+              >
+                <option
+                  value="NO"
+                >
+                  NO
+                </option>
+                <option
+                  value="SI"
+                >
+                  SI
+                </option>
+              </Field>&nbsp;&nbsp;&nbsp;
+            </>
+          }
           <Field
             as={TF}
             disabled={isPolicy}

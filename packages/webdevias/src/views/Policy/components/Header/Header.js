@@ -35,6 +35,7 @@ import { mdiFilePdfOutline, mdiPrinterSettings } from '@mdi/js'
 import Icon from '@mdi/react'
 import { envConfig } from 'init'
 import CompanyView from './CompanyView'
+import { numeric } from '@adapter/common'
 
 const useStyles = makeStyles(theme => ({
   box: {
@@ -367,6 +368,8 @@ const Header = props => {
     dispatch,
     setProducer,
     producer,
+    numPolizzaCompagnia,
+    provvigioni,
     subAgent,
     setSubAgent,
     formRefHolders,
@@ -377,7 +380,7 @@ const Header = props => {
   const classes = useStyles()
   const client = useApolloClient()
   const { me: { priority } } = client.readQuery({ query: ME })
-  const [company, setCompany] = useState(companyDefault || 'TUA ASSICURAZIONI SPA')
+  const [company, setCompany] = useState(companyDefault || 'ALLIANZ NEXT S.P.A.')
   const stateChip = getPolicyState(state, meta, top, priority)
   const [open, setOpen] = React.useState(false)
   const handleClickOpen = () => {
@@ -425,7 +428,7 @@ const Header = props => {
                             href={`http://${envConfig.SERVER}:8091/ui/index.html#!/buckets/documents/MB_POLICY%7C${_code}?bucket=${envConfig.BUCKET}`}
                             target="_blank"
                           >
-                            {number}
+                            {numPolizzaCompagnia || number}
                           </Link>
                           {
                             (!isPolicy) &&
@@ -487,21 +490,56 @@ const Header = props => {
                   return (
                     <>
                       <ProducerView
+                        formRefHolders={formRefHolders}
                         formRefProd={formRefProd}
                         priority={priority}
                         producer={producer}
+                        provvigioni={provvigioni}
                         setProducer={setProducer}
                         state={state}
                         subAgent={subAgent}
-                        formRefHolders={formRefHolders}
                       />
                       <CompanyView
                         company={company}
                         formRefComp={formRefComp}
+                        number={number}
                         priority={priority}
                         setCompany={setCompany}
                         state={state}
                       />
+                      {
+                        state?.isPolicy &&
+                        <div style={{ paddingTop: 0, marginLeft: 5 }}>
+                          <Typography
+                            component="h2"
+                            display="inline"
+                            variant="overline"
+                          >
+                            Provvigioni Attive:
+                            <Typography
+                              color="primary"
+                              display="inline"
+                              variant="overline"
+                            >
+                              &nbsp;{numeric.printDecimal(provvigioni?.['attive'] / 1000)}%
+                            </Typography>
+                          </Typography>&nbsp;&nbsp;&nbsp;&nbsp;
+                          <Typography
+                            component="h2"
+                            display="inline"
+                            variant="overline"
+                          >
+                            Provvigioni Passive:
+                            <Typography
+                              color="primary"
+                              display="inline"
+                              variant="overline"
+                            >
+                              &nbsp;{numeric.printDecimal(provvigioni?.['passive'] / 1000)}%
+                            </Typography>
+                          </Typography>
+                        </div>
+                      }
                     </>
                   )
                 case 3:

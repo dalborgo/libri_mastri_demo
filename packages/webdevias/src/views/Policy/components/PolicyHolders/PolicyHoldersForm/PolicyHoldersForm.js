@@ -9,7 +9,13 @@ import { makeStyles, useTheme } from '@material-ui/styles'
 import Remove from '@material-ui/icons/Remove'
 import Add from '@material-ui/icons/Add'
 import Icon from '@mdi/react'
-import { mdiAccountMultipleOutline, mdiPencilCircle, mdiShieldAccountOutline, mdiShieldPlusOutline } from '@mdi/js'
+import {
+  mdiAccountMultipleOutline,
+  mdiPencilCircle,
+  mdiShieldAccountOutline,
+  mdiShieldPlusOutline,
+  mdiUpload,
+} from '@mdi/js'
 import reduce from 'lodash/reduce'
 import { COLLABORATOR_SAVE_FRAGMENT, HOLDER_SAVE_FRAGMENT } from 'queries/policies'
 import { cGraphQL } from '@adapter/common'
@@ -87,6 +93,7 @@ const initValueCollaborator = {
 
 const PolicyHoldersForm = props => {
   const {
+    handleSendGenias,
     holders = [],
     innerRef,
     globalClass,
@@ -336,6 +343,25 @@ const PolicyHoldersForm = props => {
                                               )
                                           )
                                         }
+                                        <>
+                                          &nbsp;&nbsp;
+                                          <Tooltip
+                                            title="Carica in Genias"
+                                          >
+                                            <IconButton
+                                              className={classes.plusButton}
+                                              disabled={isDisabled || (isPolicy && index < holdersLength)}
+                                              disableFocusRipple
+                                              onClick={
+                                                async () => {
+                                                  await handleSendGenias(index)
+                                                }
+                                              }
+                                            >
+                                              <Icon path={mdiUpload} size={1}/>
+                                            </IconButton>
+                                          </Tooltip>
+                                        </>
                                       </CardContent>
                                     </Card>
                                   </div>

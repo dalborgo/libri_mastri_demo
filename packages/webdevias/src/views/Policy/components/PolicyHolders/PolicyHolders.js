@@ -24,6 +24,7 @@ function Body (props) {
             collaborators={props.collaborators}
             dispatch={props.dispatch}
             globalClass={props.globalClass}
+            handleSendGenias={props.handleSendGenias}
             holders={props.holders}
             innerRef={props.innerRef}
             isPolicy={props.isPolicy}
@@ -36,7 +37,7 @@ function Body (props) {
   )
 }
 
-const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy, collaborators, parent }) => {
+const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy, collaborators, parent, handleSendGenias }) => {
   const throwError = useAsyncError()
   const { tab } = useParams()
   const client = useApolloClient()
@@ -67,6 +68,7 @@ const PolicyHolders = ({ globalClass, holders, innerRef, dispatch, isPolicy, col
     dispatch,
     globalClass,
     holders,
+    handleSendGenias,
     collaborators,
     collaboratorList: parent?.children?.filter(row => row.role === 'COLLABORATOR') || [],
     innerRef,

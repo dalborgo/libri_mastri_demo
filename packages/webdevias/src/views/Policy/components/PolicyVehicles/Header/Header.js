@@ -27,6 +27,7 @@ const useStyles = makeStyles(theme => ({
 // eslint-disable-next-line react/display-name
 const ExportMenu = memo(({
   priority,
+  handleSendGenias,
   filtered,
   setFiltered,
   isPolicy,
@@ -176,9 +177,11 @@ const ExportMenu = memo(({
               async () => {
                 const value = await checkPolicy()
                 if(!value){
-                  await dispatch({ type: 'confirmAllInclExcl' })
-                  document.getElementById('headerButton').click()
+                  await handleSendGenias()
                   handleClose()
+                 /* await dispatch({ type: 'confirmAllInclExcl' })
+                  document.getElementById('headerButton').click()
+                  */
                 }
               }
             }
@@ -260,6 +263,7 @@ const ExportMenu = memo(({
 
 const Header = props => {
   const {
+    handleSendGenias,
     handleModeChange,
     handleApplicationZip,
     handleExport,
@@ -328,6 +332,7 @@ const Header = props => {
           <Grid container justify="flex-end">
             <ExportMenu
               checkPolicy={checkPolicy}
+              handleSendGenias={handleSendGenias}
               classes={classes}
               dispatch={dispatch}
               filtered={filtered}

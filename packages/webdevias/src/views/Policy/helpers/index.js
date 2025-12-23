@@ -9,6 +9,27 @@ import saveAs from 'file-saver'
 import { axiosGraphqlQuery } from 'utils/axios'
 import moment from 'moment'
 
+export function checkVehicleStateTransitions (vehicles) {
+  if (!Array.isArray(vehicles)) { return [] }
+  const counters = new Map()
+  for (const vehicle of vehicles) {
+    if (!vehicle) { continue }
+    const plate = vehicle.licensePlate || vehicle.licenzePlate
+    const st = vehicle.state
+    if (!plate || !st) { continue }
+    if (!counters.has(plate)) { counters.set(plate, { active: 0, added: 0 }) }
+    if (st === 'ACTIVE') { counters.get(plate).active++ }
+    if (st === 'ADDED_CONFIRMED' || st === 'ADDED') { counters.get(plate).added++ }
+  }
+  const invalid = []
+  for (const [plate, c] of counters) {
+    if (c.added >= 2 || (c.added >= 1 && c.active >= 1)) {
+      invalid.push(plate)
+    }
+  }
+  return invalid
+}
+
 export function reducerPolicy (draft, action) {
   switch (action.type) {
     case 'setNumber':
@@ -26,42 +47,57 @@ export function reducerPolicy (draft, action) {
     case 'setPaidFractions':
       draft.paidFractions[action.paidFraction.index] = action.paidFraction.val
       return
-    case 'confirmAllInclExcl':
-      const partial_ = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, index: -1 }
+    case 'confirmAllInclExcl': {
+      const invalidPlates = checkVehicleStateTransitions(draft.vehicles)
+      if (invalidPlates.length) {return}
+      const partial_ = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, maxAllianz: 0, index: -1 }
       for (let i = 0; i < draft.vehicles.length; i++) {
-        if (draft.vehicles[i].state === 'ADDED_CONFIRMED') {
-          partial_.maxIncluded = Math.max(partial_.maxIncluded, draft.vehicles[i].counter || 0)
+        const vehicle = draft.vehicles[i]
+        if (['ADDED_CONFIRMED'].includes(vehicle.state) || (['DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state) && vehicle.includedCounter)) {
+          partial_.maxIncluded = Math.max(partial_.maxIncluded, vehicle.includedCounter || vehicle.counter || 0)
         }
-        if (draft.vehicles[i].state === 'DELETED_CONFIRMED') {
-          partial_.maxExcluded = Math.max(partial_.maxExcluded, draft.vehicles[i].counter || 0)
+        if (['DELETED_CONFIRMED'].includes(vehicle.state)) {
+          partial_.maxExcluded = Math.max(partial_.maxExcluded, vehicle.excludedCounter || vehicle.counter || 0)
         }
-        if (draft.vehicles[i].leasingCompany && draft.vehicles[i].state === 'ADDED_CONFIRMED') {
-          partial_.maxConstraint = Math.max(partial_.maxConstraint, draft.vehicles[i].constraintCounter || 0)
+        if (vehicle.leasingCompany) {
+          partial_.maxConstraint = Math.max(partial_.maxConstraint, vehicle.constraintCounter || 0)
         }
+        partial_.maxAllianz = Math.max(partial_.maxAllianz, vehicle.allianzCounter || 0)
       }
       draft.vehicles = draft.vehicles.map(vehicle => {
         if (['ADDED', 'DELETED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
           const newState = vehicle.state === 'ADDED' ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED'
-          let counter, constraintCounter
-          counter = newState === 'ADDED_CONFIRMED'
-            ?
-            vehicle.counter ? vehicle.counter : ++partial_.maxIncluded
-            :
-            vehicle.counter ? vehicle.counter : ++partial_.maxExcluded
+          let counter, constraintCounter, includedCounter, excludedCounter
+          const allianzCounter = newState === 'ADDED_CONFIRMED' ? ++partial_.maxAllianz : vehicle.allianzCounter
+          if (newState === 'ADDED_CONFIRMED') {
+            ++partial_.maxIncluded
+            counter = vehicle.counter ? vehicle.counter : partial_.maxIncluded
+            includedCounter = vehicle.includedCounter ? vehicle.includedCounter : partial_.maxIncluded
+          } else {
+            ++partial_.maxExcluded
+            counter = vehicle.counter ? vehicle.counter : partial_.maxExcluded
+            excludedCounter = vehicle.excludedCounter ? vehicle.excludedCounter : partial_.maxExcluded
+            includedCounter = vehicle.includedCounter
+          }
           if (newState === 'ADDED_CONFIRMED' && vehicle.leasingCompany) {
             constraintCounter = vehicle.constraintCounter ? vehicle.constraintCounter : ++partial_.maxConstraint
           }
+          const isMatrix = Boolean(draft['numPolizzaCompagnia'])
           return {
             ...vehicle,
             state: newState,
             counter,
             constraintCounter,
+            includedCounter,
+            excludedCounter,
+            allianzCounter: isMatrix ? allianzCounter : undefined,
           }
         } else {
           return vehicle
         }
       })
       return
+    }
     case 'setVehicles':
       draft.vehicles = action.vehicles
       return
@@ -76,21 +112,26 @@ export function reducerPolicy (draft, action) {
       draft.regFractions = action.regFractions
       draft.vehicles = action.vehicles
       return
-    case 'setVehicleStateByIndex':
-      const partial = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, index: -1 }
+    case 'setVehicleStateByIndex': {
+      const isMatrix = Boolean(draft['numPolizzaCompagnia'])
+      const invalidPlates = checkVehicleStateTransitions(draft.vehicles)
+      if (invalidPlates.length) { return }
+      const partial = { maxIncluded: 0, maxExcluded: 0, maxConstraint: 0, maxAllianz: 0, index: -1 }
       for (let i = 0; i < draft.vehicles.length; i++) {
-        if (draft.vehicles[i].licensePlate === action.licensePlate && draft.vehicles[i].state === action.state) {
+        const vehicle = draft.vehicles[i]
+        if (vehicle.licensePlate === action.licensePlate && vehicle.state === action.state) {
           partial.index = i
         }
-        if (draft.vehicles[i].state === 'ADDED_CONFIRMED' || (draft.vehicles[i].state === 'DELETED_CONFIRMED' && draft.vehicles[i].includedCounter)) {
-          partial.maxIncluded = Math.max(partial.maxIncluded, draft.vehicles[i].includedCounter || draft.vehicles[i].counter || 0)
+        if (vehicle.state === 'ADDED_CONFIRMED' || (vehicle.state === 'DELETED_CONFIRMED' && vehicle.includedCounter)) {
+          partial.maxIncluded = Math.max(partial.maxIncluded, vehicle.includedCounter || vehicle.counter || 0)
         }
-        if (draft.vehicles[i].state === 'DELETED_CONFIRMED') {
-          partial.maxExcluded = Math.max(partial.maxExcluded, draft.vehicles[i].excludedCounter || draft.vehicles[i].counter || 0)
+        if (vehicle.state === 'DELETED_CONFIRMED') {
+          partial.maxExcluded = Math.max(partial.maxExcluded, vehicle.excludedCounter || vehicle.counter || 0)
         }
-        if (draft.vehicles[i].leasingCompany) {
-          partial.maxConstraint = Math.max(partial.maxConstraint, draft.vehicles[i].constraintCounter || 0)
+        if (vehicle.leasingCompany) {
+          partial.maxConstraint = Math.max(partial.maxConstraint, vehicle.constraintCounter || 0)
         }
+        partial.maxAllianz = Math.max(partial.maxAllianz, vehicle.allianzCounter || 0)
       }
       if (partial.index > -1) {
         draft.vehicles[partial.index].state = action.newState
@@ -107,8 +148,12 @@ export function reducerPolicy (draft, action) {
         if (draft.vehicles[partial.index].state === 'ADDED_CONFIRMED' && draft.vehicles[partial.index].leasingCompany) {
           draft.vehicles[partial.index].constraintCounter = draft.vehicles[partial.index].constraintCounter ? draft.vehicles[partial.index].constraintCounter : ++partial.maxConstraint
         }
+        if(isMatrix) {
+        draft.vehicles[partial.index].allianzCounter = draft.vehicles[partial.index].state === 'DELETED_CONFIRMED' ? draft.vehicles[partial.index].allianzCounter : partial.maxAllianz + 1
+      }
       }
       return
+    }
     case 'setPolicy':
       return action.policy
     case 'refresh':
@@ -162,6 +207,7 @@ export function getProductDefinitions (pds) {
     clone.towing = numeric.normNumb(clone.towing)
     clone.conditions = clone.conditions || ''
     clone.statements = clone.statements || ''
+    clone.statementsTowing = clone.statementsTowing || ''
     clone.index = index++
     prev[cFunctions.camelDeburr(clone.productCode + clone.vehicleType || uuid())] = clone
     return prev
@@ -256,16 +302,19 @@ export async function createExportTotal (vehicles, fileName) {
     { key: 'dateTo', width: 15, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'vehicleType', width: 20 },
     { key: 'qli', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'vehicleUse', width: 20 },
     { key: 'regDate', width: 15, style: { numFmt: 'dd/mm/yyyy' } },
     { key: 'brand', width: 20 },
     { key: 'model', width: 20 },
     { key: 'cov', width: 20 },
     { key: 'val', width: 15, style: { numFmt: '#,##0.00' } },
+    { key: 'vatIncluded', width: 15 },
     { key: 'gla', width: 15 },
     { key: 'tow', width: 15 },
     { key: 'leasingCompany', width: 20 },
     { key: 'leasingExpiry', width: 15 },
     { key: 'owner', width: 20 },
+    { key: 'custom', width: 20 },
     { key: 'prize', width: 15, style: { numFmt: '#,##0.00' } },
     { key: 'prizeT', width: 15, style: { numFmt: '#,##0.00' } },
     { key: 'payment', width: 15, style: { numFmt: '#,##0.00' } },
@@ -280,23 +329,26 @@ export async function createExportTotal (vehicles, fileName) {
     dateTo: 'Data a',
     vehicleType: 'Tipo veicolo',
     qli: 'Q.li/Kw/Posti',
+    vehicleUse: 'Uso Veicolo',
     regDate: 'Data imm.',
     brand: 'Marca',
     model: 'Modello',
     cov: 'Tipo copertura',
     val: 'Valore',
+    vatIncluded: 'Compresa Iva',
     gla: 'Cristalli',
     tow: 'Traino',
     leasingCompany: 'Società di leasing',
     leasingExpiry: 'Scad. leasing',
     owner: 'Proprietario/Locatario',
+    custom: 'Condizioni',
     prize: 'Premio Lordo',
     prizeT: 'Premio Netto',
     payment: 'Rateo Lordo',
     paymentT: 'Rateo Netto',
   })
   const alignRightCols = ['qli', 'val', 'prize', 'prizeT', 'payment', 'paymentT']
-  const alignCenterCols = ['gla', 'tow', 'regDate', 'dateTo', 'hourFrom', 'dateFrom', 'leasingExpiry']
+  const alignCenterCols = ['gla', 'tow', 'regDate', 'dateTo', 'hourFrom', 'dateFrom', 'leasingExpiry', 'vatIncluded']
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {
     if (alignRightCols.includes(columns[colIndex - 1].key)) {
       Object.assign(ws.getColumn(colIndex), right)
@@ -332,12 +384,15 @@ export async function createExportTotal (vehicles, fileName) {
       model: vehicle.model,
       cov: vehicle.productCode,
       qli: numeric.toFloat(vehicle.weight),
+      vehicleUse: vehicle.vehicleUse,
       val: numeric.toFloat(vehicle.value),
+      vatIncluded: vehicle.vatIncluded === 'SI' ? 'SI' : 'NO',
       gla: vehicle.hasGlass === 'SI' ? 'SI' : 'NO',
       tow: vehicle.hasTowing === 'SI' ? 'SI' : 'NO',
       leasingCompany: targetLeasing,
       leasingExpiry: vehicle.leasingExpiry && cDate.mom(vehicle.leasingExpiry, null, 'DD/MM/YYYY'),
       owner: vehicle.realSigner,
+      custom: vehicle.custom,
       prize: vehicle.prize,
       prizeT: vehicle.prizeT,
       payment: vehicle.payment,
@@ -357,7 +412,7 @@ export async function createExportTotal (vehicles, fileName) {
     prize: { formula: `SUM(${letter['prize']}${2}:${letter['prize']}${totalVehicles + 1})`, result: totalPrize || '' },
     prizeT: {
       formula: `SUM(${letter['prizeT']}${2}:${letter['prizeT']}${totalVehicles + 1})`,
-      result: totalPrizeT || ''
+      result: totalPrizeT || '',
     },
   })
   for (let colIndex = 1; colIndex <= columns.length; colIndex += 1) {

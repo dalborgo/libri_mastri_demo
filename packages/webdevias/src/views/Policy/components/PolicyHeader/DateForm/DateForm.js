@@ -16,7 +16,7 @@ require(`moment/locale/${newLocale}`)
 moment.locale(newLocale)
 const focus = event => event.target.select()
 const DateForm = props => {
-  const { formik: { values }, globalClass, isNew, generateDates, generateRegDates, isPolicy } = props
+  const { formik: { values }, globalClass, isNew, generateDates, generateRegDates, isPolicy, priority } = props
   return (
     <div className={globalClass.contentSection} id="headerForm">
       <Card className={globalClass.cardRowFree}>
@@ -135,8 +135,48 @@ const DateForm = props => {
           <Icon path={mdiEqual} size={1} style={{ marginTop: -1 }}/>&nbsp;Applica ai Frazionamenti
         </Button>
       </div>*/}
+      {
+        priority === 4 &&
+        <Card className={globalClass.cardRowFree} style={{ marginLeft: 10 }}>
+          <FastField
+            as={TF}
+            className={clsx(globalClass.field, globalClass.fieldMid)}
+            disabled={isPolicy}
+            InputLabelProps={
+              {
+                shrink: true,
+              }
+            }
+            InputProps={
+              {
+                classes: {
+                  disabled: globalClass.fieldDisabled,
+                },
+                className: globalClass.fieldBack,
+              }
+            }
+            label="Modalità rinnovo"
+            name="renewMode"
+            select
+            SelectProps={{ native: true }}
+            size="small"
+            variant="outlined"
+          >
+            <option
+              value="0"
+            >
+              {' '}
+            </option>
+            <option value="1">Pari condizioni</option>
+            <option value="2">Adeguamento ISTAT</option>
+            <option value="3">Adeguamento tecnico (SP)</option>
+            <option value="4">Condizioni & Tariffa compagnia attuale</option>
+            <option value="5">Cambio garanzia</option>
+            <option value="6">Nuova emissione</option>
+          </FastField>
+        </Card>
+      }
     </div>
-  
   )
 }
 export default compose(

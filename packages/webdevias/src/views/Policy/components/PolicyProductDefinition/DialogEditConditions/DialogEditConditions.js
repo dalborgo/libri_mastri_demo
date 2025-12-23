@@ -21,6 +21,7 @@ const DialogEditConditions = props => {
   }
   const firstTextAreaRef = useRef(null)
   const secondTextAreaRef = useRef(null)
+  const thirdTextAreaRef = useRef(null)
   const theme = useTheme()
   return (
     <Dialog
@@ -137,6 +138,40 @@ const DialogEditConditions = props => {
             Predefinito Cristalli
           </Button>
         }
+        <br/>
+        <br/>
+        <Typography
+          gutterBottom
+          style={
+            {
+              color: theme.palette.grey[800],
+              fontWeight: 'normal',
+            }
+          }
+          variant="h5"
+        >
+          &nbsp;&nbsp;Garanzia Traino
+        </Typography>
+        <TextareaAutosize
+          defaultValue={defaultValue?.[index]?.statementsTowing}
+          disabled={isDisabled}
+          ref={thirdTextAreaRef}
+          style={
+            {
+              ...typography.body1,
+              backgroundColor: theme.palette.grey[200],
+              border: '1px solid',
+              borderColor: theme.palette.grey[400],
+              borderRadius: 5,
+              fontFamily: 'Roboto',
+              height: 100,
+              overflow: 'auto',
+              padding: 7,
+              resize: 'vertical',
+              width: '100%',
+            }
+          }
+        />
       </DialogContent>
       <Grid
         container
@@ -162,6 +197,7 @@ const DialogEditConditions = props => {
                   () => {
                     setFieldValue(`productDefinitions.${index}.conditions`, firstTextAreaRef.current.value.trim() || '')
                     setFieldValue(`productDefinitions.${index}.statements`, secondTextAreaRef.current.value.trim() || '')
+                    setFieldValue(`productDefinitions.${index}.statementsTowing`, thirdTextAreaRef.current.value.trim() || '')
                     handleClose()
                   }
                 }

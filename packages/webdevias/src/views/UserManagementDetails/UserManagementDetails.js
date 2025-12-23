@@ -23,6 +23,7 @@ import find from 'lodash/find'
 import remove from 'lodash/remove'
 import Error404 from '../Error404'
 import { validation } from '@adapter/common'
+import Provvigioni from './components/Provvigioni'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -62,6 +63,8 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
     }
     let aggregate = Object.assign(user, input)
     aggregate = validation.trimAll(aggregate)
+    delete aggregate['provvigioni']
+    input.active = input.active !== false //forza a booleano
     const optimistic = filter(USER_COMPLETE_FRAGMENT, aggregate)
     const res = await edit({
       variables: {
@@ -132,6 +135,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
   const tabs = [
     { value: 'summary', label: 'Riepilogo' },
     { value: 'options', label: 'Impostazioni' },
+    { value: 'provvigioni', label: 'Provvigioni' },
     { value: 'password', label: 'Reset Password' },
   ]
   priority !== 4 && tabs.pop()
@@ -178,6 +182,7 @@ const UserManagementDetails = ({ enqueueSnackbar }) => {
             <div className={classes.content}>
               {tab === 'summary' && <General {...user} handleEdit={handleEdit}/>}
               {tab === 'options' && <Options {...user}/>}
+              {tab === 'provvigioni' && <Provvigioni {...user} me={me}/>}
               {tab === 'password' && <Password {...user} me={me}/>}
             </div>
           </>

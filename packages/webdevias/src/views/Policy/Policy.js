@@ -24,6 +24,7 @@ import {
   getPayFractionsNorm,
   getPolicyCode,
   getPolicyEndDate,
+  getPolicyEndDate2,
   useAsyncError,
 } from 'helpers'
 import { withSnackbar } from 'notistack'
@@ -50,11 +51,14 @@ import Error404 from '../Error404'
 import { colors, Divider, Tab, Tabs } from '@material-ui/core'
 import find from 'lodash/find'
 import get from 'lodash/get'
+import isString from 'lodash/isString'
 import clsx from 'clsx'
 import useRouter from 'utils/useRouter'
 import { useImmerReducer } from 'use-immer'
 import cloneDeep from 'lodash/cloneDeep'
+import mapValues from 'lodash/mapValues'
 import {
+  checkVehicleStateTransitions,
   comparePolicy,
   createExportTotal,
   getLastFraction,
@@ -248,7 +252,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   const [uploadErrors, setUploadErrors] = useState([])
   const [openDiff, setOpenDiff] = useState(false)
   const [uploadMode, setUploadMode] = useState('list')
+  const [productDisappeared, setProductDisappeared] = useState([])
   const [confirmState, setConfirmState] = useState({ open: false })
+  const [confirmStateApplication, setConfirmStateApplication] = useState({ open: false })
   const { tab } = useParams()
   const isNew = matchPath(router.location.pathname, {
     path: '/policies/new/:tab',
@@ -324,13 +330,71 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   }, [])
   
   //endregion
-  
-  function checkVehicleErrors (clone, product = {}) {
+  const checkVehicleErrors = useCallback((clone, product = {}, statePolicy = {}, stateCode) => {
+    const BANNED_LEASING = {
+      10554340967: '2025-09-19',
+    }
+    const endDate = getPolicyEndDate(statePolicy.initDate, statePolicy.midDate)
+    const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
+    if (isMatrix && !clone.vehicleUse && stateCode) {
+      throw Error(`Uso veicolo obbligatorio [${clone.licensePlate}]`)
+    }
+    const { values: prod } = formRefProd.current || {}
+    
+    const header = formRefHeader?.current?.values || statePolicy
+    if (isMatrix && (prod?.provvigioni?.attive === 0 || prod?.provvigioni?.attive === '0,000')) {
+      throw Error('Provvigioni obbligatorie!')
+    }
+    if (isMatrix && (prod?.provvigioni?.passive === 0 || prod?.provvigioni?.passive === '0,000')) {
+      throw Error('Provvigioni obbligatorie!')
+    }
+    if (isMatrix && statePolicy.id?.startsWith('RENEWED') && (header.renewMode === '0' || !header.renewMode)) {
+      throw Error('Modalità rinnovo obbligatoria!')
+    }
+    if (isMatrix && prod && prod.provvigioni) {
+      const provvigioni = prod.provvigioni
+      const provvAttive = isString(provvigioni['attive']) ? numeric.normNumb(provvigioni['attive']) / 1000 : provvigioni['attive']
+      const provvPassive = isString(provvigioni['passive']) ? numeric.normNumb(provvigioni['passive']) / 1000 : provvigioni['passive']
+      if (provvAttive <= provvPassive) {
+        throw Error(`Provvigioni passive ${provvPassive}% maggiori o uguali alle attive!`)
+      }
+    }
     if (!clone.startHour && ['ADDED_CONFIRMED', 'ADDED'].includes(clone.state)) {
       throw Error(`Ora obbligatoria per confermare un'inclusione [${clone.licensePlate}]`)
     }
+    if (!clone.startDate && ['ADDED_CONFIRMED', 'ADDED'].includes(clone.state)) {
+      throw Error(`Data obbligatoria per confermare un'inclusione [${clone.licensePlate}]`)
+    }
+    if (clone.finishDate && ['ADDED_CONFIRMED', 'ADDED'].includes(clone.state)) {
+      if (!moment(clone.finishDate).isSame(moment(endDate, 'DD/MM/YYYY'))) {
+        throw Error(`"Data a" diversa da data fine polizza [${clone.licensePlate}]`)
+      }
+    }
+    if (statePolicy.initDate && (clone.startDate || clone.finishDate)) {
+      if (moment(clone.startDate).isBefore(moment(statePolicy.initDate)) || moment(clone.finishDate).isAfter(moment(endDate, 'DD/MM/YYYY'))) {
+        throw Error(`Data non compresa nel periodo di polizza! [${clone.licensePlate}]`)
+      }
+    }
+    if (statePolicy.initDate && (clone.startDate || clone.finishDate)) {
+      if (moment(clone.finishDate).isBefore(moment(statePolicy.initDate)) || moment(clone.startDate).isAfter(moment(endDate, 'DD/MM/YYYY'))) {
+        throw Error(`Data non compresa nel periodo di polizza! [${clone.licensePlate}]`)
+      }
+    }
+    if (moment(clone.startDate).isAfter(moment(clone.finishDate))) {
+      throw Error(`"Data da" superiore a "data a" [${clone.licensePlate}]`)
+    }
+    if (clone.leasingCompany && BANNED_LEASING[clone.leasingCompany]) {
+      const bannedDate = moment(BANNED_LEASING[clone.leasingCompany], 'YYYY-MM-DD')
+      const finishDate = clone.finishDate ? moment(clone.finishDate, 'YYYY-MM-DD') : null
+      
+      const isAllowed = finishDate && finishDate.isBefore(bannedDate)
+      
+      if (!isAllowed) {
+        throw Error(`Compagnia di leasing non accettata! [${clone.leasingCompany}] fino a ${BANNED_LEASING[clone.leasingCompany]}`)
+      }
+    }
     if (clone.registrationDate && moment(clone.registrationDate).isAfter(moment())) {
-      throw Error(`Data immatricolazione errata [${clone.licensePlate}]`)
+      throw Error(`Data immatricolazione errata! [${clone.licensePlate}]`)
     }
     if (clone.vehicleType === 'RIMORCHIO' && clone.hasGlass === 'SI') {
       throw Error(`Cristalli a "SI" per tipo veicolo "Rimorchio" non ammesso [${clone.licensePlate}]`)
@@ -344,7 +408,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     if (!clone.productCode) {
       throw Error(`Codice prodotto mancante per ${clone.vehicleType} non definito [${clone.licensePlate}]`)
     }
-  }
+  }, [])
   
   const calculatePolicy = useCallback((header, pds, holders, targetLicensePlate, targetState, targetCounter, typeLabel) => {
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
@@ -360,7 +424,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
-      checkVehicleErrors(clone, productDefinitions[vehicleKey])
+      checkVehicleErrors(clone, productDefinitions[vehicleKey], statePolicy)
       if (targetLicensePlate) {
         // ok (clone.counter == targetCounter) non sapendo il tipo
         if (typeLabel === 'vincolo') {
@@ -373,7 +437,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
           if (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!counter || counter == targetCounter)) {
             prev.push(clone)
           }
-        } else if (typeLabel === 'application') {
+        } else if (typeLabel === 'application' || typeLabel === 'applicazione') {
           //eslint-disable-next-line
           const counter = clone.inPolicy
           if (clone.licensePlate === targetLicensePlate && clone.state === targetState && (!counter || counter == targetCounter)) {
@@ -421,7 +485,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       ...filter(POLICY_SAVE_FRAGMENT, out),
     }
     return input
-  }, [gs.vehicleTypes, isNew, me.username, statePolicy])
+  }, [checkVehicleErrors, gs.vehicleTypes, isNew, me.username, statePolicy])
   
   const calculateEmittedPolicy = useCallback((pds, header, tablePd, header_, holders) => {
     const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
@@ -438,7 +502,11 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
       clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
-      checkVehicleErrors(clone, productDefinitions[vehicleKey])
+      console.log('productDisappeared:', productDisappeared)
+      if (productDisappeared.length) {
+        throw Error('Alcuni prodotti sono stati modificati: ' + productDisappeared.join(', '))
+      }
+      checkVehicleErrors(clone, productDefinitions[vehicleKey], statePolicy, 'EMITTED')
       if (['DELETED_CONFIRMED', 'ADDED_CONFIRMED'].includes(clone.state)) {
         payObj[`${clone.licensePlate}${clone.state}`] = calculateRegulationPayment([clone], tablePd, statePolicy, header_, statePolicy.regFractions)
       }
@@ -471,7 +539,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       ...filter(POLICY_SAVE_FRAGMENT, out),
     }
     return { ...input, payObj }
-  }, [gs.vehicleTypes, statePolicy])
+  }, [checkVehicleErrors, gs.vehicleTypes, productDisappeared, statePolicy])
   
   //region HANDLE PRINT
   const handlePrint = useCallback((type, startRegDate, endRegDate, hasRegulation, regCounter, toSave = false) => async () => {
@@ -650,9 +718,16 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
       tab === 'all' && dispatch({ type: 'refresh' })
       client.writeData({ data: { loading: true } })
-      let fileName = `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`
+      const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
+      let fileName = isMatrix ?
+        `${statePolicy.numPolizzaCompagnia}.pdf`
+        :
+        `${getPolicyCode(statePolicy, header, isNew) || 'bozza'}.pdf`
       if (type === 'regulation') {
-        fileName = `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${regCounter}.pdf`
+        fileName = isMatrix ?
+          `regolazione_${statePolicy.numPolizzaCompagnia}-${regCounter}.pdf`
+          :
+          `regolazione_${getPolicyCode(statePolicy, header, isNew)}-${regCounter}.pdf`
       }
       if (type === 'receipt') {
         fileName = `quietanza_${getPolicyCode(statePolicy, header, isNew)}-${data.startRecDate}.pdf`
@@ -696,7 +771,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   //region HANDLE PRINT EmittedPolicy
   const handlePrintEmittedPolicy = useCallback(async event => {
     try {
-      const [type, targetLicensePlate, targetState, counter, noPrize] = event.currentTarget.name.split('|')
+      const [type, targetLicensePlate, targetState, counter, allianzCounter, noPrize] = event.currentTarget.name.split('|')
       const header = formRefHeader?.current?.values || statePolicy
       const { values: pds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
@@ -739,9 +814,15 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
       //tab === 'all' && dispatch({ type: 'refresh' })
       client.writeData({ data: { loading: true } })
+      const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
+      const fileName =
+        isMatrix ?
+          `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${statePolicy.numPolizzaCompagnia}-${targetLicensePlate}-${allianzCounter}.pdf`
+          :
+          `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${getPolicyCode(statePolicy, header, isNew)}-${targetLicensePlate}-${counter}.pdf`
       const { ok, message } = await manageFile(
         `prints/print_${type}`,
-        `${typeLabel}_${data.noPrize ? 'senza_premi_' : ''}${getPolicyCode(statePolicy, header, isNew)}-${targetLicensePlate}-${counter}.pdf`,
+        fileName,
         'application/pdf',
         data,
         { toDownload: forceDownloadPdf }
@@ -760,6 +841,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const header = formRefHeader?.current?.values || statePolicy
       const { values: pds } = formRefPDS.current || {}
       const tablePd = formRefPDS.current
+      const isPolicy = statePolicy?.state?.isPolicy
       const noPrize = type === 'senza_premi'
       let typeLabel = 'application'
       const { values: holders } = formRefHolders.current || {}
@@ -778,15 +860,21 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         data.priceObj = calculateRegulationPayment(data.vehicles, tablePd, statePolicy, header, data.regFractions)// typeLabel === 'esclusione'
         data.endDate = getPolicyEndDate(data.initDate, data.midDate)
         data.noPrize = Boolean(noPrize)
-        data.toSave = false
+        data.toSave = isPolicy
         prev.push(data)
         return prev
       }, [])
       const forceDownloadPdf = me?.options?.forceDownloadPdf ?? false
       client.writeData({ data: { loading: true } })
+      const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
+      const fileName =
+        isMatrix ?
+          `applicazioni_${type}_${statePolicy.numPolizzaCompagnia}.zip`
+          :
+          `applicazioni_${type}_${getPolicyCode(statePolicy, header, isNew)}.zip`
       const { ok, message } = await manageFile(
         `prints/application_zip_${type}`,
-        `applicazioni_${type}_${getPolicyCode(statePolicy, header, isNew)}.zip`,
+        fileName,
         'application/zip',
         output,
         { toDownload: forceDownloadPdf }
@@ -899,7 +987,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     client.writeData({ data: { loading: true } })
     const { ok, message } = await manageFile(
       isPolicy ? 'files/export_added_csv' : 'files/export_csv',
-      isPolicy ? `veicoli_inclusi_${getPolicyCode(statePolicy, header, isNew, 'template_polizza')}.csv` : `veicoli_inclusi_${statePolicy.number.replace('/', '_').replace('.', '_')}`,
+      isPolicy ? `veicoli_inclusi_${getPolicyCode(statePolicy, header, isNew, 'template_polizza')}.csv` : `veicoli_inclusi_${statePolicy?.number?.replace('/', '_')?.replace('.', '_')}`,
       'text/csv',
       vehicles,
       { toDownload: true }
@@ -929,8 +1017,8 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const vehicleCode = `${cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)}`
       const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
       clone.licensePlate = clone.licensePlate.startsWith('XXXXXX') ? '' : clone.licensePlate
-      clone.startDate = clone.startDate ? cDate.mom(clone.startDate, null, 'YYYY-MM-DD') : null
-      clone.finishDate = clone.finishDate ? cDate.mom(clone.finishDate, null, 'YYYY-MM-DD') : null
+      clone.startDate = clone.startDate ? cDate.mom(clone.startDate, null, 'YYYY-MM-DD') : cDate.mom(statePolicy.initDate, null, 'YYYY-MM-DD')
+      clone.finishDate = clone.finishDate ? cDate.mom(clone.finishDate, null, 'YYYY-MM-DD') : getPolicyEndDate2(statePolicy.initDate, statePolicy.midDate)
       clone.registrationDate = clone.registrationDate ? cDate.mom(clone.registrationDate, null, 'YYYY-MM-DD') : null
       clone.leasingExpiry = clone.leasingExpiry ? cDate.mom(clone.leasingExpiry, null, 'YYYY-MM-DD') : null
       const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
@@ -946,16 +1034,15 @@ let Policy = ({ policy, enqueueSnackbar }) => {
     const isPolicy = statePolicy?.state?.isPolicy
     await createExportTotal(
       vehicles,
-      isPolicy ? `stato_veicoli_${getPolicyCode(statePolicy, header)}` : statePolicy.number.replace('/', '_').replace('.', '_')
+      isPolicy ? `stato_veicoli_${getPolicyCode(statePolicy, header)}` : statePolicy?.number?.replace('/', '_')?.replace('.', '_')
     )
   }, [gs.vehicleTypes, statePolicy])
   //endregion
   
   //region HANDLE SAVE
-  const handleSave = useCallback(async event => {
+  const handleSave = useCallback(async (event, fromGenias = {}) => {
     try {
       const stateCode = event.currentTarget.name || 'DRAFT'
-      console.log('stateCodeS:', stateCode)
       /* eslint-disable no-unused-vars */
       const { values: header, resetForm: resetFormHeader } = formRefHeader.current || {}
       const { values: pds, resetForm: resetFormPDS, setFieldValue } = formRefPDS.current || {}
@@ -970,6 +1057,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       if (tab === 'all') {dispatch({ type: 'refresh' })}
       const { values: newPds } = formRefPDS.current || {}
       const input = calculatePolicy(header, newPds, holders)
+      input.provvigioni = mapValues(prodSelected.provvigioni, value => numeric.normNumb(value))
+      input.statusCode = fromGenias['statusCode']
+      input.numPolizzaCompagnia = fromGenias['numPolizzaCompagnia']
       log.debug('input', input)
       let result
       client.writeData({ data: { loading: true } })
@@ -1215,14 +1305,170 @@ let Policy = ({ policy, enqueueSnackbar }) => {
   // region HANDLE PRE-SAVE
   const handlePreSave = useCallback(async event => {
     const stateCode = event.currentTarget.name || 'DRAFT'
-    if (stateCode === 'TO_POLICY') {
-      const { values: currentValues } = formRefHolders.current || {}
+    if (stateCode === 'TO_POLICY' && me.priority === 4) {
+      try {
+        const { values: pds } = formRefPDS.current || {}
+        const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
+        statePolicy.vehicles.forEach(vehicle => {
+          const clone = { ...vehicle }
+          
+          const vehicleCode = cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)
+          const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
+          const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
+          
+          clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
+          
+          checkVehicleErrors(clone, productDefinitions[vehicleKey], statePolicy, stateCode)
+        })
+        
+      } catch ({ message }) {
+        return enqueueSnackbar(message, { variant: 'error' })
+      }
+      const { values: holders } = formRefHolders.current || {}
+      const { values: header } = formRefHeader.current || {}
+      console.log('header:', header)
+      console.log('statePolicy:', statePolicy)
+      const { values: prodSelected = {} } = formRefProd.current || {}
       const dummyEvent = { currentTarget: { name: stateCode } }
-      setConfirmState({ ...confirmState, open: true, save: async () => await handleSave(dummyEvent), currentValues })
+      const tablePd = formRefPDS.current
+      const payFractions = calculatePaymentDates(statePolicy.vehicles, tablePd, statePolicy, header)
+      console.log('payFractions:', payFractions)
+      const { payFractionsNorm } = statePolicy?.payFractions?.length ? getPayFractionsNorm(statePolicy.payFractions, false, false, true) : getPayFractionsNorm(payFractions, false)
+      console.log('payFractionsNorm:', payFractionsNorm)
+      setConfirmState({
+        ...confirmState,
+        open: true,
+        save: async results => {
+          if (results['statusCode']) {
+            return handleSave(dummyEvent, results)
+          } else {
+            console.log('Saving...', results)
+          }
+        },
+        currentValues: {
+          holders,
+          header,
+          prodSelected,
+          payFractions: payFractionsNorm,
+          statePolicy,
+          tablePd,
+          vehicleTypes: gs.vehicleTypes,
+        },
+      })
     } else {
       await handleSave(event)
     }
-  }, [confirmState, handleSave])
+  }, [checkVehicleErrors, confirmState, enqueueSnackbar, gs.vehicleTypes, handleSave, me.priority, statePolicy])
+  //endregion
+  
+  // region HANDLE PRE-SAVE 2
+  const handlePreSave2 = useCallback(async (licensePlate = '', vehicleState = '', oldVehicleState = {}) => {
+    const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
+    if (!isMatrix || me.priority < 4) {
+      if (licensePlate) {
+        await dispatch(oldVehicleState)
+      } else {
+        await dispatch({ type: 'confirmAllInclExcl' })
+      }
+      document.getElementById('headerButton').click()
+      return
+    }
+    try {
+      const { values: pds } = formRefPDS.current || {}
+      const productDefinitions = pds ? getProductDefinitions(pds) : getProductDefinitions({ productDefinitions: statePolicy.productDefinitions })
+      statePolicy.vehicles.forEach(vehicle => {
+        const clone = { ...vehicle }
+        
+        const vehicleCode = cFunctions.getVehicleCode(clone.vehicleType, clone.weight, gs.vehicleTypes)
+        const vehicleKey = cFunctions.camelDeburr(`${clone.productCode}${vehicleCode}`)
+        const defProdCode = get(find(productDefinitions, { vehicleType: vehicleCode }), 'productCode')
+        
+        clone.productCode = productDefinitions[vehicleKey] ? clone.productCode : defProdCode
+        
+        checkVehicleErrors(clone, productDefinitions[vehicleKey], statePolicy)
+      })
+      
+    } catch ({ message }) {
+      return enqueueSnackbar(message, { variant: 'error' })
+    }
+    const { values: holders } = formRefHolders.current || {}
+    const { values: header } = formRefHeader.current || {}
+    const { values: prodSelected = {} } = formRefProd.current || {}
+    const tablePd = formRefPDS.current
+    const payFractions = calculatePaymentDates(statePolicy.vehicles, tablePd, statePolicy, header)
+    const { payFractionsNorm } = statePolicy?.payFractions?.length ? getPayFractionsNorm(statePolicy.payFractions, false, false, true) : getPayFractionsNorm(payFractions, false)
+    setConfirmState({
+      ...confirmState,
+      open: true,
+      save: async (results, handleClose) => {
+        if (results['vehicleSent'].length) {
+          if (licensePlate) {
+            const [first] = results['vehicleSent']
+            console.log('first:', first)
+            await dispatch(first)
+            handleClose()
+            document.getElementById('headerButton').click()
+          } else {
+            await dispatch({ type: 'confirmAllInclExcl' })
+            handleClose()
+            document.getElementById('headerButton').click()
+          }
+        }
+        /*if (results['vehicleSent'].length) {
+          await dispatch({
+            licensePlate: row.licensePlate,
+            newState: isInclusion ? 'ADDED_CONFIRMED' : 'DELETED_CONFIRMED',
+            state: row.state,
+            type: 'setVehicleStateByIndex',
+          })
+          document.getElementById('headerButton').click()
+        }*/
+      },
+      currentValues: {
+        ID: 'APPLICATION',
+        licensePlate,
+        vehicleState,
+        holders,
+        header,
+        prodSelected,
+        payFractions: payFractionsNorm,
+        statePolicy,
+        tablePd,
+        vehicleTypes: gs.vehicleTypes,
+      },
+    })
+  }, [checkVehicleErrors, confirmState, dispatch, enqueueSnackbar, gs.vehicleTypes, me.priority, statePolicy])
+  //endregion
+  
+  // region HANDLE PRE-SAVE 3
+  const handlePreSave3 = useCallback(async currentIndex => {
+    if (me.priority < 4) {
+      return
+    }
+    const { values: holders } = formRefHolders.current || {}
+    const { values: header } = formRefHeader.current || {}
+    const { values: prodSelected = {} } = formRefProd.current || {}
+    const tablePd = formRefPDS.current
+    const currentHolder = { ...holders['holders']?.[currentIndex], isMain: currentIndex === 0 }
+    setConfirmState({
+      ...confirmState,
+      open: true,
+      save: async (results, handleClose) => {
+        console.log('results:', results)
+        handleClose()
+      },
+      currentValues: {
+        ID: 'REGISTRY',
+        currentHolder,
+        holders,
+        header,
+        prodSelected,
+        statePolicy,
+        tablePd,
+        vehicleTypes: gs.vehicleTypes,
+      },
+    })
+  }, [confirmState, gs.vehicleTypes, me.priority, statePolicy])
   //endregion
   
   const checkPolicy = useCallback(async () => {
@@ -1271,6 +1517,13 @@ let Policy = ({ policy, enqueueSnackbar }) => {
       const input = calculateEmittedPolicy(newPds, header, tablePd, header_, holders)
       if (lastFract > 0 && !input?.paidFractions?.[lastFract] && me.priority === 4) {
         return enqueueSnackbar('L\'ultima rata non è stata pagata, salvataggio non effettuato!', { variant: 'error' })
+      }
+      const invalidPlates = checkVehicleStateTransitions(statePolicy.vehicles)
+      if (invalidPlates.length) {
+        return enqueueSnackbar(
+          `Targhe incluse già presenti: ${invalidPlates.join(', ')}`,
+          { variant: 'error' }
+        )
       }
       input.endDate = getPolicyEndDate(input.initDate, input.midDate)
       log.debug('input', input)
@@ -1409,7 +1662,9 @@ let Policy = ({ policy, enqueueSnackbar }) => {
         loadingDiff={loadingDiff}
         meta={statePolicy.meta}
         number={statePolicy.number}
+        numPolizzaCompagnia={statePolicy.numPolizzaCompagnia}
         producer={producer}
+        provvigioni={statePolicy.provvigioni}
         setOpenDiff={setOpenDiff}
         setProducer={setProducer}
         setSubAgent={setSubAgent}
@@ -1463,6 +1718,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               collaborators={statePolicy.collaborators}
               dispatch={dispatchInsertModal}
               globalClass={classes}
+              handleSendGenias={handlePreSave3}
               holders={statePolicy.holders}
               innerRef={formRefHolders}
               isPolicy={statePolicy?.state?.isPolicy}
@@ -1502,6 +1758,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               priority={me.priority}
               regFractions={statePolicy.regFractions}
               regulationFract={statePolicy.regulationFract}
+              renewMode={statePolicy.renewMode}
               setPaidFractions={setPaidFractions}
             />
           }
@@ -1514,6 +1771,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               innerRef={formRefPDS}
               isPolicy={statePolicy?.state?.isPolicy}
               productDefinitions={statePolicy.productDefinitions}
+              setProductDisappeared={setProductDisappeared}
               specialArrangements={statePolicy.specialArrangements}
               vehicleTypes={gs.vehicleTypes}
             />
@@ -1530,6 +1788,7 @@ let Policy = ({ policy, enqueueSnackbar }) => {
               handleExportTotal={handleExportTotal}
               handleModeChange={handleVehiclesModeChange}
               handlePrint={handlePrintEmittedPolicy}
+              handleSendGenias={handlePreSave2}
               handleUpload={handlePolicyUpload}
               mode={uploadMode}
               policy={statePolicy}

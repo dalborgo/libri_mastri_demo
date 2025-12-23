@@ -23,14 +23,11 @@ function extractFieldsFromFragment (fragment, skip = []) {
 function formInitialByFragment (fragment, obj = {}, skip = []) {
   const fields = extractFieldsFromFragment(fragment, skip)
   return fields.reduce((prev, curr) => {
-    if(typeof obj[curr] === 'string') {
-      prev[curr] = obj[curr] ? obj[curr].trim() : ''
-    } else {
-      prev[curr] = obj[curr]
-    }
+    prev[curr] = obj[curr] ? obj[curr].trim() : ''
     return prev
   }, {})
 }
+
 
 //usa solo i valori dell'oggetto passato e non il resto del fragment
 function exclusiveFormInitialByFragment (fragment, obj = {}, skip = []) {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Paper } from '@material-ui/core'
 import { IntegratedPaging, PagingState, RowDetailState } from '@devexpress/dx-react-grid'
 import { Grid, PagingPanel, Table, TableHeaderRow, TableRowDetail } from '@devexpress/dx-react-grid-material-ui'
@@ -39,17 +39,9 @@ const styles = theme => ({
   actionDetailButton: {},
 })
 const getRowId = row => row.id
-const columns = [
-  { name: 'number', title: 'Numero' },
-  { name: 'initDate', title: 'Data decorrenza' },
-  { name: 'createdBy', title: 'Creata da', getCellValue: ({ createdBy }) => createdBy?.username },
-  { name: 'producer', title: 'Intermediario', getCellValue: ({ producer }) => producer?.username },
-  { name: 'subAgent', title: 'Filiale', getCellValue: ({ subAgent }) => subAgent?.username },
-  { name: 'signer', title: 'Contraente', getCellValue: ({ signer }) => signer?.surname },
-  { name: 'state', title: 'Stato' },
-  { name: 'action', title: 'Azioni' },
-]
+
 const tableColumnExtensions = [
+  { columnName: 'numPolizzaCompagnia', align: 'center' },
   { columnName: 'number', align: 'center' },
   { columnName: 'initDate', align: 'center' },
   { columnName: 'createdBy', align: 'center' },
@@ -252,6 +244,26 @@ const PolicyListTable = props => {
       setSelection([])
     }
   }, [selection, setSelection])*/
+  const [columns] = useState(() => {
+    return [
+      {
+        name: 'numPolizzaCompagnia',
+        title: 'Numero',
+        getCellValue: ({ numPolizzaCompagnia, number }) => numPolizzaCompagnia || number,
+      },
+      { name: 'number', title: 'N. Interno' },
+      { name: 'initDate', title: 'Data decorrenza' },
+      { name: 'createdBy', title: 'Creata da', getCellValue: ({ createdBy }) => createdBy?.username },
+      { name: 'producer', title: 'Intermediario', getCellValue: ({ producer }) => producer?.username },
+      { name: 'subAgent', title: 'Filiale', getCellValue: ({ subAgent }) => subAgent?.username },
+      { name: 'signer', title: 'Contraente', getCellValue: ({ signer }) => signer?.surname },
+      { name: 'state', title: 'Stato' },
+      { name: 'action', title: 'Azioni' },
+    ].filter(col => {
+      if (priority < 4) {return col.name !== 'number'}
+      return true
+    })
+  })
   const Cell = useMemo(() => withStyles(styles)(props_ => {
     const { column, row: { __typename, state, id: policyId, top, meta, number, initDate, midDate } } = props_
     const { classes, ...rest } = props_

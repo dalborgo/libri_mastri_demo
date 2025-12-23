@@ -51,6 +51,12 @@ export const USERS_PRODUCERS_FRAGMENT = (gql`
               }
             }
             longName
+            vat
+            provvigioni {
+              attive
+              passive
+              codice
+            }
             priority
             __typename
           }
@@ -74,6 +80,11 @@ export const USER_COMPLETE_FRAGMENT = (gql`
             state
             vat
             zip
+            provvigioni {
+              attive
+              passive
+              codice
+            }
             ... on ChildUser {
               father
               children {
@@ -236,6 +247,15 @@ export const UPDATE_USER_PASSWORD = gql`
   mutation UpdatePassword($password: String, $username: String!){
     updatePassword(password: $password, username: $username)
   }
+`
+export const UPDATE_USER_PROVVIGIONI = gql`
+  mutation UpdateProvvigioni($input: UpdateProvvigioniInput!, $username: String!){
+    updateProvvigioni(input: $input, username: $username){
+      ...userComplete
+      priority @client
+    }
+  }
+  ${USER_COMPLETE_FRAGMENT}
 `
 export const ADD_USER = gql`
   mutation addUser($input: AddUserInput!){

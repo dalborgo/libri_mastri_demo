@@ -1,0 +1,382 @@
+[
+  {
+    "Descrizione": "AUTO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 1,
+    "cod_anagraficaVeicoloAllianz": 50000,
+    "Categoria Veicolo": 10,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTO USO NOLEGGIO",
+    "Uso": "USO NOLEGGIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 1,
+    "cod_anagraficaVeicoloAllianz": 104010,
+    "Categoria Veicolo": 10,
+    "cod_utilizzoveicolo": 3
+  },
+  {
+    "Descrizione": "AUTO USO NOLEGGIO CON CONDUCENTE",
+    "Uso": "USO NOLEGGIO",
+    "Peso Da": 0.0,
+    "Peso A": 0.0,
+    "Cod Garanzia Allianz": 1,
+    "cod_anagraficaVeicoloAllianz": 105010,
+    "Categoria Veicolo": 10,
+    "cod_utilizzoveicolo": 3
+  },
+  {
+    "Descrizione": "AUTO USO SCUOLA GUIDA",
+    "Uso": "USO SCUOLA GUIDA",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 1,
+    "cod_anagraficaVeicoloAllianz": 102010,
+    "Categoria Veicolo": 10,
+    "cod_utilizzoveicolo": 4
+  },
+  {
+    "Descrizione": "AUTOARTICOLATO",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 503124,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "AUTOARTICOLATO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 503122,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTOBUS EXTRAURBANO",
+    "Uso": "AUTOBUS EXTRAURBANO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 30,
+    "cod_anagraficaVeicoloAllianz": 305010,
+    "Categoria Veicolo": 111,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "AUTOBUS URBANO",
+    "Uso": "AUTOBUS URBANO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 31,
+    "cod_anagraficaVeicoloAllianz": 305010,
+    "Categoria Veicolo": 111,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "AUTOCARAVAN",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 42,
+    "cod_anagraficaVeicoloAllianz": 150614,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTOCARRO",
+    "Uso": "USO NOLEGGIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502414,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 3
+  },
+  {
+    "Descrizione": "AUTOCARRO USO NOLEGGIO",
+    "Uso": "USO NOLEGGIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502414,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 3
+  },
+  {
+    "Descrizione": "AUTOCARRO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 61.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502212,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTOCARRO",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0.0,
+    "Peso A": 60.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502218,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "AUTOCARRO",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 61.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502214,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "AUTOCARRO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0.0,
+    "Peso A": 60.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 502216,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTOCARRO USO SPECIALE A NOLEGGIO",
+    "Uso": "USO NOLEGGIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 41,
+    "cod_anagraficaVeicoloAllianz": 801521,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 3
+  },
+  {
+    "Descrizione": "AUTOCARRO USO SPECIALE CONTO PROPRIO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 41,
+    "cod_anagraficaVeicoloAllianz": 811508,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "AUTOCARRO USO SPECIALE CONTO TERZI",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 41,
+    "cod_anagraficaVeicoloAllianz": 811510,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "AUTOVETTURA",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 1,
+    "cod_anagraficaVeicoloAllianz": 50000,
+    "Categoria Veicolo": 10,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "CICLOMOTORE",
+    "Uso": "CICLOMOTORE",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 51,
+    "cod_anagraficaVeicoloAllianz": 602010,
+    "Categoria Veicolo": 330,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "MACCHINA AGRICOLA",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 70,
+    "cod_anagraficaVeicoloAllianz": 912020,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "MACCHINA AGRICOLA",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 70,
+    "cod_anagraficaVeicoloAllianz": 912010,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "MACCHINA OPERATRICE",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 60,
+    "cod_anagraficaVeicoloAllianz": 912010,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "MACCHINA OPERATRICE",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 60,
+    "cod_anagraficaVeicoloAllianz": 912020,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "MOTOCARRO",
+    "Uso": "MOTOCARRO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 44,
+    "cod_anagraficaVeicoloAllianz": 605012,
+    "Categoria Veicolo": 510,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "MOTOCICLO",
+    "Uso": "MOTOCICLO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 50,
+    "cod_anagraficaVeicoloAllianz": 602010,
+    "Categoria Veicolo": 310,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "PULLMAN",
+    "Uso": "PULLMAN",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 30,
+    "cod_anagraficaVeicoloAllianz": 305010,
+    "Categoria Veicolo": 111,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "RIMORCHIO",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 783016,
+    "Categoria Veicolo": 420,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "RIMORCHIO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 49,
+    "cod_anagraficaVeicoloAllianz": 783014,
+    "Categoria Veicolo": 420,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "RIMORCHIO AGRICOLO",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 79,
+    "cod_anagraficaVeicoloAllianz": 784000,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "RIMORCHIO AGRICOLO",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 79,
+    "cod_anagraficaVeicoloAllianz": 784000,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "TAXI",
+    "Uso": "TAXI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 2,
+    "cod_anagraficaVeicoloAllianz": 122022,
+    "Categoria Veicolo": 210,
+    "cod_utilizzoveicolo": null
+  },
+  {
+    "Descrizione": "TRATTORE STRADALE",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 503122,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "TRATTORE STRADALE",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0.0,
+    "Peso A": 99999.0,
+    "Cod Garanzia Allianz": 40,
+    "cod_anagraficaVeicoloAllianz": 503124,
+    "Categoria Veicolo": 410,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "TRATTRICE AGRICOLA",
+    "Uso": "CONTO PROPRIO",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 70,
+    "cod_anagraficaVeicoloAllianz": 912010,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 1
+  },
+  {
+    "Descrizione": "TRATTRICE AGRICOLA",
+    "Uso": "CONTO TERZI",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 70,
+    "cod_anagraficaVeicoloAllianz": 912020,
+    "Categoria Veicolo": 810,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "QUADRICICLO TRASPORTO COSE",
+    "Uso": "QUADRICICLO TRASPORTO COSE",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 44,
+    "cod_anagraficaVeicoloAllianz": 605012,
+    "Categoria Veicolo": 510,
+    "cod_utilizzoveicolo": 2
+  },
+  {
+    "Descrizione": "QUADRICICLO TRASPORTO PERSONE",
+    "Uso": "QUADRICICLO TRASPORTO PERSONE",
+    "Peso Da": 0,
+    "Peso A": 10000000,
+    "Cod Garanzia Allianz": 50,
+    "cod_anagraficaVeicoloAllianz": 602010,
+    "Categoria Veicolo": 310,
+    "cod_utilizzoveicolo": 2
+  }
+]

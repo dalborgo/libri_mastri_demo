@@ -101,9 +101,9 @@ function createExcel (policies, vehicleTypes, data) {
   }
   ws.mergeCells(9, 1, 9, 3)
   ws.getColumn(1).values = ['', '', 'Nome dell\'Agenzia', 'QUBO INSURANCE SOLUTIONS', '', '', 'Estrazione dal', cDate.mom(data.startDate, null, 'DD/MM/YYYY')]
-  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT TUA ASSICURAZIONI 40313690000001 - 40313690000001', '', 'Periodo di estrazione', 'Estrazione al', cDate.mom(data.endDate, null, 'DD/MM/YYYY')]
+  ws.getColumn(2).values = ['', '', 'Ramo', 'POL MASTER CVT ALLIANZ NEXT S.P.A. 40313690000001 - 40313690000001', '', 'Periodo di estrazione', 'Estrazione al', cDate.mom(data.endDate, null, 'DD/MM/YYYY')]
   
-  Object.assign(ws.getRow(2).getCell(1), { value: 'Codice Compagnia: 4 - Ragione Sociale Compagnia: TUA ASSICURAZIONI SPA' }, bold)
+  Object.assign(ws.getRow(2).getCell(1), { value: 'Codice Compagnia: 4 - Ragione Sociale Compagnia: ALLIANZ NEXT S.P.A.' }, bold)
   Object.assign(ws.getRow(3).getCell(1), lightGray, fontWhite)
   for (let rowIndex = 1; rowIndex < 10; rowIndex += 1) {
     for (let colIndex = 4; colIndex < columns.length + 31; colIndex += 1) {
@@ -148,7 +148,7 @@ function createExcel (policies, vehicleTypes, data) {
       console.log('skipped 2.5 %')
       continue
     }
-    const data = {
+    const statePolicy = {
       ...newPolicy,
     }
     const tablePd = { values: { productDefinitions: newPolicy.productDefinitions } }
@@ -159,57 +159,48 @@ function createExcel (policies, vehicleTypes, data) {
       const hasRegulation = regulation.hasRegulation
       for (let vehicle of cloneDeep(policy.vehicles)) {
         vehicle.value = vehicle.value / 1000
-        if (hasRegulation === 'SI') {
-          if (!vehicle.finishDate || moment(vehicle.finishDate).isBefore(startRegDate)) {// se non è stata toccata continua
-            continue
-          }
-          const isInPolicy = Boolean(vehicle.inPolicy)
-          const isAlive = moment(vehicle.finishDate).isAfter(endRegDate)
-          const hasBeenAdded = !isInPolicy && cDate.inRange(startRegDate, endRegDate, vehicle.startDate)
-          if (isAlive) {
-            if (hasBeenAdded) {// è viva ed è stata aggiunta nel periodo: devo pagare da quando è stata aggiunta fino alla fine della polizza
-              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-              vehicle.state = 'ADDED_CONFIRMED'
-            } else {
-              continue// è viva ma non è stata aggiunta in questo periodo: quindi non faccio niente
-            }
+        if (!vehicle.finishDate || moment(vehicle.finishDate).isBefore(startRegDate)) {// se non è stata toccata continua
+          //console.log(vehicle.licensePlate, 'excluded because removed before this period')
+          continue
+        }
+        const isInPolicy = Boolean(vehicle.inPolicy)
+        const isAlive = moment(vehicle.finishDate).isAfter(endRegDate)
+        const hasBeenAdded = !isInPolicy && cDate.inRange(startRegDate, endRegDate, vehicle.startDate)
+        //console.log(vehicle.licensePlate, isAlive, hasBeenAdded, vehicle.state)
+        if (isAlive) {
+          if (hasBeenAdded) {// è viva ed è stata aggiunta nel periodo: devo pagare da quando è stata aggiunta fino alla fine della polizza
+            vehicle.finishDate = cFunctions.calcPolicyEndDate(statePolicy.initDate, statePolicy.midDate)
+            vehicle.state = 'ADDED_CONFIRMED'
           } else {
-            if (hasBeenAdded) {// è stata esclusa ed era stata aggiunta in questo periodo: quindi pago la diff da quando è entrata a quando è uscita
-              //vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
-              vehicle.state = 'ADDED_CONFIRMED'
-            } else {// è stata aggiunta in un periodo precedente, è stata esclusa, quindi storno la differenza solo se le motivazioni sono quelle
-              if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
-                //
-              } else {
-                continue
-              }
-            }
+            continue// è viva ma non è stata aggiunta in questo periodo: quindi non faccio niente
           }
-          const { payment } = calculateIsRecalculatePaymentTable(tablePd, data, vehicle, true, true, endRegDate)
-          totTaxable += payment
         } else {
-          const isStartDate = vehicle.startDate === data.initDate
-          if ((!vehicle.startDate || !vehicle.finishDate)/* || (['DELETED', 'DELETED_CONFIRMED'].includes(vehicle.state) && isStartDate)*/) {
-            continue
-          }
-          if (cDate.inRange(startRegDate, endRegDate, vehicle.startDate, isStartDate) || (cDate.inRange(startRegDate, endRegDate, vehicle.finishDate) && ['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state))) {
-            if (moment(vehicle.finishDate).isAfter(endRegDate)) {
-              vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+          if (hasBeenAdded) {// è stata esclusa ed era stata aggiunta in questo periodo: quindi pago la diff da quando è entrata a quando è uscita
+            //vehicle.finishDate = cFunctions.calcPolicyEndDate(data.initDate, data.midDate)
+            if (cFunctions.exclusionTypeFactor(vehicle.exclusionType) !== 0) {// in caso di furto viene gestita dopo
               vehicle.state = 'ADDED_CONFIRMED'
             }
-            const { payment } = calculatePaymentTable(tablePd, data, vehicle, true, true)
-            totTaxable += payment
+          } else {// è stata aggiunta in un periodo precedente, è stata esclusa, quindi storno la differenza solo se le motivazioni sono quelle
+            if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
+              //
+            } else {
+              continue
+            }
           }
         }
+        const {
+          payment,
+        } = hasRegulation === 'SI' ? calculateIsRecalculatePaymentTable(tablePd, statePolicy, vehicle, true, true, endRegDate) : calculatePaymentTable(tablePd, statePolicy, vehicle, true, true)
+        totTaxable += payment
       }
       totalRows++
-      data.totTaxable = Number(totTaxable.toFixed(2))
-      data.totInstalment = (totTaxable * ((100 + taxRate) / 100))
+      statePolicy.totTaxable = Number(totTaxable.toFixed(2))
+      statePolicy.totInstalment = (totTaxable * ((100 + taxRate) / 100))
       const signer = newPolicy?.holders?.[0] ?? {}
       const sign = signer.surname + (signer.name ? ` ${signer.name}` : '')
-      totalTaxable += data.totTaxable
-      totalInstalment += data.totInstalment
-      const tax = data.totInstalment - data.totTaxable
+      totalTaxable += statePolicy.totTaxable
+      totalInstalment += statePolicy.totInstalment
+      const tax = statePolicy.totInstalment - statePolicy.totTaxable
       totalTaxes += tax
       ws.addRow({
         pol: newPolicy.number,
@@ -221,9 +212,9 @@ function createExcel (policies, vehicleTypes, data) {
         broker: newPolicy.producer,
         dec: startRegDate && new Date(startRegDate),
         sca: endRegDate && new Date(endRegDate),
-        totTaxable: data.totTaxable,
-        tax: data.totInstalment > 0 ? tax : 0,
-        totInstalment: data.totInstalment > 0 ? data.totInstalment : data.totTaxable,
+        totTaxable: statePolicy.totTaxable,
+        tax: statePolicy.totInstalment > 0 ? tax : 0,
+        totInstalment: statePolicy.totInstalment > 0 ? statePolicy.totInstalment : statePolicy.totTaxable,
       })
     }
   }

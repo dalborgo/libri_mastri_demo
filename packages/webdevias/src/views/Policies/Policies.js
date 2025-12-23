@@ -46,7 +46,7 @@ const Policies = ({ enqueueSnackbar }) => {
     if (isFiltered) {
       return data.policies.reduce((prev, curr) => {
         let toInclude = true
-        if (filters.docNumber && !curr.number.includes(filters.docNumber.trim())) {
+        if (filters.docNumber && (!curr.number.includes(filters.docNumber.trim()) && !curr?.numPolizzaCompagnia?.includes(filters.docNumber.trim()))) {
           toInclude &= false
         }
         if (toInclude && filters.docSigner && !curr.signer?.surname?.toLowerCase().includes(filters.docSigner.toLowerCase().trim())) {

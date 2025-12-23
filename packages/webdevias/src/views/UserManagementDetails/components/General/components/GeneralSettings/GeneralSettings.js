@@ -72,7 +72,7 @@ const GeneralSettings = props => {
       <Formik
         initialValues={
           {
-            ...cGraphQL.formInitialByFragment(USER_EDIT_FRAGMENT, user),
+            ...cGraphQL.formInitialByFragment(USER_EDIT_FRAGMENT, user, ['provvigioni', 'active']),
           }
         }
         onSubmit={handleEdit}

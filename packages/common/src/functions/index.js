@@ -215,13 +215,11 @@ function calculateRegulationDates (regFractions, header, isRecalculateFraction =
 */
 
 
-
 function isEndOfMonth (date) {
   const m1 = moment(date).endOf('month')
   const m2 = moment(date)
   return m1.format('YYYY-MM-DD') === m2.format('YYYY-MM-DD')
 }
-
 
 function calculateRegulationDates (regFractions, header, isRecalculateFraction = 'NO') {
   const { initDate, midDate, regulationFract } = header
@@ -233,7 +231,7 @@ function calculateRegulationDates (regFractions, header, isRecalculateFraction =
       const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
       fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, regFractions, isRecalculateFraction))
     } else {
-      midDate && fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), regFractions, isRecalculateFraction, midDate))
+      midDate && fractions.push(calcDateReg(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), regFractions, isRecalculateFraction))
       let date = cDate.mom(start, null, 'YYYY-MM-DD')
       const daysPeriod360 = period * 30
       for (let i = 0; i < 12; i += period) {
@@ -261,11 +259,10 @@ function calculateRegulationDates (regFractions, header, isRecalculateFraction =
   return fractions
 }
 
-
-function calcDateReg (startDate, endDate, regFractions, hasRegulation, midDate = false) {
+function calcDateReg (startDate, endDate, regFractions, hasRegulation) {
   const startCalc = cDate.mom(startDate, null, 'YYYY-MM-DD')
   const endCalc = cDate.mom(endDate, null, 'YYYY-MM-DD')
-  const daysDiff = myDays360(startCalc, endCalc, midDate)
+  const daysDiff = myDays360New(startCalc, endCalc)
   //const found = find(regFractions, { endCalc })
   return {
     startDate: startCalc,
@@ -293,39 +290,129 @@ function myDays360_old (startCalc, endCalc, midDate) {
   return daysDiff
 }
 
-
 function myDays360 (startCalc, endCalc) {
-  const sd = new Date(startCalc+' 00:00:00')
-  const ed = new Date(endCalc+' 00:00:00')
+  console.log('OLD FUNCTION')
+  const sd = new Date(startCalc + ' 00:00:00')
+  const ed = new Date(endCalc + ' 00:00:00')
   if ((isEndOfMonth(sd) && isEndOfMonth(ed)) || (isLastFebruary(ed))) {//|| (isLastFebruary(ed)
     const duration = moment.duration(moment(ed).diff(moment(sd)))
-    const dd=Math.round(duration.asMonths())
+    const dd = Math.round(duration.asMonths())
     return dd * 30
   } else {
     const diff = days360(new Date(startCalc), new Date(endCalc), 2)
     const endDay = parseInt(moment(endCalc).format('DD'))
     const startDay = parseInt(moment(startCalc).format('DD'))
-    if(endDay === 31 && startDay === 30 && diff === 0){
+    if (endDay === 31 && startDay === 30 && diff === 0) {
       return 1
     }
     return diff
   }
 }
 
+function isLastDayOfFebruary (date) {
+  const day = new Date(date)
+  return day.getMonth() === 1 && day.getDate() === new Date(day.getFullYear(), 2, 0).getDate()
+}
+
+function days360Excel (startDate, endDate) {
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  
+  let startDay = start.getDate()
+  let startMonth = start.getMonth() + 1
+  let startYear = start.getFullYear()
+  let endDay = end.getDate()
+  let endMonth = end.getMonth() + 1
+  let endYear = end.getFullYear()
+  
+  if (startDay === 31 || isLastDayOfFebruary(start)) {
+    startDay = 30
+  }
+  
+  if (startDay === 30 && endDay === 31) {
+    endDay = 30
+  }
+  
+  return ((endYear - startYear) * 360) + ((endMonth - startMonth) * 30) + (endDay - startDay)
+}
+
+function myDays360New (startCalc, endCalc, startHour) {
+  console.log('NEW FUNCTION')
+  const start = new Date(startCalc)
+  const end = new Date(endCalc)
+  const isFeb = (date) => date.getMonth() === 1
+  const lastDayOfStartMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate()
+  const isStartEndOfMonth = start.getDate() === lastDayOfStartMonth
+  const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
+  let result = days360Excel(start, end)
+  const startIsConsideredEndOfMonth =
+    isStartEndOfMonth
+    || (isFeb(start) && start.getDate() === 28 && !isLeapYear(start.getFullYear()))
+  
+  const lastDayOfEndMonth = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate()
+  const isEndEndOfMonth = end.getDate() === lastDayOfEndMonth
+  
+  if (startIsConsideredEndOfMonth && isEndEndOfMonth) {
+    const startDay = 30
+    const endDay = 30
+    
+    return (
+      (end.getFullYear() - start.getFullYear()) * 360
+      + (end.getMonth() - start.getMonth()) * 30
+      + (endDay - startDay)
+    )
+  }
+  const daysInStartMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate()
+  if (
+    daysInStartMonth === 31
+    && start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === 30
+    && end.getDate() === 31
+  ) {
+    const nextOfStart = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1)
+    if (
+      nextOfStart.getFullYear() === end.getFullYear()
+      && nextOfStart.getMonth() === end.getMonth()
+      && nextOfStart.getDate() === end.getDate()
+    ) {
+      result = result + 1
+    }
+  }
+  const sameYMD =
+    start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === end.getDate()
+  if (sameYMD) {
+    const hourIs24 = startHour === '24:00' || startHour === '24' || startHour === 24
+    const hourMissing = startHour == null || startHour === ''
+    
+    if (hourMissing || hourIs24) {
+      result = 0
+    } else {
+      result = 1
+    }
+  }
+  return result
+}
+
 function myDays360_1 (startCalc, endCalc) {
   let daysDiff = days360(new Date(startCalc), new Date(endCalc), 2)
- /* const diff = isLastFebruary(startCalc)
-  if (diff && (endCalc !== startCalc)) {
-    daysDiff -= 30 - diff
-  }*/
+  /* const diff = isLastFebruary(startCalc)
+   if (diff && (endCalc !== startCalc)) {
+     daysDiff -= 30 - diff
+   }*/
   return daysDiff
 }
 
 const EXCLUSION_TYPES = {
-  'VENDITA/DEMOLIZIONE': 1,
+  VENDITA: 1,
   REIMMATRICOLAZIONE: 1,
   'FURTO TOTALE': 0,
   ALTRO: 1,
+  'SCADENZA POLIZZA': 1,
+  'DEMOLIZIONE/ESPORTAZIONE': 1,
+  'MODIFICA PROPRIETARIO': 1,
 }
 
 const getExclusionTypeList = () => Object.keys(EXCLUSION_TYPES)
@@ -358,6 +445,7 @@ export default {
   isProd,
   isString,
   myDays360,
+  myDays360New,
   normPayFractions,
   removeAtIndex,
   sequencePromises,

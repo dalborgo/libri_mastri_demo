@@ -28,6 +28,16 @@ export function getPolicyEndDate (init, mid) {
   }
 }
 
+export function getPolicyEndDate2 (init, mid) {
+  if (mid) {
+    return cDate.mom(mid, null, 'YYYY-MM-DD', [1, 'y'])
+  } else if (init) {
+    return cDate.mom(init, null, 'YYYY-MM-DD', [1, 'y'])
+  } else {
+    return null
+  }
+}
+
 const theme = createMuiTheme({
   palette: {
     secondary: {
@@ -140,7 +150,7 @@ export function pdsToArray (pds) {
   return chain(pds).keys().sortBy(key => pds[key].index).value().map(val => pds[val])
 }
 
-function getFractMonths (fract) {
+export function getFractMonths (fract) {
   switch (fract) {
     case 'UNIQUE':
       return 0
@@ -154,6 +164,25 @@ function getFractMonths (fract) {
       return 3
     case 'MONTHLY':
       return 1
+    default:
+      return 0
+  }
+}
+
+export function getGeniasFractMonths (fract) {
+  switch (fract) {
+    case 'UNIQUE':
+      return 0
+    case 'ANNUAL':
+      return 1
+    case 'SIX_MONTHLY':
+      return 2
+    case 'FOUR_MONTHLY':
+      return 3
+    case 'THREE_MONTHLY':
+      return 4
+    case 'MONTHLY':
+      return 12
     default:
       return 0
   }
@@ -189,6 +218,7 @@ function myDays360_2_old (startCalc, endCalc) {
 }
 
 function myDays360_2 (startCalc, endCalc) {
+  console.log('OLD FUNCTION')
   const sd = new Date(startCalc + ' 00:00:00')
   const ed = new Date(endCalc + ' 00:00:00')
   if (cFunctions.isEndOfMonth(sd) && cFunctions.isEndOfMonth(ed)) {
@@ -206,10 +236,11 @@ function myDays360_2 (startCalc, endCalc) {
   }
 }
 
-function calcInst (date, dateNext, dayPrize, midDate = false, taxRate = DEFAULT_TAXATION) {
+function calcInst (date, dateNext, dayPrize, midDate = false, taxRate = DEFAULT_TAXATION, isMatrix) {
   const startCalc = cDate.mom(date, null, 'YYYY-MM-DD')
   const endCalc = cDate.mom(dateNext, null, 'YYYY-MM-DD')
-  const daysDiff = cFunctions.myDays360(startCalc, endCalc, midDate)
+  const myDays360Func = isMatrix ? cFunctions.myDays360New : cFunctions.myDays360
+  const daysDiff = myDays360Func(startCalc, endCalc)
   const instalment = Math.round(((dayPrize * 1000) * daysDiff)) / 1000
   const taxable = Math.round((instalment * 1000 / ((100 + taxRate) / 100))) / 1000
   const tax = Number(instalment.toFixed(2)) - Number(taxable.toFixed(2))
@@ -283,39 +314,6 @@ export function calculateRegulationPayment (vehicles, tablePd, statePolicy, head
   return priceObj
 }
 
-/*
-
-export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
-  let sumPrize = 0
-  for (let vehicle of vehicles) {
-    sumPrize += calculatePrizeTable(tablePd, statePolicy, vehicle)
-  }
-  const dayPrize = sumPrize / 360
-  const { initDate, midDate, paymentFract } = header
-  const fractions = []
-  const period = getFractMonths(paymentFract)
-  if (initDate) {
-    const start = midDate || initDate
-    if (period === 0) {
-      const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
-      fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, dayPrize))
-    } else {
-      midDate && fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), dayPrize, midDate))
-      for (let i = 0; i < 12; i += period) {
-        const date = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i, 'M'])
-        const dateNext = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [i + period, 'M'])
-        fractions.push(
-          calcInst(
-            date,
-            dateNext,
-            dayPrize
-          ))
-      }
-    }
-  }
-  return fractions
-}
-*/
 
 export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
   let sumPrize = 0
@@ -323,6 +321,7 @@ export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
   for (let vehicle of vehicles) {
     sumPrize += calculatePrizeTable(tablePd, statePolicy, vehicle)
   }
+  const isMatrix = Boolean(statePolicy.numPolizzaCompagnia || !statePolicy.state?.isPolicy)
   const taxRate = getGlobalTaxation(tablePd, statePolicy, vehicle)
   const dayPrize = sumPrize / 360
   const { initDate, midDate, paymentFract } = header
@@ -332,9 +331,9 @@ export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
     const start = midDate || initDate
     if (period === 0) {
       const endDate = cDate.mom(start, null, 'YYYY-MM-DD HH:mm', [1, 'y'])
-      fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, dayPrize, false, taxRate))
+      fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), endDate, dayPrize, false, taxRate, isMatrix))
     } else {
-      midDate && fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), dayPrize, midDate, taxRate))
+      midDate && fractions.push(calcInst(cDate.mom(initDate, null, 'YYYY-MM-DD HH:mm'), cDate.mom(midDate, null, 'YYYY-MM-DD HH:mm'), dayPrize, midDate, taxRate, isMatrix))
       let date = cDate.mom(start, null, 'YYYY-MM-DD')
       const daysPeriod360 = period * 30
       for (let i = 0; i < 12; i += period) {
@@ -354,7 +353,8 @@ export function calculatePaymentDates (vehicles, tablePd, statePolicy, header) {
             dateNext,
             dayPrize,
             false,
-            taxRate
+            taxRate,
+            isMatrix
           ))
         date = dateNext
       }
@@ -375,6 +375,19 @@ export function getGlobalTaxation (tablePd, policy, vehicle) {
     vehicleType: vehicleCode,
   }) || defProdCode
   return prodFound?.taxRate ? numeric.toFloat(prodFound.taxRate) : DEFAULT_TAXATION
+}
+
+export function getProdDefinition (tablePd, policy, vehicle) {
+  const { values: valuesTPd } = tablePd || {}
+  const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
+  const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
+  if (!productDefinitions.length) {return 0}
+  const vehicleCode = cFunctions.getVehicleCode(vehicle.vehicleType, vehicle.weight, vehicleTypes)
+  const defProdCode = find(productDefinitions, { vehicleType: vehicleCode })
+  return find(productDefinitions, {
+    productCode: vehicle.productCode,
+    vehicleType: vehicleCode,
+  }) || defProdCode
 }
 
 export function calculatePrizeTable (tablePd, policy, vehicle, printTaxable = false) {
@@ -407,6 +420,7 @@ export function calculatePrizeTable (tablePd, policy, vehicle, printTaxable = fa
 
 export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = false, returnExtra = false) {
   const { values: valuesTPd } = tablePd || {}
+  const isMatrix = Boolean(policy.numPolizzaCompagnia || !policy.state?.isPolicy)
   const productDefinitions = valuesTPd ? valuesTPd.productDefinitions : policy.productDefinitions
   const { gs: { vehicleTypes = [] } } = client.readQuery({ query: GS })
   if (!productDefinitions.length) {return 0}
@@ -416,7 +430,7 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     productCode: vehicle.productCode,
     vehicleType: vehicleCode,
   }) || defProdCode
-  let prize = 0, taxable = 0
+  let prize = 0, taxable = 0, noAccPrize = 0, noAccTaxable = 0, towingNumTaxable = 0, glassNumTaxable = 0
   const regFractions = policy.regFractions
   if (prodFound) {
     const glass = vehicle.hasGlass === 'SI' ? prodFound.glass || 0 : 0
@@ -424,14 +438,21 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     const rate = prodFound.rate || 0
     const minimum = numeric.toFloat(prodFound.minimum) || 0
     const taxRate = prodFound.taxRate ? numeric.toFloat(prodFound.taxRate) : DEFAULT_TAXATION
-    const accessories = numeric.toFloat(glass) + numeric.toFloat(towing)
+    const glassNum = numeric.toFloat(glass)
+    const towingNum = numeric.toFloat(towing)
+    const accessories = glassNum + towingNum
     let totalAmount = (numeric.toFloat(vehicle.value) * numeric.toFloat(rate) / 100)
     totalAmount = (totalAmount < minimum ? minimum : totalAmount) || 0
+    const noAccTotalAmount = totalAmount
     totalAmount = (totalAmount + accessories) || 0
     const dayAmount = totalAmount / 360
-    let normStartDate, normFinishDate
+    const noAccDayAmount = noAccTotalAmount / 360
+    const towingNumDayAmount = towingNum / 360
+    const glassNumDayAmount = glassNum / 360
+    let normStartDate, normFinishDate, startHour
     if (vehicle.startDate) {
       normStartDate = cDate.mom(vehicle.startDate, null, 'YYYY-MM-DD')
+      startHour = vehicle.startHour
     }
     if (vehicle.finishDate) {
       normFinishDate = cDate.mom(vehicle.finishDate, null, 'YYYY-MM-DD')
@@ -439,33 +460,64 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
     const startDate = normStartDate || policy.initDate
     const endDate = cFunctions.calcPolicyEndDate(policy.initDate, policy.midDate)
     const finishDate = normFinishDate || endDate
-    let rangePrice, days360_
-    if (startDate === policy.initDate && finishDate === endDate) {
+    let rangePrice, days360_, noAccRangePrice, towingNumRangePrice, glassNumRangePrice
+    const myDays360Func = isMatrix ? cFunctions.myDays360New : myDays360_2
+    if (((policy.midDate && startDate === policy.midDate) || (!policy.midDate && startDate === policy.initDate)) && finishDate === endDate) {
       rangePrice = totalAmount
+      noAccRangePrice = noAccTotalAmount
+      towingNumRangePrice = towingNum
+      glassNumRangePrice = glassNum
     } else {
-      days360_ = myDays360_2(normStartDate, normFinishDate)
+      days360_ = myDays360Func(normStartDate, normFinishDate, startHour)
       if (['DELETED', 'DELETED_CONFIRMED', 'DELETED_FROM_INCLUDED'].includes(vehicle.state)) {
         if (cFunctions.exclusionTypeFactor(vehicle.exclusionType) === 0) {// furto non nello stato di rischio si calcola come se fosse un'inclusione
-          rangePrice = startDate !== policy.initDate ? dayAmount * myDays360_2(normStartDate, endDate) : 0
+          rangePrice = startDate !== policy.initDate ? dayAmount * myDays360Func(normStartDate, endDate, startHour) : 0
+          noAccRangePrice = startDate !== policy.initDate ? noAccDayAmount * myDays360Func(normStartDate, endDate, startHour) : 0
+          towingNumRangePrice = startDate !== policy.initDate ? towingNumDayAmount * myDays360Func(normStartDate, endDate, startHour) : 0
+          glassNumRangePrice = startDate !== policy.initDate ? glassNumDayAmount * myDays360Func(normStartDate, endDate, startHour) : 0
         } else {
           if (cDate.someInRangeDate(normStartDate, normFinishDate, regFractions) && finishDate !== policy.initDate && startDate !== policy.initDate) {
             rangePrice = dayAmount * days360_
+            noAccRangePrice = noAccDayAmount * days360_
+            towingNumRangePrice = towingNumDayAmount * days360_
+            glassNumRangePrice = glassNumDayAmount * days360_
           } else {
-            const days360ToEnd = myDays360_2(normStartDate, endDate)
+            const days360ToEnd = myDays360Func(normStartDate, endDate, startHour)
             rangePrice = dayAmount * days360_ - (dayAmount * days360ToEnd)
+            noAccRangePrice = noAccDayAmount * days360_ - (noAccDayAmount * days360ToEnd)
+            towingNumRangePrice = towingNumDayAmount * days360_ - (towingNumDayAmount * days360ToEnd)
+            glassNumRangePrice = glassNumDayAmount * days360_ - (glassNumDayAmount * days360ToEnd)
           }
         }
       } else {
-        rangePrice = dayAmount * days360_
+        if (['ACTIVE'].includes(vehicle.state)) {
+          days360_ = myDays360Func(startDate, finishDate, startHour)
+          rangePrice = dayAmount * days360_
+          noAccRangePrice = noAccDayAmount * days360_
+          towingNumRangePrice = towingNumDayAmount * days360_
+          glassNumRangePrice = glassNumDayAmount * days360_
+        } else {
+          rangePrice = dayAmount * days360_
+          noAccRangePrice = noAccDayAmount * days360_
+          towingNumRangePrice = towingNumDayAmount * days360_
+          glassNumRangePrice = glassNumDayAmount * days360_
+        }
       }
     }
     const factor = 1
     prize = factor * rangePrice || 0
+    noAccPrize = factor * noAccRangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
+    noAccTaxable = (noAccPrize / ((100 + taxRate) / 100))
+    towingNumTaxable = (towingNumRangePrice / ((100 + taxRate) / 100))
+    glassNumTaxable = (glassNumRangePrice / ((100 + taxRate) / 100))
     if (returnExtra) {
       return {
         payment: printTaxable ? taxable : prize,
-        days: days360_ === undefined ? myDays360_2(policy.initDate, endDate) : days360_,
+        days: days360_ === undefined ? myDays360Func(policy.initDate, endDate) : days360_,
+        glassNet: glassNumTaxable,
+        towingNet: towingNumTaxable,
+        rateoNet: noAccTaxable,
       }
     } else {
       return printTaxable ? taxable : prize// printTaxable ? taxable : taxable < 0 ? taxable : prize
@@ -474,14 +526,13 @@ export function calculatePaymentTable (tablePd, policy, vehicle, printTaxable = 
   return 0
 }
 
-function calcDaysBetweenTwoDateRanges (startDate, endDate, dateRanges) {
+function calcDaysBetweenTwoDateRanges (startDate, endDate, dateRanges, isMatrix, startHour) {
   const inputStartDate = startDate
-  
   const inputEndDate = endDate
-  
   const endDateToConsider = moment(dateRanges.EndDate).isAfter(inputEndDate) ? inputEndDate : dateRanges.EndDate
   const startDateToConsider = moment(dateRanges.startDate).isAfter(inputStartDate) ? dateRanges.startDate : inputStartDate
-  const daysDifference = myDays360_2(startDateToConsider, endDateToConsider)
+  const myDays360Func = isMatrix ? cFunctions.myDays360New : myDays360_2
+  const daysDifference = myDays360Func(startDateToConsider, endDateToConsider, startHour)
   return daysDifference
 }
 
@@ -498,6 +549,7 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
   }) || defProdCode
   let prize = 0, taxable = 0
   const regFractions = policy.regFractions
+  const isMatrix = Boolean(policy.numPolizzaCompagnia || !policy.state?.isPolicy)
   if (prodFound) {
     const glass = vehicle.hasGlass === 'SI' ? prodFound.glass || 0 : 0
     const towing = vehicle.hasTowing === 'SI' ? prodFound.towing || 0 : 0
@@ -509,10 +561,10 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
     totalAmount = (totalAmount < minimum ? minimum : totalAmount) || 0
     totalAmount = (totalAmount + accessories) || 0
     const dayAmount = totalAmount / 360
-    let normStartDate, normFinishDate
-    
+    let normStartDate, normFinishDate, startHour
     if (vehicle.startDate) {
       normStartDate = cDate.mom(vehicle.startDate, null, 'YYYY-MM-DD')
+      startHour = vehicle.startHour
     }
     if (vehicle.finishDate) {
       normFinishDate = cDate.mom(vehicle.finishDate, null, 'YYYY-MM-DD')
@@ -549,9 +601,9 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
       //console.log('' + vehicle.licensePlate, startDate, finishDate)
       //console.log('current_fract', currentFract.startDate, currentFract.endDate)
       const dateRanges = { startDate: currentFract.startDate, EndDate: currentFract.endDate }
-  
-      const vehicleDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(startDate, finishDate, dateRanges), 0)
-      const fractDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(currentFract.startDate, currentFract.endDate, dateRanges), 0)
+      
+      const vehicleDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(startDate, finishDate, dateRanges, isMatrix, startHour), 0)
+      const fractDaysInCurrentFract = Math.max(calcDaysBetweenTwoDateRanges(currentFract.startDate, currentFract.endDate, dateRanges, isMatrix, startHour), 0)
       //console.log('vehicleDaysInCurrentFract:', vehicleDaysInCurrentFract)
       /*  let totalPaidAtInitRange
         if (moment(finishDate).isBefore(moment(currentFract.startDate))) {// è stato escluso precedentemente al currentFract
@@ -593,7 +645,7 @@ export function calculateIsRecalculatePaymentTable (tablePd, policy, vehicle, pr
       }*/
     }
     const factor = vehicle.exclusionType ? cFunctions.exclusionTypeFactor(vehicle.exclusionType) : 1
-  
+    
     prize = factor * rangePrice || 0
     taxable = (prize / ((100 + taxRate) / 100))
     if (returnExtra) {

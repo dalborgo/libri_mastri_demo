@@ -14,7 +14,7 @@ import {
   getNewChangesConfirmed,
   getNewOffer,
   getNewPolicy,
-  getNewProposal
+  getNewProposal,
 } from './mails'
 import mkdirp from 'mkdirp'
 import { CustomValidationError } from '../../errors'
@@ -29,6 +29,7 @@ export const CSV_HEADER_MAP = {
   'CODICE PRODOTTO': 'productCode',
   'TIPO VEICOLO': 'vehicleType',
   'Q.LI/KW/POSTI': 'weight',
+  'USO VEICOLO': 'vehicleUse',
   'data immatricolazione': 'registrationDate',
   marca: 'brand',
   modello: 'model',
@@ -39,6 +40,7 @@ export const CSV_HEADER_MAP = {
   'p.iva societa di leasing': 'leasingCompany',
   'scadenza leasing': 'leasingExpiry',
   'p.iva proprietario/locatario': 'owner',
+  condizioni: 'custom',
 }
 export const CSV_ADDED_HEADER_MAP = {
   TARGA: 'licensePlate',
@@ -48,6 +50,7 @@ export const CSV_ADDED_HEADER_MAP = {
   'CODICE PRODOTTO': 'productCode',
   'TIPO VEICOLO': 'vehicleType',
   'Q.LI/KW/POSTI': 'weight',
+  'USO VEICOLO': 'vehicleUse',
   'data immatricolazione': 'registrationDate',
   marca: 'brand',
   modello: 'model',
@@ -58,6 +61,7 @@ export const CSV_ADDED_HEADER_MAP = {
   'p.iva societa di leasing': 'leasingCompany',
   'scadenza leasing': 'leasingExpiry',
   'p.iva proprietario/locatario': 'owner',
+  condizioni: 'custom',
 }
 /*eslint-enable sort-keys*/
 export const columnNameMap = isPolicy => header => header.map(column => {
@@ -430,7 +434,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
     primaryQuboEmail = 'test@astenpos.it'
     primaryOrigin = 'http://178.175.201.217:5031'
   } else {
-    prodEmail = ['valentina.santorum@qubo-italia.eu', ...collaboratorsEmails]
+    prodEmail = ['librimatricola@qubo-italia.eu', ...collaboratorsEmails]
   }
   const number = code.replace('_', '/')
   if (stateCode === 'TO_AGENT') {
@@ -459,7 +463,7 @@ export async function manageMail (state, producer = {}, code, userRole, signer, 
 
 export async function manageMailEmitted_ (state, producer = {}, code, userRole, list = [], signer, userId = '', collaborators = []) {
   let { email: prodEmail } = producer //gestire filiale
-  const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
+  const collaboratorsEmails = collaborators.length ? collaborators.map(collaborator => collaborator.email) : []
   let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
@@ -467,7 +471,7 @@ export async function manageMailEmitted_ (state, producer = {}, code, userRole, 
     prodEmail = 'dalborgo.m@asten.it'
     primaryOrigin = 'http://178.175.201.217:5031'
   } else {
-    prodEmail = 'valentina.santorum@qubo-italia.eu'
+    prodEmail = 'librimatricola@qubo-italia.eu'
   }
   const number = code.replace('_', '/')
   const formattedList = []
@@ -493,7 +497,7 @@ const getState = state => {
 
 export async function manageMailEmitted (state, savedPolicy, code, userRole, list = [], signer, userId = '', collaborators = []) {
   let { email: prodEmail } = savedPolicy.producer || {} //gestire filiale
-  const collaboratorsEmails = collaborators.map(collaborator => collaborator.email)
+  const collaboratorsEmails = collaborators.length ? collaborators.map(collaborator => collaborator.email) : []
   let [primaryQuboEmail] = QUBO_EMAILS
   let [primaryOrigin] = ORIGIN
   const signer_ = signer.surname ? `${signer.name ? signer.name + ' ' : ''}${signer.surname}` : ''
@@ -501,7 +505,7 @@ export async function manageMailEmitted (state, savedPolicy, code, userRole, lis
     prodEmail = 'dalborgo.m@asten.it'
     primaryOrigin = 'http://178.175.201.217:5031'
   } else {
-    prodEmail = 'valentina.santorum@qubo-italia.eu'
+    prodEmail = 'librimatricola@qubo-italia.eu'
   }
   const number = code.replace('_', '/')
   const partial = { ok: true, message: '' }
@@ -512,7 +516,7 @@ export async function manageMailEmitted (state, savedPolicy, code, userRole, lis
       const {
         ok,
         message,
-      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} CONFERMA DI ${getState(state)} ${licensePlate}`, html, null, null, primaryQuboEmail)
+      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} ${signer_} CONFERMA DI ${getState(state)} ${licensePlate} - ${signer_}`, html, null, null, primaryQuboEmail)
       partial.ok = ok
       partial.message = message
     } else {
@@ -520,7 +524,7 @@ export async function manageMailEmitted (state, savedPolicy, code, userRole, lis
       const {
         ok,
         message,
-      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} CONFERMA DI ${getState(state)} ${licensePlate} cod: ${counter}`, html, null, null, primaryQuboEmail)
+      } = await email.send(!cFunctions.isProd() ? ['test@astenpos.it'] : [...QUBO_EMAILS, ...collaboratorsEmails], `POLIZZA ${number} ${signer_} CONFERMA DI ${getState(state)} ${licensePlate} cod: ${counter} - ${signer_}`, html, null, null, primaryQuboEmail)
       partial.ok = ok
       partial.message = message
     }

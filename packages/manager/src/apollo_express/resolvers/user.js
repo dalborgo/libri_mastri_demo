@@ -127,5 +127,11 @@ export default {
       await updatedUser.save()
       return true
     },
+    updateProvvigioni: async (root, { input, username }) => {
+      const user = await User.findById(username)
+      log.debug('user', user)
+      const newUser = Object.assign(user, input)
+      return newUser.save()
+    },
   },
 }

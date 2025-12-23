@@ -52,6 +52,10 @@ export default gql`
     acceptedBy: String
     isPolicy: Boolean
   }
+  type PolicyProvvigioni {
+    attive: Int
+    passive: Int
+  }
   type PolicyAttachments {
     name: String
     dir: String
@@ -71,6 +75,10 @@ export default gql`
     code: StateCodes
     acceptedBy: String
     isPolicy: Boolean
+  }
+  input PolicyProvvigioniInput {
+    attive: Int
+    passive: Int
   }
   input PolicyMetaInput {
     fromDoc: String
@@ -100,11 +108,15 @@ export default gql`
     regFractions: JSON
     meta: PolicyMetaInput
     number: String
+    statusCode: Int
+    numPolizzaCompagnia: String
     initDate: String
     midDate: String
-    notes: String,
+    notes: String
     producer: String
     productDefinitions: JSON
+    provvigioni: PolicyProvvigioniInput
+    renewMode: String
     signer: JSON
     specialArrangements: String
     state: PolicyStateInput
@@ -123,6 +135,7 @@ export default gql`
   }
   type Holder {
     id: ID
+    natura: String
     activity: String
     name: String
     surname: String
@@ -151,12 +164,16 @@ export default gql`
     regulationFract: String
     regFractions: JSON
     meta: PolicyMeta
-    notes: String,
+    notes: String
     number: String!
     initDate: String
     midDate: String
     producer: User
     productDefinitions: JSON
+    provvigioni: PolicyProvvigioni
+    renewMode: String
+    statusCode: Int
+    numPolizzaCompagnia: String
     signer: Holder
     specialArrangements: String
     state: PolicyState

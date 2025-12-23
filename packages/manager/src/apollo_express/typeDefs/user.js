@@ -18,6 +18,7 @@ const interfaceUserFields = `
  zip: String
  vat: String
  options: UserOptions
+ provvigioni: UserProvvigioni
 `
 
 const usersDefinitionType = `
@@ -50,6 +51,7 @@ export default gql`
     edit(input: EditUserInput!): User @auth
     editOptions(input: EditOptionsInput!): User @auth
     updatePassword(password: String, username: String!): Boolean @auth
+    updateProvvigioni(input: UpdateProvvigioniInput!, username: String!): User @auth
     del(id: ID!): User @auth
     newPass(id: ID!, password: String!): User @auth
     signUp(email: String!, username: String!, role: Roles!, password: String!): User @guest
@@ -91,9 +93,17 @@ export default gql`
     username: String!
     options: OptionsInput
   }
+  input UpdateProvvigioniInput {
+    provvigioni: ProvvigioniInput
+  }
   input OptionsInput {
     neverShowMenu: Boolean
     forceDownloadPdf: Boolean
+  }
+  input ProvvigioniInput {
+    attive: Int
+    passive: Int
+    codice: Int
   }
   """
   The order of roles is important, the index correspond to the priority weight.
@@ -109,6 +119,11 @@ export default gql`
   type UserOptions {
     neverShowMenu: Boolean
     forceDownloadPdf: Boolean
+  }
+  type UserProvvigioni {
+    attive: Int
+    passive: Int
+    codice: Int
   }
 
   ${usersDefinitionType}

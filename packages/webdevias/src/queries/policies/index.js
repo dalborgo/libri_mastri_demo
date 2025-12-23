@@ -13,6 +13,7 @@ export const ATTACHMENTS_FRAGMENT = (gql`
 export const HOLDER_FRAGMENT = (gql`
           fragment holderFragment on Holder {
             id
+            natura
             activity
             name
             surname
@@ -75,6 +76,13 @@ export const STATE_FRAGMENT = (gql`
             __typename
           }`
 )
+export const PROVVIGIONI_FRAGMENT = (gql`
+          fragment provvigioniFragment on PolicyProvvigioni {
+           attive
+           passive
+            __typename
+          }`
+)
 export const PRODUCER_FRAGMENT = (gql`
           fragment producerFragment on User {
             id
@@ -85,6 +93,7 @@ export const PRODUCER_FRAGMENT = (gql`
               }
             }
             longName
+            vat
             __typename
           }
           ${CHILDREN_FROM_LIST}
@@ -117,9 +126,16 @@ export const STATE_SAVE_FRAGMENT = (gql`
             isPolicy
           }`
 )
+export const PROVVIGIONI_SAVE_FRAGMENT = (gql`
+          fragment provvigioniSaveFragment on PolicyProvvigioni {
+            attive
+            passive
+          }`
+)
 export const HOLDER_SAVE_FRAGMENT = (gql`
           fragment holderSaveFragment on Holder {
             id
+            natura
             activity
             name
             surname
@@ -168,6 +184,9 @@ export const POLICY_FRAGMENT = (gql`
               ...metaFragment
             }
             notes
+            renewMode
+            statusCode
+            numPolizzaCompagnia
             producer{
               ...producerFragment
             }
@@ -176,6 +195,9 @@ export const POLICY_FRAGMENT = (gql`
               ...holderFragment
             }
             specialArrangements
+            provvigioni {
+              ...provvigioniFragment
+            }
             state {
               ...stateFragment
             }
@@ -192,6 +214,7 @@ export const POLICY_FRAGMENT = (gql`
           }
           ${ATTACHMENTS_FRAGMENT}
           ${HOLDER_FRAGMENT}
+          ${PROVVIGIONI_FRAGMENT}
           ${STATE_FRAGMENT}
           ${CREATED_BY_FRAGMENT}
           ${PRODUCER_FRAGMENT}
@@ -206,6 +229,7 @@ export const POLICIES_FRAGMENT = (gql`
             # È una query ottimizzata l'aggiunta di campi comporta la modifica della query nel resolver: getPoliciesQuery
             id
             number
+            numPolizzaCompagnia
             children{
               id
               __typename
@@ -274,12 +298,18 @@ export const POLICY_SAVE_FRAGMENT = (gql`
             initDate
             midDate
             notes
+            renewMode
+            statusCode
+            numPolizzaCompagnia
             producer
             productDefinitions
             signer {
               ...holderSaveFragment
             }
             specialArrangements
+            provvigioni {
+              ...provvigioniSaveFragment
+            }
             state {
               ...stateSaveFragment
             }
@@ -293,6 +323,7 @@ export const POLICY_SAVE_FRAGMENT = (gql`
           ${HOLDER_SAVE_FRAGMENT}
           ${META_SAVE_FRAGMENT}
           ${STATE_SAVE_FRAGMENT}
+          ${PROVVIGIONI_SAVE_FRAGMENT}
   `
 )
 

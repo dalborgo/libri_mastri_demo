@@ -331,11 +331,13 @@ function addRouters (router) {
       signer,
       state,
       vehicles,
+      numPolizzaCompagnia,
     } = data
     const { folderName, fileName } = getCompanyFile('testo_ard_definitivo', company)
     const filePath = path.resolve(`src/apollo_express/public/templates/${folderName}/${fileName}.docx`)
     //const filePath = path.resolve('src/apollo_express/public/templates/testo_ard_definitivo_2019_2020.docx')
     const { isPolicy } = state || {}
+    const isMatrix = Boolean(numPolizzaCompagnia || !isPolicy)
     if (isPolicy) {
       const savedFilePath = path.resolve(`src/apollo_express/crypt/${_code}/${_code}.pdf`)
       const pathExists = fs.existsSync(savedFilePath)
@@ -389,6 +391,9 @@ function addRouters (router) {
       master: newNumber || MASTER_NUMBER,
       number,
       isPolicy,
+      isMatrix,
+      notIsMatrix: !isMatrix,
+      numPolizzaCompagnia: numPolizzaCompagnia || 'da assegnare',
       today: cDate.mom(null, null, 'DD/MM/YYYY'),
       pLongName: get(producer, 'longName'),
       sName: get(signer, 'name') ? get(signer, 'name') + ' ' : '',

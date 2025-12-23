@@ -5,4 +5,5 @@ export const COMPANY = {
   quota_ristoro_delegataria: 0.0,
   flag_delegataria: true,
   flag_gestita: true,
+  codiceUnivocoRischioCompagnia: 67,
 }

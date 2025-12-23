@@ -90,6 +90,7 @@ const PolicyHolderInsertModal = props => {
         {
           ...cGraphQL.formInitialByFragment(HOLDER_SAVE_FRAGMENT, currentValue),
           activity: currentValue?.activity || null,
+          natura: currentValue?.natura || null,
         }
       }
       onSubmit={() => {}}
@@ -192,6 +193,8 @@ const PolicyHolderInsertModal = props => {
                       handleReset() //to reset touched value
                       setValues(reduce(values, (prev, _, key) => {
                         if (key === 'activity') {
+                          prev[key] = null
+                        } else if (key === 'natura'){
                           prev[key] = null
                         } else {
                           prev[key] = ''

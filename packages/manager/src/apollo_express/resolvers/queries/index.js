@@ -38,6 +38,7 @@ export function getPoliciesQuery (userRole, userId, onlyDoc = false) {
                 + '{ARRAY_AGG(DISTINCT p)[0].meta.modified, ARRAY_AGG(DISTINCT p)[0].meta.toDoc} as meta, '
                 + 'ARRAY_AGG(DISTINCT p)[0].top, '
                 + 'ARRAY_AGG(DISTINCT p)[0].`number`, '
+                + 'ARRAY_AGG(DISTINCT p)[0].`numPolizzaCompagnia`, '
                 + 'ARRAY_AGG(CASE WHEN ch IS NOT NULL THEN {"id":ch._code} ELSE missing END) children, '
                 + 'ARRAY_AGG(OBJECT_CONCAT({"username":c.username}, {"id":c.username}, {"role":c.`role`}))[0] createdBy, '
                 + 'OBJECT_CONCAT({"surname": ARRAY_AGG(DISTINCT p)[0].signer.surname},{"id": ARRAY_AGG(DISTINCT p)[0].signer.id}) signer, '

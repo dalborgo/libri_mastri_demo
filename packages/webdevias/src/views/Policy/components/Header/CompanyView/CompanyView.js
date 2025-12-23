@@ -106,12 +106,12 @@ const CompanyProducer = props => {
 }
 
 const COMPANIES = [
-  'TUA ASSICURAZIONI SPA',
+  'ALLIANZ NEXT S.P.A.',
   'ASSICURATRICE MILANESE SPA',
 ]
 
 const CompanyView = props => {
-  const { company, formRefComp, priority, setCompany, state } = props
+  const { company, formRefComp, priority, setCompany, state, number } = props
   const autoComp = (!state || state?.code === 'DRAFT') && priority === 4
   const classes = useStyles()
   return (
@@ -122,10 +122,14 @@ const CompanyView = props => {
       {
         !autoComp && priority === 4
           ?
-          <div className={classes.divLinkShort}>
-            Compagnia:&nbsp;
-            <Typography color="primary" display="inline" variant="overline">{company}</Typography>
-          </div>
+          <>
+            <div className={classes.divLinkShort}>
+              Compagnia:&nbsp;
+              <Typography color="primary" display="inline" variant="overline">{company}</Typography>
+              &nbsp;&nbsp;&nbsp;&nbsp;N. Interno:&nbsp;
+              <Typography color="primary" display="inline" variant="overline">{number}</Typography>
+            </div>
+          </>
           :
           <>
             {
